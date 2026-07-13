@@ -1,0 +1,69 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Dependency directories
+node_modules/
+jspm_packages/
+
+# Build outputs
+dist/
+build/
+out/
+.next/
+.nuxt/
+.svelte-kit/
+.docusaurus/
+.cache/
+.vuepress/
+.serverless/
+.fusebox/
+.dynamodb/
+tsconfig.tsbuildinfo
+
+# IDEs and editors
+.idea/
+.project
+.classpath
+.cproject
+.settings/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# System Files
+.DS_Store
+Thumbs.db
+
+# Environmental variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.backup
+.env.example.local
+*.env
+
+# Testing
+/coverage
+/.nyc_output
+
+# Temporary / Scratch files
+scratch/
+temp/
+tmp/
+
+# Local DB Data
+backend/data/
+
