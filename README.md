@@ -6,6 +6,8 @@
 
 ## 🏗️ Tech Stack
 
+This project is built using the **MERN Stack (MongoDB, Express, React, Node.js)**, completely modernised with end-to-end **TypeScript**.
+
 ### Frontend
 - **Framework**: React with TypeScript (powered by Vite)
 - **Styling**: Tailwind CSS
