@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/useAuthStore';
-import api from '../services/api';
+import { api, API_URL } from '../services/api';
 import toast from 'react-hot-toast';
 import { Mail, Lock, Loader2, LogIn, ArrowRight } from 'lucide-react';
 
@@ -19,7 +19,6 @@ export function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const loginStore = useAuthStore((state) => state.login);
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
 
   const {
     register,

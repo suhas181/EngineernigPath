@@ -8,9 +8,11 @@ import {
   refreshToken,
   forgotPassword,
   resetPassword,
+  getMe,
 } from '../controllers/authController';
 import { generateAccessToken, generateRefreshToken } from '../utils/jwt';
 import { User } from '../models/User';
+import { protect } from '../middlewares/auth';
 
 const router = Router();
 
@@ -22,6 +24,7 @@ router.post('/logout', logout);
 router.post('/refresh-token', refreshToken);
 router.post('/forgot-password', forgotPassword);
 router.post('/reset-password', resetPassword);
+router.get('/me', protect, getMe);
 
 // Google OAuth routes
 router.get(

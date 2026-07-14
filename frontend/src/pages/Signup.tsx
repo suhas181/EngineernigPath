@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Link, useNavigate } from 'react-router-dom';
-import api from '../services/api';
+import { api, API_URL } from '../services/api';
 import toast from 'react-hot-toast';
 import { User, Mail, Lock, Loader2, UserPlus, ArrowRight } from 'lucide-react';
 
@@ -29,7 +29,6 @@ type SignupFormValues = z.infer<typeof signupSchema>;
 export function Signup() {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
 
   const {
     register,

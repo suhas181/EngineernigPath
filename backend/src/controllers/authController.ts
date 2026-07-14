@@ -5,6 +5,47 @@ import { z } from 'zod';
 import { User } from '../models/User';
 import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from '../utils/jwt';
 import { sendVerificationEmail, sendPasswordResetEmail } from '../services/mailService';
+import { AuthenticatedRequest } from '../types';
+
+// Serializer to normalize user objects returned by auth APIs
+const serializeUser = (user: any) => ({
+  id: user._id,
+  name: user.name,
+  email: user.email,
+  role: user.role,
+  isVerified: user.isVerified,
+  college: user.college,
+  branch: user.branch,
+  cgpa: user.cgpa,
+  graduationYear: user.graduationYear,
+  currentSemester: user.currentSemester,
+  preferredCareer: user.preferredCareer,
+  skills: user.skills,
+  interests: user.interests,
+  linkedinUrl: user.linkedinUrl,
+  githubUrl: user.githubUrl,
+  profileImage: user.profileImage,
+  dreamCompany: user.dreamCompany,
+  dailyStudyHours: user.dailyStudyHours,
+  programmingLanguages: user.programmingLanguages,
+  frameworks: user.frameworks,
+  leetcodeEasyCount: user.leetcodeEasyCount,
+  leetcodeMediumCount: user.leetcodeMediumCount,
+  leetcodeHardCount: user.leetcodeHardCount,
+  dsaLevel: user.dsaLevel,
+  frontendLevel: user.frontendLevel,
+  backendLevel: user.backendLevel,
+  databaseLevel: user.databaseLevel,
+  csFundamentalsLevel: user.csFundamentalsLevel,
+  aptitudeLevel: user.aptitudeLevel,
+  communicationLevel: user.communicationLevel,
+  careerGoal: user.careerGoal,
+  placementTimeline: user.placementTimeline,
+  strongSubjects: user.strongSubjects,
+  weakSubjects: user.weakSubjects,
+  projects: user.projects,
+  createdAt: user.createdAt,
+});
 
 // Signup validation schema
 const signupSchema = z.object({
@@ -65,6 +106,8 @@ export const signup = async (
       isVerified: false,
     });
 
+    console.log(`[AUTH] [SIGNUP] User registered: ${email} (ID: ${newUser._id})`);
+
     // Send verification email
     await sendVerificationEmail(email, name, verificationToken);
 
@@ -96,6 +139,7 @@ export const verifyEmail = async (
     });
 
     if (!user) {
+      console.log(`[AUTH] [VERIFY-EMAIL] Verification failed: Token "${token}" is invalid or expired.`);
       res.status(400).json({ message: 'Invalid or expired verification token' });
       return;
     }
@@ -104,6 +148,8 @@ export const verifyEmail = async (
     user.verificationToken = undefined;
     user.verificationTokenExpires = undefined;
     await user.save();
+
+    console.log(`[AUTH] [VERIFY-EMAIL] Email verified successfully for: ${user.email}`);
 
     res.status(200).json({ message: 'Email verified successfully. You can now log in.' });
   } catch (error) {
@@ -131,6 +177,7 @@ export const login = async (
     // Find user and include password field
     const user = await User.findOne({ email }).select('+password');
     if (!user || !user.password) {
+      console.log(`[AUTH] [LOGIN] Login failed: User not found for ${email}`);
       res.status(401).json({ message: 'Invalid email or password' });
       return;
     }
@@ -138,7 +185,15 @@ export const login = async (
     // Verify password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
+      console.log(`[AUTH] [LOGIN] Login failed: Password mismatch for ${email}`);
       res.status(401).json({ message: 'Invalid email or password' });
+      return;
+    }
+
+    // Reject unverified users
+    if (!user.isVerified) {
+      console.log(`[AUTH] [LOGIN] Login rejected: Email unverified for ${email}`);
+      res.status(401).json({ message: 'Please verify your email address before logging in' });
       return;
     }
 
@@ -150,27 +205,14 @@ export const login = async (
     user.refreshToken = refreshToken;
     await user.save();
 
+    console.log(`[AUTH] [LOGIN] User logged in: ${email} (ID: ${user._id})`);
+    console.log(`[AUTH] [TOKENS] Tokens generated for ${email}`);
+
     res.status(200).json({
       message: 'Login successful',
       accessToken,
       refreshToken,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        isVerified: user.isVerified,
-        college: user.college,
-        branch: user.branch,
-        graduationYear: user.graduationYear,
-        currentSemester: user.currentSemester,
-        preferredCareer: user.preferredCareer,
-        skills: user.skills,
-        interests: user.interests,
-        linkedinUrl: user.linkedinUrl,
-        githubUrl: user.githubUrl,
-        profileImage: user.profileImage,
-      },
+      user: serializeUser(user),
     });
   } catch (error) {
     next(error);
@@ -190,7 +232,12 @@ export const logout = async (
       if (user) {
         user.refreshToken = undefined;
         await user.save();
+        console.log(`[AUTH] [LOGOUT] User logged out: ${user.email} (ID: ${user._id})`);
+      } else {
+        console.log(`[AUTH] [LOGOUT] Session not found in DB for provided refresh token`);
       }
+    } else {
+      console.log(`[AUTH] [LOGOUT] Logout request received without refresh token`);
     }
 
     res.status(200).json({ message: 'Logged out successfully' });
@@ -208,6 +255,7 @@ export const refreshToken = async (
     const { refreshToken } = req.body;
 
     if (!refreshToken) {
+      console.log(`[AUTH] [REFRESH] Refresh failed: Missing token in payload`);
       res.status(400).json({ message: 'Refresh token is required' });
       return;
     }
@@ -217,6 +265,7 @@ export const refreshToken = async (
       const user = await User.findOne({ _id: decoded.id, refreshToken });
 
       if (!user) {
+        console.log(`[AUTH] [REFRESH] Refresh failed: User or session matching token not found in DB`);
         res.status(401).json({ message: 'Invalid or expired refresh token' });
         return;
       }
@@ -227,11 +276,14 @@ export const refreshToken = async (
       user.refreshToken = newRefreshToken;
       await user.save();
 
+      console.log(`[AUTH] [REFRESH] Tokens rotated successfully for user: ${user.email}`);
+
       res.status(200).json({
         accessToken: newAccessToken,
         refreshToken: newRefreshToken,
       });
     } catch (err) {
+      console.log(`[AUTH] [REFRESH] Refresh failed: Token is expired or signatures mismatch`);
       res.status(401).json({ message: 'Invalid or expired refresh token' });
       return;
     }
@@ -254,6 +306,7 @@ export const forgotPassword = async (
 
     const user = await User.findOne({ email });
     if (!user) {
+      console.log(`[AUTH] [FORGOT-PASSWORD] Requested email "${email}" not found in database. Silent success response returned.`);
       // Return 200 for security reasons to prevent user enumeration
       res.status(200).json({ message: 'If a user with that email exists, a password reset link has been sent.' });
       return;
@@ -266,6 +319,8 @@ export const forgotPassword = async (
     user.resetPasswordToken = resetToken;
     user.resetPasswordTokenExpires = resetTokenExpires;
     await user.save();
+
+    console.log(`[AUTH] [FORGOT-PASSWORD] Password reset token generated for ${email}`);
 
     // Send reset email
     await sendPasswordResetEmail(user.email, user.name, resetToken);
@@ -312,6 +367,7 @@ export const resetPassword = async (
     });
 
     if (!user) {
+      console.log(`[AUTH] [RESET-PASSWORD] Reset failed: Token "${token}" is invalid or has expired.`);
       res.status(400).json({ message: 'Invalid or expired reset token' });
       return;
     }
@@ -325,7 +381,30 @@ export const resetPassword = async (
     user.refreshToken = undefined;
     await user.save();
 
+    console.log(`[AUTH] [RESET-PASSWORD] Password reset successfully and active sessions cleared for ${user.email}`);
+
     res.status(200).json({ message: 'Password has been reset successfully. You can now log in.' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getMe = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const user = req.user;
+    if (!user) {
+      res.status(404).json({ message: 'User not found' });
+      return;
+    }
+
+    res.status(200).json({
+      success: true,
+      user: serializeUser(user),
+    });
   } catch (error) {
     next(error);
   }
