@@ -16,6 +16,7 @@ import Dashboard from '../pages/Dashboard';
 import Roadmap from '../pages/Roadmap';
 import Resources from '../pages/Resources';
 import ResumeAnalyzer from '../pages/ResumeAnalyzer';
+import Planner from '../pages/Planner';
 
 // Wrapper for routes requiring authentication
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -125,6 +126,14 @@ export function AppRouter() {
         element={
           <ProtectedRoute>
             <ResumeAnalyzer />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/planner"
+        element={
+          <ProtectedRoute>
+            <Planner />
           </ProtectedRoute>
         }
       />

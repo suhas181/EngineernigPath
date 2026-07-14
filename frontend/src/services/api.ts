@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { useAuthStore } from '../store/useAuthStore';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
 
 export const api = axios.create({
   baseURL: API_URL,
@@ -24,6 +24,24 @@ api.interceptors.request.use(
   }
 );
 
+// Token refresh request queuing variables
+let isRefreshing = false;
+let failedQueue: Array<{
+  resolve: (token: string) => void;
+  reject: (err: any) => void;
+}> = [];
+
+const processQueue = (error: any, token: string | null = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token!);
+    }
+  });
+  failedQueue = [];
+};
+
 // Response interceptor to handle token refresh on 401
 api.interceptors.response.use(
   (response) => response,
@@ -37,12 +55,30 @@ api.interceptors.response.use(
       originalRequest.url.includes('/auth/refresh-token') ||
       originalRequest.url.includes('/auth/forgot-password') ||
       originalRequest.url.includes('/auth/reset-password') ||
-      originalRequest.url.includes('/auth/verify-email')
+      originalRequest.url.includes('/auth/verify-email') ||
+      originalRequest.url.includes('/auth/me')
     );
 
     // Check if error is 401 and request hasn't been retried, and is not an auth request
     if (error.response?.status === 401 && originalRequest && !originalRequest._retry && !isAuthRequest) {
+      if (isRefreshing) {
+        // Queue the request until token refresh finishes
+        return new Promise((resolve, reject) => {
+          failedQueue.push({
+            resolve: (token: string) => {
+              originalRequest.headers.Authorization = `Bearer ${token}`;
+              resolve(api(originalRequest));
+            },
+            reject: (err: any) => {
+              reject(err);
+            },
+          });
+        });
+      }
+
       originalRequest._retry = true;
+      isRefreshing = true;
+
       const refreshToken = useAuthStore.getState().refreshToken;
 
       if (refreshToken) {
@@ -57,13 +93,19 @@ api.interceptors.response.use(
           // Update Zustand store
           useAuthStore.getState().setTokens(newAccessToken, newRefreshToken);
 
+          // Process queued requests
+          processQueue(null, newAccessToken);
+
           // Retry original request with new token
           originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
           return api(originalRequest);
         } catch (refreshError) {
-          // If refresh fails, log out the user
+          // If refresh fails, reject queued requests and log out the user
+          processQueue(refreshError, null);
           useAuthStore.getState().logout();
           return Promise.reject(refreshError);
+        } finally {
+          isRefreshing = false;
         }
       } else {
         useAuthStore.getState().logout();
