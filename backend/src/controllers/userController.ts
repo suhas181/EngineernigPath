@@ -94,6 +94,9 @@ const updateProfileSchema = z.object({
   // Career goal & timeline
   careerGoal: z.enum(CAREER_GOALS).optional(),
   placementTimeline: z.enum(PLACEMENT_TIMELINES).optional(),
+  preferredProgrammingLanguage: z.enum(['Java', 'Python', 'C++']).optional(),
+  preferredDsaLanguage: z.enum(['Java', 'Python', 'C++']).optional(),
+  targetCompanyType: z.enum(['Product-Based', 'Service-Based']).optional(),
 
   // Subjects
   strongSubjects: uniqueStringArray,
@@ -135,6 +138,9 @@ const UPDATABLE_FIELDS = [
   'communicationLevel',
   'careerGoal',
   'placementTimeline',
+  'preferredProgrammingLanguage',
+  'preferredDsaLanguage',
+  'targetCompanyType',
   'strongSubjects',
   'weakSubjects',
   'projects',
@@ -176,6 +182,9 @@ function serializeUser(user: any) {
     communicationLevel: user.communicationLevel,
     careerGoal: user.careerGoal,
     placementTimeline: user.placementTimeline,
+    preferredProgrammingLanguage: user.preferredProgrammingLanguage,
+    preferredDsaLanguage: user.preferredDsaLanguage,
+    targetCompanyType: user.targetCompanyType,
     strongSubjects: user.strongSubjects,
     weakSubjects: user.weakSubjects,
     projects: user.projects,

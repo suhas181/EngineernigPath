@@ -35,6 +35,9 @@ interface UserProfile {
   communicationLevel?: 'Beginner' | 'Intermediate' | 'Advanced';
   careerGoal?: 'Placement' | 'Internship' | 'Higher Studies' | 'Freelancing' | 'Startup';
   placementTimeline?: '3 Months' | '6 Months' | '8 Months' | '1 Year';
+  preferredProgrammingLanguage?: 'Java' | 'Python' | 'C++';
+  preferredDsaLanguage?: 'Java' | 'Python' | 'C++';
+  targetCompanyType?: 'Product-Based' | 'Service-Based';
   strongSubjects?: string[];
   weakSubjects?: string[];
   projects?: Array<{

@@ -50,6 +50,9 @@ const profileSetupSchema = z.object({
   preferredCareer: z.string().min(2, 'Please select a preferred career path'),
   linkedinUrl: z.string().url('Invalid LinkedIn URL').or(z.literal('')),
   githubUrl: z.string().url('Invalid GitHub URL').or(z.literal('')),
+  preferredProgrammingLanguage: z.enum(['Java', 'Python', 'C++']),
+  preferredDsaLanguage: z.enum(['Java', 'Python', 'C++']),
+  targetCompanyType: z.enum(['Product-Based', 'Service-Based']),
 });
 
 type ProfileSetupFormValues = z.infer<typeof profileSetupSchema>;
@@ -72,6 +75,8 @@ export function ProfileSetup() {
     register,
     handleSubmit,
     trigger,
+    setValue,
+    watch,
     formState: { errors },
   } = useForm<ProfileSetupFormValues>({
     resolver: zodResolver(profileSetupSchema),
@@ -84,19 +89,28 @@ export function ProfileSetup() {
       preferredCareer: user?.preferredCareer || 'Software Engineer (SDE)',
       linkedinUrl: user?.linkedinUrl || '',
       githubUrl: user?.githubUrl || '',
+      preferredProgrammingLanguage: user?.preferredProgrammingLanguage || 'Java',
+      preferredDsaLanguage: user?.preferredDsaLanguage || 'Java',
+      targetCompanyType: user?.targetCompanyType || 'Product-Based',
     },
   });
+
+  const watchedValues = watch();
 
   const nextStep = async () => {
     let isValid = false;
     if (step === 1) {
       isValid = await trigger(['college', 'branch', 'cgpa', 'graduationYear', 'currentSemester']);
     } else if (step === 2) {
+      // SDE preferences, always valid
+      isValid = true;
+    } else if (step === 3) {
       isValid = await trigger(['preferredCareer']);
       if (skills.length === 0) {
         toast.error('Please add at least one skill.');
         return;
       }
+      isValid = true;
     }
     if (isValid) setStep((s) => s + 1);
   };
@@ -205,12 +219,12 @@ export function ProfileSetup() {
           <div className="space-y-2 pt-4">
             <div className="flex justify-between items-center text-xs uppercase tracking-wider font-semibold text-muted-foreground">
               <span>Profile Completion</span>
-              <span className="font-bold text-blue-400">{Math.round((step / 3) * 100)}%</span>
+              <span className="font-bold text-blue-400">{Math.round((step / 4) * 100)}%</span>
             </div>
             <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden border border-white/5">
               <div
                 className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 transition-all duration-300 ease-out animate-pulse"
-                style={{ width: `${(step / 3) * 100}%` }}
+                style={{ width: `${(step / 4) * 100}%` }}
               />
             </div>
           </div>
@@ -292,8 +306,118 @@ export function ProfileSetup() {
             </div>
           )}
 
-          {/* STEP 2: Career Path & Skills */}
+          {/* STEP 2: SDE Placement Preferences */}
           {step === 2 && (
+            <div className="space-y-6 animate-fadeIn">
+              <h3 className="text-xl font-bold font-heading text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">
+                SDE Placement Strategy
+              </h3>
+              <p className="text-muted-foreground text-sm">
+                Tailor your preparation style to target specific types of SDE recruiters.
+              </p>
+
+              {/* Target Company Type - Premium Segmented Cards */}
+              <div className="space-y-3 text-left">
+                <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                  Target Company Type
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Option 1: Product-Based */}
+                  <button
+                    type="button"
+                    onClick={() => setValue('targetCompanyType', 'Product-Based')}
+                    className={`p-5 rounded-2xl border text-left transition duration-200 hover:scale-[1.01] ${
+                      watchedValues.targetCompanyType === 'Product-Based'
+                        ? 'bg-blue-600/10 border-blue-500 text-white shadow-lg shadow-blue-500/10'
+                        : 'bg-white/5 border-white/10 text-muted-foreground hover:bg-white/10 hover:text-white'
+                    }`}
+                  >
+                    <div className="font-semibold text-sm sm:text-base text-white">Product-Based Companies</div>
+                    <div className="text-xs text-muted-foreground mt-2 leading-relaxed">
+                      Requires strong DSA, Projects, System Design (HLD/LLD), and Core CS Fundamentals.
+                    </div>
+                  </button>
+
+                  {/* Option 2: Service-Based */}
+                  <button
+                    type="button"
+                    onClick={() => setValue('targetCompanyType', 'Service-Based')}
+                    className={`p-5 rounded-2xl border text-left transition duration-200 hover:scale-[1.01] ${
+                      watchedValues.targetCompanyType === 'Service-Based'
+                        ? 'bg-blue-600/10 border-blue-500 text-white shadow-lg shadow-blue-500/10'
+                        : 'bg-white/5 border-white/10 text-muted-foreground hover:bg-white/10 hover:text-white'
+                    }`}
+                  >
+                    <div className="font-semibold text-sm sm:text-base text-white">Service-Based Companies</div>
+                    <div className="text-xs text-muted-foreground mt-2 leading-relaxed">
+                      Focuses on Quantitative Aptitude, Verbal/Logical reasoning, basic DSA, and HR behavioral preparation.
+                    </div>
+                  </button>
+                </div>
+              </div>
+
+              {/* Preferred Programming Language - Premium Segmented Tabs */}
+              <div className="space-y-3 text-left pt-2">
+                <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block">
+                  Preferred Programming Language
+                </label>
+                <div className="flex bg-white/5 border border-white/10 p-1.5 rounded-2xl gap-2 max-w-md">
+                  {['Java', 'Python', 'C++'].map((lang) => {
+                    const isSelected = watchedValues.preferredProgrammingLanguage === lang;
+                    return (
+                      <button
+                        key={lang}
+                        type="button"
+                        onClick={() => setValue('preferredProgrammingLanguage', lang as any)}
+                        className={`flex-grow text-center py-3 text-xs sm:text-sm font-semibold rounded-xl transition duration-200 ${
+                          isSelected
+                            ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25'
+                            : 'text-muted-foreground hover:text-white hover:bg-white/5'
+                        }`}
+                      >
+                        {lang}
+                      </button>
+                    );
+                  })}
+                </div>
+                <span className="text-[10px] text-muted-foreground italic">
+                  Used for SDE projects, syntax details, code snippets, and explanations.
+                </span>
+              </div>
+
+              {/* Preferred DSA Language - Premium Segmented Tabs */}
+              <div className="space-y-3 text-left pt-2">
+                <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block">
+                  Preferred DSA Language
+                </label>
+                <div className="flex bg-white/5 border border-white/10 p-1.5 rounded-2xl gap-2 max-w-md">
+                  {['Java', 'Python', 'C++'].map((lang) => {
+                    const isSelected = watchedValues.preferredDsaLanguage === lang;
+                    return (
+                      <button
+                        key={lang}
+                        type="button"
+                        onClick={() => setValue('preferredDsaLanguage', lang as any)}
+                        className={`flex-grow text-center py-3 text-xs sm:text-sm font-semibold rounded-xl transition duration-200 ${
+                          isSelected
+                            ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25'
+                            : 'text-muted-foreground hover:text-white hover:bg-white/5'
+                        }`}
+                      >
+                        {lang}
+                      </button>
+                    );
+                  })}
+                </div>
+                <span className="text-[10px] text-muted-foreground italic">
+                  Determines which language-specific DSA tutorials and curated videos will be resolved in your roadmap.
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* STEP 3: Career Path & Skills */}
+          {step === 3 && (
             <div className="space-y-5 animate-fadeIn">
               <h3 className="text-lg font-semibold font-heading text-blue-400">Career Preferences & Core Skills</h3>
               
@@ -453,8 +577,8 @@ export function ProfileSetup() {
             </div>
           )}
 
-          {/* STEP 3: Image & Social Links */}
-          {step === 3 && (
+          {/* STEP 4: Image & Social Links */}
+          {step === 4 && (
             <div className="space-y-6 animate-fadeIn">
               <h3 className="text-lg font-semibold font-heading text-blue-400">Social Portfolios & Image</h3>
               
@@ -533,7 +657,7 @@ export function ProfileSetup() {
               <div />
             )}
 
-            {step < 3 ? (
+            {step < 4 ? (
               <button
                 type="button"
                 onClick={nextStep}

@@ -5,11 +5,17 @@ import { Roadmap } from '../models/Roadmap';
 import { generateRoadmapWithAI, EnrichedProfileInput } from '../services/geminiService';
 import mongoose from 'mongoose';
 
-// Schema for toggling a topic/resource completion
+// Schema for toggling a topic/resource/problem/project completion
 const toggleRoadmapItemSchema = z.object({
   topicId: z.string({ required_error: 'topicId is required' }).min(1),
   resourceId: z.string().optional(),
-  isCompleted: z.boolean({ required_error: 'isCompleted is required' }),
+  problemId: z.string().optional(),
+  project: z.object({
+    githubSubmission: z.string().optional(),
+    liveDemoSubmission: z.string().optional(),
+    isCompleted: z.boolean().optional(),
+  }).optional(),
+  isCompleted: z.boolean().optional(),
 });
 
 // Schema for generating a roadmap
@@ -30,7 +36,19 @@ export const getRoadmap = async (
     }
 
     const roadmap = await Roadmap.findOne({ userId: user.id });
-    res.status(200).json({ success: true, roadmap });
+    let pendingWeeklyReview = false;
+    if (roadmap) {
+      const lastReview = roadmap.lastWeeklyReviewDate || roadmap.createdAt;
+      const oneWeekMs = 7 * 24 * 60 * 60 * 1000;
+      if (Date.now() - new Date(lastReview).getTime() >= oneWeekMs) {
+        pendingWeeklyReview = true;
+      }
+      if (req.query.debugWeeklyReview === 'true') {
+        pendingWeeklyReview = true;
+      }
+    }
+
+    res.status(200).json({ success: true, roadmap, pendingWeeklyReview });
   } catch (error) {
     next(error);
   }
@@ -219,6 +237,7 @@ export const generateRoadmap = async (
       description: generated.description || 'Custom tailored learning roadmap.',
       topics: allTopics,
       progress,
+      version: generated.version || '2.0.0',
     });
 
     console.log(`[ROADMAP-CTRL] Roadmap saved: ${allTopics.length} topics (${preservedTopics.length} preserved, ${generated.topics.length} new), progress: ${progress}%`);
@@ -248,7 +267,6 @@ export const toggleRoadmapItem = async (
       return;
     }
 
-    // Validate body request with Zod
     const parseResult = toggleRoadmapItemSchema.safeParse(req.body);
     if (!parseResult.success) {
       res.status(400).json({
@@ -259,7 +277,7 @@ export const toggleRoadmapItem = async (
       return;
     }
 
-    const { topicId, resourceId, isCompleted } = parseResult.data;
+    const { topicId, resourceId, problemId, project, isCompleted } = parseResult.data;
 
     const roadmap = await Roadmap.findOne({ userId: user.id });
     if (!roadmap) {
@@ -273,6 +291,8 @@ export const toggleRoadmapItem = async (
       return;
     }
 
+    const targetVal = isCompleted !== undefined ? !!isCompleted : false;
+
     if (resourceId) {
       // Toggle a specific resource
       const resource = topic.resources.find((r) => r.id === resourceId);
@@ -280,30 +300,221 @@ export const toggleRoadmapItem = async (
         res.status(404).json({ success: false, message: 'Resource not found in topic' });
         return;
       }
-      resource.isCompleted = isCompleted;
-
-      // Auto update topic status based on resource completion
-      if (topic.resources.length > 0) {
-        topic.isCompleted = topic.resources.every((r) => r.isCompleted);
+      resource.isCompleted = targetVal;
+    } else if (problemId) {
+      // Toggle a specific practice problem
+      if (!topic.practiceProblems) {
+        topic.practiceProblems = [];
       }
-    } else {
-      // Toggle entire topic and sync all its children resources
-      topic.isCompleted = isCompleted;
+      const problem = topic.practiceProblems.find((p) => p.id === problemId);
+      if (!problem) {
+        res.status(404).json({ success: false, message: 'Practice problem not found in topic' });
+        return;
+      }
+      problem.isCompleted = targetVal;
+    } else if (project) {
+      // Update/toggle project details
+      if (!topic.project) {
+        res.status(404).json({ success: false, message: 'Project not defined for this month' });
+        return;
+      }
+      if (project.githubSubmission !== undefined) {
+        topic.project.githubSubmission = project.githubSubmission;
+      }
+      if (project.liveDemoSubmission !== undefined) {
+        topic.project.liveDemoSubmission = project.liveDemoSubmission;
+      }
+      if (project.isCompleted !== undefined) {
+        topic.project.isCompleted = project.isCompleted;
+      }
+    } else if (isCompleted !== undefined) {
+      // Toggle entire month and sync resources, practice problems, and projects
+      topic.isCompleted = targetVal;
       topic.resources.forEach((r) => {
-        r.isCompleted = isCompleted;
+        r.isCompleted = targetVal;
       });
+      if (topic.practiceProblems) {
+        topic.practiceProblems.forEach((p) => {
+          p.isCompleted = targetVal;
+        });
+      }
+      if (topic.project) {
+        topic.project.isCompleted = targetVal;
+      }
     }
 
-    // Recalculate progress: percentage of completed topics
-    const totalTopics = roadmap.topics.length;
-    const completedTopics = roadmap.topics.filter((t) => t.isCompleted).length;
-    roadmap.progress = totalTopics > 0 ? Math.round((completedTopics / totalTopics) * 100) : 0;
+    // Auto-update month (topic) overall completion state based on children status
+    const allResourcesDone = topic.resources.every((r) => r.isCompleted);
+    const allProblemsDone = !topic.practiceProblems || topic.practiceProblems.length === 0 || topic.practiceProblems.every((p) => p.isCompleted);
+    const projectDone = !topic.project || topic.project.isCompleted;
+
+    if (resourceId || problemId || project) {
+      topic.isCompleted = allResourcesDone && allProblemsDone && projectDone;
+    }
+
+    // Recalculate progress: count total items vs completed items across the entire roadmap
+    let totalItems = 0;
+    let completedItems = 0;
+
+    roadmap.topics.forEach((t) => {
+      // Resources
+      totalItems += t.resources.length;
+      completedItems += t.resources.filter((r) => r.isCompleted).length;
+
+      // Problems
+      if (t.practiceProblems && t.practiceProblems.length > 0) {
+        totalItems += t.practiceProblems.length;
+        completedItems += t.practiceProblems.filter((p) => p.isCompleted).length;
+      }
+
+      // Project
+      if (t.project) {
+        totalItems += 1;
+        if (t.project.isCompleted) {
+          completedItems += 1;
+        }
+      }
+    });
+
+    roadmap.progress = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;
 
     await roadmap.save();
 
     res.status(200).json({
       success: true,
       message: 'Roadmap progress updated',
+      roadmap,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const weeklyReviewSchema = z.object({
+  easySolved: z.number().int().min(0).default(0),
+  mediumSolved: z.number().int().min(0).default(0),
+  hardSolved: z.number().int().min(0).default(0),
+  completedTopicIds: z.array(z.string()).default([]),
+  difficultTopics: z.array(z.string()).default([]),
+  projectCompleted: z.boolean().optional(),
+  adaptRoadmap: z.boolean().optional(),
+});
+
+export const submitWeeklyReview = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const user = req.user;
+    if (!user) {
+      res.status(401).json({ success: false, message: 'Not authorized' });
+      return;
+    }
+
+    const parseResult = weeklyReviewSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: parseResult.error.flatten().fieldErrors,
+      });
+      return;
+    }
+
+    const { easySolved, mediumSolved, hardSolved, completedTopicIds, difficultTopics, projectCompleted, adaptRoadmap } = parseResult.data;
+
+    // 1. Update user LeetCode solved count
+    user.leetcodeEasyCount = (user.leetcodeEasyCount || 0) + easySolved;
+    user.leetcodeMediumCount = (user.leetcodeMediumCount || 0) + mediumSolved;
+    user.leetcodeHardCount = (user.leetcodeHardCount || 0) + hardSolved;
+
+    // 2. Append difficultTopics to user weakSubjects (avoiding duplicates)
+    const currentWeak = user.weakSubjects || [];
+    const newWeakSet = new Set([...currentWeak, ...difficultTopics]);
+    user.weakSubjects = Array.from(newWeakSet);
+
+    await user.save();
+
+    // 3. Update active Roadmap properties
+    const roadmap = await Roadmap.findOne({ userId: user.id });
+    if (!roadmap) {
+      res.status(404).json({ success: false, message: 'Active roadmap not found' });
+      return;
+    }
+
+    // Toggle completed topics/months
+    if (completedTopicIds && completedTopicIds.length > 0) {
+      roadmap.topics.forEach((topic) => {
+        if (completedTopicIds.includes(topic.id)) {
+          topic.isCompleted = true;
+          topic.resources.forEach((r) => { r.isCompleted = true; });
+          if (topic.practiceProblems) {
+            topic.practiceProblems.forEach((p) => { p.isCompleted = true; });
+          }
+          if (topic.project) {
+            topic.project.isCompleted = true;
+          }
+        }
+      });
+    }
+
+    // If current month project completed is flagged, mark the active month's project as completed
+    if (projectCompleted) {
+      // Find the first uncompleted month and mark its project as completed
+      const activeMonth = roadmap.topics.find((t) => !t.isCompleted);
+      if (activeMonth && activeMonth.project) {
+        activeMonth.project.isCompleted = true;
+        
+        // Check if that auto-completes the active month
+        const allResourcesDone = activeMonth.resources.every((r) => r.isCompleted);
+        const allProblemsDone = !activeMonth.practiceProblems || activeMonth.practiceProblems.every((p) => p.isCompleted);
+        if (allResourcesDone && allProblemsDone) {
+          activeMonth.isCompleted = true;
+        }
+      }
+    }
+
+    // Recalculate roadmap progress
+    let totalItems = 0;
+    let completedItems = 0;
+    roadmap.topics.forEach((t) => {
+      totalItems += t.resources.length;
+      completedItems += t.resources.filter((r) => r.isCompleted).length;
+      if (t.practiceProblems && t.practiceProblems.length > 0) {
+        totalItems += t.practiceProblems.length;
+        completedItems += t.practiceProblems.filter((p) => p.isCompleted).length;
+      }
+      if (t.project) {
+        totalItems += 1;
+        if (t.project.isCompleted) {
+          completedItems += 1;
+        }
+      }
+    });
+    roadmap.progress = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;
+
+    // Reset last weekly review date to now
+    roadmap.lastWeeklyReviewDate = new Date();
+    await roadmap.save();
+
+    console.log(`[WEEKLY-REVIEW] Solved: +${easySolved}E/+${mediumSolved}M/+${hardSolved}H. Progress: ${roadmap.progress}%`);
+
+    // 4. Adapt roadmap if requested
+    if (adaptRoadmap) {
+      res.status(200).json({
+        success: true,
+        message: 'Weekly review submitted. Adapting roadmap structure...',
+        adaptRequired: true,
+        roadmap,
+      });
+      return;
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Weekly review submitted successfully',
+      adaptRequired: false,
       roadmap,
     });
   } catch (error) {
