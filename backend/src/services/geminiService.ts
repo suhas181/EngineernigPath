@@ -1223,7 +1223,6 @@ function buildTopicPool(
       { id: rid(), title: 'LeetCode Contest - Weekly Practice', url: 'https://leetcode.com/contest/', type: 'article', difficulty: 'advanced' },
     ],
   });
-}
 
   return pool;
 }
