@@ -4,6 +4,7 @@ import { AuthenticatedRequest } from '../types';
 import { Roadmap } from '../models/Roadmap';
 import { generateRoadmapWithAI, EnrichedProfileInput } from '../services/geminiService';
 import mongoose from 'mongoose';
+import crypto from 'crypto';
 
 // Schema for toggling a topic/resource/problem/project completion
 const toggleRoadmapItemSchema = z.object({
@@ -23,6 +24,62 @@ const generateRoadmapSchema = z.object({
   regenerate: z.boolean().optional(),
 });
 
+// Helper to fetch resume score
+const fetchResumeScore = async (userId: string | mongoose.Types.ObjectId): Promise<number> => {
+  try {
+    const Resume = mongoose.model('Resume');
+    const latestResume = await Resume.findOne({ userId }).sort({ createdAt: -1 }).lean() as any;
+    if (latestResume && typeof latestResume.atsScore === 'number') {
+      return latestResume.atsScore;
+    }
+  } catch (e) {
+    console.log('[ROADMAP-CTRL] Resume model not available or error fetching score:', e);
+  }
+  return 0;
+};
+
+// Helper to calculate profile hash
+const calculateProfileHash = (user: any, resumeScore: number): string => {
+  const dataToHash = {
+    preferredCareer: user.preferredCareer || '',
+    currentSemester: user.currentSemester || 1,
+    branch: user.branch || '',
+    cgpa: user.cgpa || 0,
+    skills: [...(user.skills || [])].sort(),
+    interests: [...(user.interests || [])].sort(),
+    programmingLanguages: [...(user.programmingLanguages || [])].sort(),
+    frameworks: [...(user.frameworks || [])].sort(),
+    dsaLevel: user.dsaLevel || 'Beginner',
+    frontendLevel: user.frontendLevel || 'Beginner',
+    backendLevel: user.backendLevel || 'Beginner',
+    databaseLevel: user.databaseLevel || 'Beginner',
+    csFundamentalsLevel: user.csFundamentalsLevel || 'Beginner',
+    aptitudeLevel: user.aptitudeLevel || 'Beginner',
+    communicationLevel: user.communicationLevel || 'Beginner',
+    leetcodeEasyCount: user.leetcodeEasyCount || 0,
+    leetcodeMediumCount: user.leetcodeMediumCount || 0,
+    leetcodeHardCount: user.leetcodeHardCount || 0,
+    careerGoal: user.careerGoal || 'Placement',
+    placementTimeline: user.placementTimeline || '6 Months',
+    dreamCompany: user.dreamCompany || '',
+    dailyStudyHours: user.dailyStudyHours || 2,
+    strongSubjects: [...(user.strongSubjects || [])].sort(),
+    weakSubjects: [...(user.weakSubjects || [])].sort(),
+    projects: (user.projects || []).map((p: any) => ({
+      title: p.title || '',
+      description: p.description || '',
+      technologies: [...(p.technologies || [])].sort(),
+      difficulty: p.difficulty || 'Beginner',
+      isCompleted: !!p.isCompleted
+    })),
+    preferredProgrammingLanguage: user.preferredProgrammingLanguage || 'Java',
+    preferredDsaLanguage: user.preferredDsaLanguage || 'Java',
+    targetCompanyType: user.targetCompanyType || 'Product-Based',
+    resumeScore
+  };
+  return crypto.createHash('sha256').update(JSON.stringify(dataToHash)).digest('hex');
+};
+
 export const getRoadmap = async (
   req: AuthenticatedRequest,
   res: Response,
@@ -37,6 +94,7 @@ export const getRoadmap = async (
 
     const roadmap = await Roadmap.findOne({ userId: user.id });
     let pendingWeeklyReview = false;
+    let profileChanged = false;
     if (roadmap) {
       const lastReview = roadmap.lastWeeklyReviewDate || roadmap.createdAt;
       const oneWeekMs = 7 * 24 * 60 * 60 * 1000;
@@ -46,9 +104,16 @@ export const getRoadmap = async (
       if (req.query.debugWeeklyReview === 'true') {
         pendingWeeklyReview = true;
       }
+
+      // Check if profile parameters relevant to roadmap generation have changed
+      const currentResumeScore = await fetchResumeScore(user.id);
+      const currentProfileHash = calculateProfileHash(user, currentResumeScore);
+      if (roadmap.profileHash !== currentProfileHash) {
+        profileChanged = true;
+      }
     }
 
-    res.status(200).json({ success: true, roadmap, pendingWeeklyReview });
+    res.status(200).json({ success: true, roadmap, pendingWeeklyReview, profileChanged });
   } catch (error) {
     next(error);
   }
@@ -125,17 +190,7 @@ export const generateRoadmap = async (
     }
 
     // 4. Fetch resume score (atsScore from latest resume, if exists)
-    let resumeScore = 0;
-    try {
-      const Resume = mongoose.model('Resume');
-      const latestResume = await Resume.findOne({ userId: user.id }).sort({ createdAt: -1 }).lean() as any;
-      if (latestResume && typeof latestResume.atsScore === 'number') {
-        resumeScore = latestResume.atsScore;
-      }
-    } catch (e) {
-      // Resume model may not be registered yet — not critical
-      console.log('[ROADMAP-CTRL] Resume model not available, defaulting resumeScore to 0');
-    }
+    const resumeScore = await fetchResumeScore(user.id);
 
     // 5. Build enriched profile input for the AI pipeline
     const enrichedProfile: EnrichedProfileInput = {
@@ -231,6 +286,8 @@ export const generateRoadmap = async (
     const totalTopics = allTopics.length;
     const progress = totalTopics > 0 ? Math.round((completedTopics / totalTopics) * 100) : 0;
 
+    const currentProfileHash = calculateProfileHash(user, resumeScore);
+
     const newRoadmap = await Roadmap.create({
       userId: user.id,
       title: generated.title || `Personalized Roadmap for ${user.preferredCareer}`,
@@ -238,6 +295,8 @@ export const generateRoadmap = async (
       topics: allTopics,
       progress,
       version: generated.version || '2.0.0',
+      profileHash: currentProfileHash,
+      source: generated.source || 'gemini',
     });
 
     console.log(`[ROADMAP-CTRL] Roadmap saved: ${allTopics.length} topics (${preservedTopics.length} preserved, ${generated.topics.length} new), progress: ${progress}%`);

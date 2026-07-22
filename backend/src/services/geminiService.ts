@@ -248,7 +248,9 @@ export const generateRoadmapWithAI = async (profile: EnrichedProfileInput): Prom
 
   if (!genAI) {
     logStage('MOCK', 'Gemini API Key is not set or placeholder. Invoking Mock pipeline.');
-    return generateIntelligentMockRoadmap(profile);
+    const mockRoadmap = generateIntelligentMockRoadmap(profile);
+    mockRoadmap.source = 'fallback';
+    return mockRoadmap;
   }
 
   try {
@@ -287,12 +289,15 @@ export const generateRoadmapWithAI = async (profile: EnrichedProfileInput): Prom
 
     // Force stamp final JSON SDE version
     roadmapJSON.version = '2.0.0';
+    roadmapJSON.source = 'gemini';
 
     logStage('SUCCESS', `Successfully compiled SDE roadmap: ${roadmapJSON.topics.length} months.`);
     return roadmapJSON;
   } catch (error) {
     console.error('Error generating SDE roadmap in multi-stage pipeline, fallback to mock:', error);
-    return generateIntelligentMockRoadmap(profile);
+    const mockRoadmap = generateIntelligentMockRoadmap(profile);
+    mockRoadmap.source = 'fallback';
+    return mockRoadmap;
   }
 };
 
@@ -684,6 +689,7 @@ ${topic.interviewPrep.map(p => `  • ${p}`).join('\n')}
     title: `Personalized SDE Career Path for ${profile.name}`,
     description: `A SDE placement preparation path targeting ${profile.targetCompanyType || 'Product-Based'} companies, custom-fit for your ${timeline} timeline, using ${progLang} and ${dsaLang}.`,
     version: '2.0.0',
+    source: 'fallback',
     topics: topicsWithResources,
     summary
   };

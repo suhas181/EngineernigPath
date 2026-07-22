@@ -57,6 +57,8 @@ export interface IRoadmap extends Document {
   topics: ITopic[];
   lastWeeklyReviewDate?: Date;
   version?: string;
+  profileHash?: string;
+  source?: 'gemini' | 'fallback';
   createdAt: Date;
   updatedAt: Date;
 }
@@ -140,6 +142,15 @@ const RoadmapSchema = new Schema<IRoadmap>(
     version: {
       type: String,
       default: '2.0.0',
+    },
+    profileHash: {
+      type: String,
+      default: '',
+    },
+    source: {
+      type: String,
+      enum: ['gemini', 'fallback'],
+      default: 'gemini',
     },
   },
   {
