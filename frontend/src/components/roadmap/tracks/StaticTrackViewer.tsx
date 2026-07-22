@@ -15,13 +15,17 @@ import {
 import { StaticTrackMonth } from '../roadmap.types';
 
 interface StaticTrackViewerProps {
-  track: 'ai-engineer' | 'data-scientist';
+  track: string;
   roadmapData: StaticTrackMonth[];
+  trackTitle?: string;
+  trackDescription?: string;
 }
 
 export const StaticTrackViewer: React.FC<StaticTrackViewerProps> = ({
   track,
   roadmapData,
+  trackTitle,
+  trackDescription,
 }) => {
   const completedTopicsKey = `${track}_completed_topics`;
   const completedProjectsKey = `${track}_completed_projects`;
@@ -102,12 +106,18 @@ export const StaticTrackViewer: React.FC<StaticTrackViewerProps> = ({
           </div>
           <div className="text-left">
             <h3 className="text-lg font-bold text-white">
-              {track === 'ai-engineer' ? 'AI Engineer Curriculum' : 'Data Scientist Curriculum'}
+              {trackTitle ||
+                (track === 'ai-engineer'
+                  ? 'AI Engineer Curriculum'
+                  : track === 'data-scientist'
+                  ? 'Data Scientist Curriculum'
+                  : `${track.replace(/-/g, ' ').toUpperCase()} Curriculum`)}
             </h3>
             <p className="text-xs text-slate-400">
-              {track === 'ai-engineer'
-                ? 'Practical, project-first path to production LLM apps'
-                : 'Comprehensive, tool-by-tool path to job readiness'}
+              {trackDescription ||
+                (track === 'ai-engineer'
+                  ? 'Practical, project-first path to production LLM apps'
+                  : 'Comprehensive, tool-by-tool path to job readiness')}
             </p>
           </div>
         </div>

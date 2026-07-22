@@ -5,6 +5,14 @@ import Navbar from '../components/Navbar';
 import toast from 'react-hot-toast';
 import { aiEngineerRoadmap } from '../utils/aiEngineerData';
 import { dataScientistRoadmap } from '../utils/dataScientistData';
+import { dataAnalystRoadmap } from '../utils/dataAnalystData';
+import { cyberSecurityRoadmap } from '../utils/cyberSecurityData';
+import { javaDeveloperRoadmap } from '../utils/javaDeveloperData';
+import { softwareEngineerRoadmap } from '../utils/softwareEngineerData';
+import { devOpsRoadmap } from '../utils/devOpsData';
+import { flutterRoadmap } from '../utils/flutterData';
+import { pythonBackendRoadmap } from '../utils/pythonBackendData';
+
 import { AlertOctagon, Sparkles, Map, ArrowRight, Target } from 'lucide-react';
 
 import * as roadmapService from '../services/roadmapService';
@@ -26,6 +34,8 @@ interface ProjectSubmissionState {
   status: 'not-started' | 'in-progress' | 'completed';
 }
 
+import { RoadmapTabType } from '../components/roadmap/RoadmapTabs';
+
 export function Roadmap() {
   const [searchParams] = useSearchParams();
   const { user, updateUser } = useAuthStore();
@@ -35,14 +45,10 @@ export function Roadmap() {
   const [isError, setIsError] = useState(false);
   const [profileChanged, setProfileChanged] = useState(false);
   const [expandedTopics, setExpandedTopics] = useState<Record<string, boolean>>({});
-  const [activeTab, setActiveTab] = useState<'personalized' | 'ai-engineer' | 'data-scientist'>(
-    'personalized'
-  );
+  const [activeTab, setActiveTab] = useState<RoadmapTabType>('personalized');
 
-  // Project submission form states per month
-  const [projectSubmissions, setProjectSubmissions] = useState<
-    Record<string, ProjectSubmissionState>
-  >({});
+  // Project Submissions local state
+  const [projectSubmissions, setProjectSubmissions] = useState<Record<string, ProjectSubmissionState>>({});
 
   // Weekly review modal state
   const [showReviewModal, setShowReviewModal] = useState(false);
@@ -630,19 +636,29 @@ export function Roadmap() {
                   </div>
                 </div>
               )
-            ) : activeTab === 'ai-engineer' ? (
-              /* AI Engineer Roadmap Track */
-              <StaticTrackViewer
-                key="ai-engineer"
-                track="ai-engineer"
-                roadmapData={aiEngineerRoadmap}
-              />
             ) : (
-              /* Data Scientist Roadmap Track */
               <StaticTrackViewer
-                key="data-scientist"
-                track="data-scientist"
-                roadmapData={dataScientistRoadmap}
+                key={activeTab}
+                track={activeTab}
+                roadmapData={
+                  activeTab === 'ai-engineer'
+                    ? aiEngineerRoadmap
+                    : activeTab === 'data-scientist'
+                    ? dataScientistRoadmap
+                    : activeTab === 'data-analyst'
+                    ? dataAnalystRoadmap
+                    : activeTab === 'cybersecurity'
+                    ? cyberSecurityRoadmap
+                    : activeTab === 'java-developer'
+                    ? javaDeveloperRoadmap
+                    : activeTab === 'software-engineer'
+                    ? softwareEngineerRoadmap
+                    : activeTab === 'devops'
+                    ? devOpsRoadmap
+                    : activeTab === 'flutter'
+                    ? flutterRoadmap
+                    : pythonBackendRoadmap
+                }
               />
             )}
           </>

@@ -1,10 +1,11 @@
 import React from 'react';
 import { RefreshCw } from 'lucide-react';
 import { RoadmapData } from './roadmap.types';
+import { RoadmapTabType } from './RoadmapTabs';
 import { useAuthStore } from '../../store/useAuthStore';
 
 interface RoadmapHeaderProps {
-  activeTab: 'personalized' | 'ai-engineer' | 'data-scientist';
+  activeTab: RoadmapTabType;
   roadmap: RoadmapData | null;
   onGenerate: (regenerate: boolean) => void;
 }
