@@ -4,12 +4,16 @@ dotenv.config();
 
 import app from './app';
 import { connectDB } from './config/db';
+import { initializeCronScheduler } from './services/cronScheduler';
 
 const PORT = process.env.PORT || 5001;
 
 const startServer = async () => {
   // Connect to Database
   await connectDB();
+
+  // Initialize background link-health scheduler
+  initializeCronScheduler();
 
   // Listen
   app.listen(PORT, () => {

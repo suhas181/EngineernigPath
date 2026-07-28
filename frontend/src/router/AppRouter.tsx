@@ -17,6 +17,8 @@ import Roadmap from '../pages/Roadmap';
 import Resources from '../pages/Resources';
 import ResumeAnalyzer from '../pages/ResumeAnalyzer';
 import Planner from '../pages/Planner';
+import ProfileSettings from '../pages/ProfileSettings';
+import NotFound from '../pages/NotFound';
 
 // Wrapper for routes requiring authentication
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -137,9 +139,17 @@ export function AppRouter() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/settings"
+        element={
+          <ProtectedRoute>
+            <ProfileSettings />
+          </ProtectedRoute>
+        }
+      />
 
       {/* Fallback Catch All */}
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<NotFound />} />
     </Routes>
   );
 }

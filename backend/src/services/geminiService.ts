@@ -1,5 +1,26 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { resolveResources, LibraryResource } from '../config/resourceLibrary';
+import { LearningResource } from '../models/LearningResource';
+
+export const normalizeDifficulty = (diff?: string): 'Beginner' | 'Intermediate' | 'Advanced' => {
+  if (!diff) return 'Beginner';
+  const lower = diff.toLowerCase();
+  if (lower.includes('adv')) return 'Advanced';
+  if (lower.includes('int') || lower.includes('med')) return 'Intermediate';
+  return 'Beginner';
+};
+
+export const normalizeResourceType = (typeStr?: string): 'video' | 'article' | 'book' | 'documentation' | 'course' | 'practice' => {
+  if (!typeStr) return 'article';
+  const lower = typeStr.toLowerCase();
+  if (['video', 'article', 'book', 'documentation', 'course', 'practice'].includes(lower)) {
+    return lower as any;
+  }
+  if (lower.includes('doc')) return 'documentation';
+  if (lower.includes('vid') || lower.includes('youtube')) return 'video';
+  if (lower.includes('prac') || lower.includes('problem')) return 'practice';
+  return 'article';
+};
 
 // ─── Initialize Gemini API ───────────────────────────────────────────────────
 const apiKey = process.env.GEMINI_API_KEY;
@@ -74,6 +95,7 @@ function logStage(stage: string, message: string, data?: any) {
 // ─── Stage 1 & 2: Profile & Skill Gap Analysis Prompt ────────────────────────
 function buildAnalysisPrompt(profile: EnrichedProfileInput): string {
   const totalLC = profile.leetcodeEasyCount + profile.leetcodeMediumCount + profile.leetcodeHardCount;
+  const targetRole = profile.preferredCareer || 'Software Engineer (SDE)';
   const projectSummary = profile.projects.length > 0
     ? profile.projects.map((p, i) =>
         `  ${i + 1}. "${p.title}" — ${p.description} [Tech: ${p.technologies.join(', ')}] [Difficulty: ${p.difficulty || 'N/A'}] [Completed: ${p.isCompleted ? 'Yes' : 'No'}]`
@@ -81,13 +103,13 @@ function buildAnalysisPrompt(profile: EnrichedProfileInput): string {
     : '  No projects declared.';
 
   return `
-You are an expert SDE Technical Interviewer and career strategist.
-Analyze the following student profile for SDE placement preparation:
+You are an expert ${targetRole} Technical Interviewer and career strategist.
+Analyze the following student profile for ${targetRole} placement preparation:
 
 STUDENT PROFILE:
   Name: ${profile.name}
   Semester: ${profile.currentSemester}/8 (Branch: ${profile.branch}, CGPA: ${profile.cgpa})
-  Career Preferences: Target Role: ${profile.preferredCareer}, Company Focus Type: ${profile.targetCompanyType || 'Product-Based'}
+  Career Preferences: Target Role: ${targetRole}, Company Focus Type: ${profile.targetCompanyType || 'Product-Based'}
   Target Timeline: ${profile.placementTimeline} (Available study: ${profile.dailyStudyHours || 2} hours/day)
   
   Coding Experience:
@@ -105,14 +127,14 @@ ${projectSummary}
 
 Perform:
 - Stage 1: Profile Analysis (Identify strengths, actual coding capability, and baseline readiness index out of 100).
-- Stage 2: Skill Gap Analysis (Analyze missing SDE skills based on target company focus).
-  * Product-Based Focus: Prioritize strong DSA, system design (when appropriate), advanced development, and resume building.
-  * Service-Based Focus: Prioritize basic/intermediate DSA, quantitative aptitude, verbal/logical reasoning, communication, and HR prep.
-  * Mastered check: Never recommend SDE curriculum topics they have already mastered (e.g. if DSA is "Advanced", skip basics).
+- Stage 2: Skill Gap Analysis (Analyze missing ${targetRole} skills based on target company focus).
+  * Product-Based Focus: Prioritize strong core architecture, system design (when appropriate), domain-specific frameworks, and resume building.
+  * Service-Based Focus: Prioritize foundational domain concepts, quantitative aptitude, verbal/logical reasoning, communication, and HR prep.
+  * Mastered check: Never recommend topics they have already mastered.
 
 Provide your final analysis report as text. Make sure to identify:
 - Mastered topics to skip.
-- High priority SDE curriculum topics to focus on first.
+- High priority ${targetRole} curriculum topics to focus on first.
 - Placement readiness index.
 `;
 }
@@ -120,19 +142,34 @@ Provide your final analysis report as text. Make sure to identify:
 // ─── Stage 3, 4, 6 & 7: Month Planning Prompt ────────────────────────────────
 function buildPlanningPrompt(analysis: string, profile: EnrichedProfileInput): string {
   const timeline = profile.placementTimeline || '6 Months';
-  const totalMonths = timeline === '3 Months' ? 3 : timeline === '6 Months' ? 6 : timeline === '8 Months' ? 8 : 12;
+  let totalMonths = 6;
+  if (timeline === '3 Months') totalMonths = 3;
+  else if (timeline === '4 Months') totalMonths = 4;
+  else if (timeline === '5 Months') totalMonths = 5;
+  else if (timeline === '6 Months') totalMonths = 6;
+  else if (timeline === '8 Months') totalMonths = 8;
+
+  const targetRole = profile.preferredCareer || 'Software Engineer (SDE)';
+
+  const pacingGuideline = totalMonths === 3
+    ? 'HIGH-INTENSITY FAST-TRACK PACING: Prioritize strictly the top-tier, highest-ROI interview topics. Assume 15-20+ study hours/week. Skip low-priority filler and low-yield breadth.'
+    : totalMonths <= 5
+    ? 'ACCELERATED BALANCED PACING: High-density weekly plans combining core frameworks, key DSA/system architecture, and high-impact mini-projects.'
+    : totalMonths === 6
+    ? 'STANDARD BALANCED PACING: Balanced depth and breadth, covering core fundamentals, algorithms, system design, and resume-ready portfolio projects.'
+    : 'COMPREHENSIVE DEEP-DIVE PACING: Thorough end-to-end curriculum covering foundational computer science principles, advanced architecture, system design, multi-stage projects, and mock screens.';
 
   const completedMonthsSection = profile.completedMonths.length > 0
     ? `
-COMPLETED MONTHS (LOCK AND DO NOT MODIFIED):
+COMPLETED MONTHS (LOCK AND DO NOT MODIFY):
 ${profile.completedMonths.map((m, i) => `  Month ${i + 1}: "${m}" — LOCKED`).join('\n')}
 Generate only the remaining ${totalMonths - profile.completedMonths.length} future months (from Month ${profile.completedMonths.length + 1} onwards).
 `
     : `Generate exactly ${totalMonths} months (Month 1 through Month ${totalMonths}).`;
 
   return `
-You are an expert AI Career Mentor for SDE roles.
-Using the Profile & Skill Gap Analysis below, create a personalized SDE placement preparation roadmap for the remaining months.
+You are an expert AI Career Mentor for ${targetRole} roles.
+Using the Profile & Skill Gap Analysis below, create a personalized ${targetRole} preparation roadmap for the remaining months.
 
 ---
 PROFILE ANALYSIS REPORT:
@@ -140,12 +177,17 @@ ${analysis}
 ---
 
 ---
-ROADMAP TIMELINE SETTINGS:
-Total Duration: ${totalMonths} Months
+ROADMAP TIMELINE & PACING INSTRUCTIONS:
+Target Role: ${targetRole}
+Target Timeline: ${timeline} (${totalMonths} Total Month Blocks)
+Pacing Strategy: ${pacingGuideline}
 ${completedMonthsSection}
+IMPORTANT RULES:
+1. You MUST generate EXACTLY ${totalMonths} topic blocks in the output array (Month 1 through Month ${totalMonths}).
+2. Do NOT invent specific resource titles or external URLs in your output. Your job is ONLY to outline curriculum topics, weekly study plans, practice problem concepts, and project specifications. The backend automatically attaches verified learning resources from the database.
 ---
 
-SDE CURRICULUM LIBRARY KEYS (Stage 3 Selection):
+CURRICULUM LIBRARY KEYS (Stage 3 Selection):
 You MUST select 1 to 3 keys for each month *ONLY* from this list:
 - DSA: DSA_ARRAYS, DSA_STRINGS, DSA_BINARY_SEARCH, DSA_SORTING, DSA_LINKED_LIST, DSA_STACK, DSA_QUEUE, DSA_TREES, DSA_GRAPHS, DSA_DP, DSA_HASHING, DSA_HEAP, DSA_TRIE, DSA_GREEDY, DSA_BACKTRACKING, DSA_SLIDING_WINDOW, DSA_TWO_POINTERS, DSA_BIT_MANIPULATION
 - DEV: DEV_GIT, DEV_HTML, DEV_CSS, DEV_JAVASCRIPT, DEV_REACT, DEV_NEXTJS, DEV_NODE, DEV_EXPRESS, DEV_MONGODB, DEV_SQL, DEV_DOCKER, DEV_AWS, DEV_REST_APIS, DEV_AUTHENTICATION, DEV_REDIS, DEV_DEPLOYMENT
@@ -153,34 +195,34 @@ You MUST select 1 to 3 keys for each month *ONLY* from this list:
 - Aptitude: APT_QUANT, APT_LOGICAL, APT_VERBAL
 - Interview Prep: INT_HR, INT_BEHAVIORAL, INT_RESUME, INT_MOCK
 
-Adapt Month Topics according to Target Company Type:
-- Product-Based: Focus heavily on strong DSA keys, System Design, development tools, and mock interviews.
-- Service-Based: Focus heavily on Aptitude keys, basic/intermediate DSA, communication/behavioral skills, and general HR prep.
+Adapt Month Topics according to Target Role (${targetRole}) and Target Company Type:
+- Product-Based: Focus heavily on core concepts, System Design, domain tools, and mock interviews.
+- Service-Based: Focus heavily on Aptitude keys, core fundamentals, communication/behavioral skills, and HR prep.
 
 OUTPUT SCHEMA SPECIFICATION:
 Return ONLY a valid JSON object matching this schema. Do not write any markdown code fences (like \`\`\`json) or text before/after.
 
 {
-  "title": "Personalized SDE Career Path for ${profile.name}",
-  "description": "Short explanation of the roadmap strategy (Product vs Service focus, coding progress, and timeline).",
+  "title": "Personalized ${targetRole} Career Path for ${profile.name}",
+  "description": "Short explanation of the roadmap strategy tailored for ${targetRole} role.",
   "version": "2.0.0",
   "topics": [
     {
       "id": "topic-N",
       "title": "Month N: [Month Title]",
-      "whyThisMonth": "Explain why this curriculum is chosen based on the profile gap.",
+      "whyThisMonth": "Explain why this curriculum is chosen based on the profile gap for ${targetRole}.",
       "learningObjectives": ["objective 1", "objective 2"],
       "weeklyStudyPlan": ["Week 1: ...", "Week 2: ...", "Week 3: ...", "Week 4: ..."],
       "estimatedStudyHours": 60,
       "topics": ["Subtopic 1", "Subtopic 2"],
-      "curriculumKeys": ["DSA_ARRAYS", "DSA_STRINGS"],
+      "curriculumKeys": ["DEV_HTML", "DEV_JAVASCRIPT"],
       "practiceProblems": [
         { "id": "prob-N-1", "title": "Problem Title", "url": "https://leetcode.com/problems/...", "difficulty": "easy" }
       ],
       "project": {
         "title": "Project Title",
         "description": "Mini project description reinforcing this month's learning.",
-        "technologies": ["Java"],
+        "technologies": ["JavaScript"],
         "difficulty": "beginner"
       },
       "interviewPrep": ["Interview preparation items..."],
@@ -202,44 +244,102 @@ Return ONLY a valid JSON object matching this schema. Do not write any markdown 
 `;
 }
 
-// ─── Stage 5: Backend Curated Resource Attachment ───────────────────────────
-function attachCuratedResources(topics: any[], preferredDsaLanguage: 'Java' | 'Python' | 'C++') {
-  logStage('STAGE-5', 'Attaching curated resources statically on the backend');
-  
-  return topics.map((month: any) => {
-    // If the month contains resources already, keep them (for completed months preserved)
+// ─── Stage 5: Backend Curated Resource Attachment from Database ─────────────
+async function attachCuratedResourcesFromDB(
+  topics: any[],
+  preferredCareer: string,
+  preferredDsaLanguage: 'Java' | 'Python' | 'C++'
+) {
+  logStage('STAGE-5', `Querying MongoDB LearningResource collection for career: "${preferredCareer}"`);
+
+  const updatedTopics = [];
+
+  for (const month of topics) {
     if (month.resources && month.resources.length > 0 && month.isCompleted) {
-      return month;
+      updatedTopics.push(month);
+      continue;
     }
 
-    const resolved: LibraryResource[] = [];
-    const keys = month.curriculumKeys || [];
-    
-    keys.forEach((key: string) => {
-      const res = resolveResources(key, preferredDsaLanguage);
-      resolved.push(...res);
-    });
+    const monthTitle = (month.title || '').replace(/^Month \d+:\s*/, '').trim();
 
-    // Remove duplicates by resource ID
-    const uniqueMap = new Map<string, LibraryResource>();
-    resolved.forEach(r => uniqueMap.set(r.id, r));
-    const finalResources = Array.from(uniqueMap.values()).map(r => ({
-      ...r,
-      isCompleted: false
-    }));
+    // Query LearningResource collection for matches
+    let dbResources = await LearningResource.find({
+      careerPaths: { $in: [preferredCareer] },
+      $or: [
+        { topic: { $regex: new RegExp(monthTitle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i') } },
+        { topic: { $regex: new RegExp((month.curriculumKeys || []).join('|'), 'i') } }
+      ]
+    }).limit(4);
 
-    return {
-      ...month,
-      resources: finalResources
-    };
-  });
+    if (!dbResources || dbResources.length === 0) {
+      // Fallback query for career path
+      dbResources = await LearningResource.find({
+        careerPaths: { $in: [preferredCareer] }
+      }).limit(3);
+    }
+
+    if (dbResources && dbResources.length > 0) {
+      const formatted = dbResources.map(r => ({
+        id: `res-${r._id}`,
+        title: r.title,
+        url: r.url,
+        type: normalizeResourceType(r.type),
+        difficulty: normalizeDifficulty(r.difficulty),
+        verified: r.verified,
+        isCompleted: false
+      }));
+
+      updatedTopics.push({
+        ...month,
+        resources: formatted
+      });
+    } else {
+      console.warn(`[CURATION-GAP] Missing curated resource in MongoDB for topic: "${monthTitle}" (${preferredCareer}).`);
+      
+      const resolved: LibraryResource[] = [];
+      const keys = month.curriculumKeys || [];
+      keys.forEach((key: string) => {
+        const res = resolveResources(key, preferredDsaLanguage);
+        resolved.push(...res);
+      });
+
+      const fallbackResources = resolved.length > 0
+        ? resolved.slice(0, 3).map(r => ({ ...r, type: normalizeResourceType(r.type), difficulty: normalizeDifficulty(r.difficulty), verified: false, isCompleted: false }))
+        : [
+            {
+              id: `res-pending-${Date.now()}`,
+              title: 'Resource curation in progress for this topic',
+              url: '#',
+              type: 'article',
+              difficulty: 'Beginner',
+              verified: false,
+              isCompleted: false
+            }
+          ];
+
+      updatedTopics.push({
+        ...month,
+        resources: fallbackResources
+      });
+    }
+  }
+
+  return updatedTopics;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // PUBLIC API: generateRoadmapWithAI
 // ═══════════════════════════════════════════════════════════════════════════════
 export const generateRoadmapWithAI = async (profile: EnrichedProfileInput): Promise<any> => {
-  logStage('INIT', `Starting multi-stage SDE Roadmap Engine for "${profile.name}"`, {
+  console.log('--------------------------------------------------');
+  console.log('[ROADMAP-ENGINE-AUDIT] Target Career Role:', profile.preferredCareer);
+  console.log('[ROADMAP-ENGINE-AUDIT] Career Goal:', profile.careerGoal);
+  console.log('[ROADMAP-ENGINE-AUDIT] API Key Configured:', isApiKeyConfigured);
+  console.log('[ROADMAP-ENGINE-AUDIT] Request Execution Mode:', genAI ? 'API_GEMINI' : 'FALLBACK_TEMPLATE');
+  console.log('--------------------------------------------------');
+
+  logStage('INIT', `Starting multi-stage Roadmap Engine for "${profile.name}" (${profile.preferredCareer || 'Software Engineer'})`, {
+    preferredCareer: profile.preferredCareer,
     targetCompanyType: profile.targetCompanyType,
     preferredDsaLanguage: profile.preferredDsaLanguage,
     preferredProgrammingLanguage: profile.preferredProgrammingLanguage,
@@ -247,14 +347,14 @@ export const generateRoadmapWithAI = async (profile: EnrichedProfileInput): Prom
   });
 
   if (!genAI) {
-    logStage('MOCK', 'Gemini API Key is not set or placeholder. Invoking Mock pipeline.');
-    const mockRoadmap = generateIntelligentMockRoadmap(profile);
+    logStage('MOCK', `Gemini API Key is not set or placeholder. Invoking Mock pipeline for role: "${profile.preferredCareer || 'Software Engineer'}"`);
+    const mockRoadmap = await generateIntelligentMockRoadmap(profile);
     mockRoadmap.source = 'fallback';
     return mockRoadmap;
   }
 
   try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
     // ───── STAGE 1 & 2: Profile & Skill Gap Analysis ─────────────────────────
     logStage('STAGE-1&2', 'Running Profile & Skill Gap Analysis...');
@@ -264,8 +364,11 @@ export const generateRoadmapWithAI = async (profile: EnrichedProfileInput): Prom
     logStage('STAGE-1&2', `Analysis Report completed (${analysisText.length} chars)`);
 
     // ───── STAGE 3, 4, 6 & 7: Month Planning & Selection ─────────────────────
-    logStage('STAGE-3&4', 'Running SDE Month Planning & Selection...');
+    logStage('STAGE-3&4', 'Running Month Planning & Selection...');
     const planningPrompt = buildPlanningPrompt(analysisText, profile);
+    
+    console.log('[ROADMAP-ENGINE-AUDIT] Full Interpolated Gemini Prompt:\n', planningPrompt);
+
     const planningResult = await model.generateContent({
       contents: [{ role: 'user', parts: [{ text: planningPrompt }] }],
       generationConfig: {
@@ -281,21 +384,21 @@ export const generateRoadmapWithAI = async (profile: EnrichedProfileInput): Prom
     logStage('STAGE-8', 'Parsing Gemini JSON output');
     const roadmapJSON = JSON.parse(planningText.trim());
 
-    // ───── STAGE 5: Curated Resource Attachment ──────────────────────────────
-    roadmapJSON.topics = attachCuratedResources(
+    // ───── STAGE 5: Curated Resource Attachment from Database ─────────────────
+    roadmapJSON.topics = await attachCuratedResourcesFromDB(
       roadmapJSON.topics || [],
+      profile.preferredCareer || 'Software Engineer (SDE)',
       profile.preferredDsaLanguage || 'Java'
     );
 
-    // Force stamp final JSON SDE version
     roadmapJSON.version = '2.0.0';
     roadmapJSON.source = 'gemini';
 
-    logStage('SUCCESS', `Successfully compiled SDE roadmap: ${roadmapJSON.topics.length} months.`);
+    logStage('SUCCESS', `Successfully compiled ${profile.preferredCareer || 'Career'} roadmap: ${roadmapJSON.topics.length} months.`);
     return roadmapJSON;
   } catch (error) {
-    console.error('Error generating SDE roadmap in multi-stage pipeline, fallback to mock:', error);
-    const mockRoadmap = generateIntelligentMockRoadmap(profile);
+    console.error('[ROADMAP-ENGINE-AUDIT] Gemini API Call Failed! Error details:', error);
+    const mockRoadmap = await generateIntelligentMockRoadmap(profile);
     mockRoadmap.source = 'fallback';
     return mockRoadmap;
   }
@@ -304,18 +407,25 @@ export const generateRoadmapWithAI = async (profile: EnrichedProfileInput): Prom
 // ═══════════════════════════════════════════════════════════════════════════════
 // INTELLIGENT MOCK GENERATOR (structured, profile-aware fallback)
 // ═══════════════════════════════════════════════════════════════════════════════
-function generateIntelligentMockRoadmap(profile: EnrichedProfileInput) {
-  logStage('MOCK-INIT', 'Analyzing profile for SDE Fallback generator');
+async function generateIntelligentMockRoadmap(profile: EnrichedProfileInput) {
+  logStage('MOCK-INIT', 'Analyzing profile for Fallback generator');
 
   const timeline = profile.placementTimeline || '6 Months';
-  const totalMonths = timeline === '3 Months' ? 3 : timeline === '6 Months' ? 6 : timeline === '8 Months' ? 8 : 12;
+  let totalMonths = 6;
+  if (timeline === '3 Months') totalMonths = 3;
+  else if (timeline === '4 Months') totalMonths = 4;
+  else if (timeline === '5 Months') totalMonths = 5;
+  else if (timeline === '6 Months') totalMonths = 6;
+  else if (timeline === '8 Months') totalMonths = 8;
+
   const skipCount = profile.completedMonths.length;
-  const newTopicCount = totalMonths - skipCount;
+  const newTopicCount = Math.max(1, totalMonths - skipCount);
   const dsaLang = profile.preferredDsaLanguage || 'Java';
   const progLang = profile.preferredProgrammingLanguage || 'Java';
   const isProduct = (profile.targetCompanyType || 'Product-Based') === 'Product-Based';
   const dailyHours = profile.dailyStudyHours || 2;
-  const monthlyHours = dailyHours * 30;
+  const baseMonthlyHours = totalMonths <= 3 ? 90 : totalMonths <= 5 ? 75 : totalMonths === 6 ? 60 : 45;
+  const monthlyHours = Math.max(baseMonthlyHours, dailyHours * 30);
 
   // Predefined curriculum templates
   interface MockTemplate {
@@ -585,25 +695,879 @@ function generateIntelligentMockRoadmap(profile: EnrichedProfileInput) {
       projectDesc: 'Create a local school registration CLI tracking student scores with relational tables.',
       projectDifficulty: 'intermediate',
       interviewPrep: ['Explain CPU Scheduling FIFO vs Round-Robin', 'Why should we hire you? (STAR Pitch)'],
-      milestones: ['Complete 5 full service SDE placement practice rounds', 'Submit finalized resume'],
+      milestones: ['Complete 5 full service placement practice rounds', 'Submit finalized resume'],
       goal: 'Confidently answer OS/DBMS questions and HR behavioral screens',
-      outcome: 'Placement ready for service SDE hiring pipelines',
+      outcome: 'Placement ready for service-based hiring pipelines',
       readinessImprovement: 15
     }
   ];
 
-  // Pick curriculum list based on company focus
-  const templatePool = isProduct ? sdeProductCurriculum : sdeServiceCurriculum;
+  const frontendCurriculum: MockTemplate[] = [
+    {
+      title: 'Modern Web Standards, Semantic HTML5 & CSS Layouts',
+      why: 'Frontend Engineers must master responsive layouts, DOM semantics, accessibility, and CSS Grid/Flexbox architecture.',
+      objectives: ['Master semantic HTML5 structures & ARIA accessibility', 'Implement responsive CSS Grid & Flexbox layouts', 'Understand DOM box model & CSS variables'],
+      weeklyPlan: [
+        'Week 1: HTML5 semantic tags, accessibility standards (a11y), and SEO metadata',
+        'Week 2: Advanced CSS Flexbox positioning & responsive grid template areas',
+        'Week 3: CSS custom properties (variables) & modern styling paradigms',
+        'Week 4: Mobile-first responsive design & cross-browser compatibility'
+      ],
+      topics: ['HTML5', 'CSS3', 'Flexbox', 'CSS Grid', 'Accessibility'],
+      keys: ['DEV_HTML', 'DEV_CSS'],
+      problems: [
+        { title: 'A Complete Guide to Flexbox (CSS)', url: 'https://css-tricks.com/snippets/css/a-guide-to-flexbox/', difficulty: 'easy' }
+      ],
+      projectTitle: 'Responsive SaaS Landing Page',
+      projectDesc: 'Design and code a pixel-perfect, fully responsive SaaS landing page with dark mode theme switching.',
+      projectDifficulty: 'beginner',
+      interviewPrep: ['Explain CSS Box Model & margin collapsing', 'Difference between inline, block, and inline-block elements'],
+      milestones: ['Build responsive SaaS landing page', 'Score 90%+ on Lighthouse Accessibility audit'],
+      goal: 'Create responsive web pages without relying on CSS UI frameworks',
+      outcome: 'Strong foundations in modern CSS layout techniques',
+      readinessImprovement: 15
+    },
+    {
+      title: 'JavaScript Deep Dive & Asynchronous Programming',
+      why: 'Frontend mastery relies heavily on JavaScript closures, event loops, promises, and modern ES6+ features.',
+      objectives: ['Understand closures, prototypes & scope chains', 'Master async/await & Promise execution order', 'Learn Event Loop, microtasks, and macro-task queues'],
+      weeklyPlan: [
+        'Week 1: Execution context, call stack, hoisting, and closures',
+        'Week 2: Prototypes, inheritance, and ES6 class syntax',
+        'Week 3: Promises, async/await, and error handling patterns',
+        'Week 4: DOM manipulation, event delegation, and performance'
+      ],
+      topics: ['JavaScript ES6+', 'Async/Await', 'Promises', 'Event Loop', 'DOM'],
+      keys: ['DEV_JAVASCRIPT'],
+      problems: [
+        { title: 'Debounce & Throttle Implementation', url: 'https://leetcode.com/problems/debounce/', difficulty: 'medium' }
+      ],
+      projectTitle: 'Interactive Kanban Task Board App',
+      projectDesc: 'Build a vanilla JavaScript drag-and-drop Kanban task board with local storage persistence.',
+      projectDifficulty: 'intermediate',
+      interviewPrep: ['Explain Event Loop microtask vs macrotask execution', 'Implement custom Promise.all helper function'],
+      milestones: ['Complete JS mini project', 'Solve 10 JS utility functions'],
+      goal: 'Write clean, bug-free asynchronous JavaScript without UI libraries',
+      outcome: 'Deep understanding of JS engine runtime behavior',
+      readinessImprovement: 15
+    },
+    {
+      title: 'React Core, Custom Hooks & State Management',
+      why: 'React is the standard library for modern frontend development. You need proficiency in component lifecycles, hooks, and global state.',
+      objectives: ['Master React component lifecycle & virtual DOM', 'Build custom hooks for data fetching & UI states', 'Implement global state management (Zustand/Redux)'],
+      weeklyPlan: [
+        'Week 1: JSX rendering, props, state, and component purity',
+        'Week 2: useEffect, useMemo, useCallback optimization hooks',
+        'Week 3: Custom hook composition and Context API design',
+        'Week 4: Global state management with Zustand & Zustand middleware'
+      ],
+      topics: ['React', 'Hooks', 'State Management', 'Zustand', 'Virtual DOM'],
+      keys: ['DEV_REACT'],
+      problems: [
+        { title: 'Build React Counter & Accordion Component', url: 'https://react.dev/learn', difficulty: 'easy' }
+      ],
+      projectTitle: 'E-Commerce Frontend with Shopping Cart',
+      projectDesc: 'Construct a React e-commerce store with product filtering, cart drawer, and local storage state.',
+      projectDifficulty: 'intermediate',
+      interviewPrep: ['Why do we need React key prop?', 'How does React Virtual DOM reconciliation work?'],
+      milestones: ['Deploy React app to Vercel', 'Pass React component state interview screen'],
+      goal: 'Structure modular React frontend applications',
+      outcome: 'Fluent in React functional components and custom hook patterns',
+      readinessImprovement: 15
+    },
+    {
+      title: 'Next.js SSR/SSG & Frontend Architecture',
+      why: 'Modern frontend roles demand fullstack React frameworks like Next.js for server-side rendering, routing, and SEO.',
+      objectives: ['Master Next.js App Router & Server Components', 'Implement SSR, SSG, and ISR rendering strategies', 'Optimize web vitals (LCP, CLS, INP)'],
+      weeklyPlan: [
+        'Week 1: App Router file structure, layouts, and server actions',
+        'Week 2: Server-side rendering vs static site generation',
+        'Week 3: Next.js API routes, middleware, and authentication',
+        'Week 4: Image optimization, font loading, and Core Web Vitals'
+      ],
+      topics: ['Next.js', 'SSR', 'SSG', 'Web Vitals', 'App Router'],
+      keys: ['DEV_NEXTJS', 'DEV_AUTHENTICATION'],
+      problems: [
+        { title: 'Optimize Next.js LCP & CLS metrics', url: 'https://nextjs.org/learn', difficulty: 'medium' }
+      ],
+      projectTitle: 'Dev.to Blog Clone with Next.js & Markdown',
+      projectDesc: 'Develop a high-performance blog platform using Next.js App Router, Tailwind CSS, and Markdown parsing.',
+      projectDifficulty: 'advanced',
+      interviewPrep: ['Server Components vs Client Components in Next.js', 'How to prevent layout shifts (CLS)?'],
+      milestones: ['Achieve 95+ score on Google Lighthouse', 'Deploy Next.js application to Vercel'],
+      goal: 'Build SEO-optimized, production-ready React web apps',
+      outcome: 'Proficient with production React frameworks',
+      readinessImprovement: 15
+    },
+    {
+      title: 'Web Performance, Progressive Web Apps (PWA) & Micro-Animations',
+      why: 'Senior Frontend Developers optimize web app performance, support offline PWA experiences, and build rich micro-interactions.',
+      objectives: ['Master browser rendering pipeline & critical rendering path', 'Implement Service Workers & Web App Manifest for PWA', 'Create high-fps web animations with Framer Motion & CSS hardware acceleration'],
+      weeklyPlan: [
+        'Week 1: Critical rendering path, layout thrashing, and memory leak profiling',
+        'Week 2: Service Workers, offline caching strategies, and PWA installation',
+        'Week 3: Micro-interactions & animations with Framer Motion and Web Animations API',
+        'Week 4: WebGL & Canvas 2D fundamentals for interactive visualizations'
+      ],
+      topics: ['Web Performance', 'PWA', 'Service Workers', 'Framer Motion', 'Animations'],
+      keys: ['DEV_REACT', 'DEV_HTML'],
+      problems: [
+        { title: 'Profile Web Vitals & Memory Leaks', url: 'https://web.dev/vitals/', difficulty: 'medium' }
+      ],
+      projectTitle: 'Offline-First PWA Task & Note Studio',
+      projectDesc: 'Build a installable progressive web application with offline caching, local sync, and smooth animations.',
+      projectDifficulty: 'advanced',
+      interviewPrep: ['Explain layout thrashing and how to avoid it', 'How do Service Workers intercept HTTP requests?'],
+      milestones: ['Pass PWA audit in Chrome Lighthouse', 'Profile app at 60fps animation budget'],
+      goal: 'Deliver silky-smooth, offline-capable progressive web apps',
+      outcome: 'Expert in frontend performance tuning and PWA architecture',
+      readinessImprovement: 15
+    },
+    {
+      title: 'End-to-End Testing, Micro-Frontends & Frontend Capstone',
+      why: 'Finalizing Frontend mastery with comprehensive E2E testing (Playwright/Cypress), micro-frontend concepts, and capstone deployment.',
+      objectives: ['Write robust E2E tests using Cypress or Playwright', 'Understand Module Federation & Micro-Frontend architecture', 'Complete production capstone portfolio website'],
+      weeklyPlan: [
+        'Week 1: Unit & Component testing using Vitest and React Testing Library',
+        'Week 2: End-to-end user flow testing with Playwright & CI integration',
+        'Week 3: Micro-Frontend concepts, Webpack Module Federation, and monorepos',
+        'Week 4: Capstone portfolio deployment, lighthouse optimization & interview prep'
+      ],
+      topics: ['Playwright', 'Cypress', 'Micro-Frontends', 'Testing', 'Portfolio'],
+      keys: ['DEV_DEPLOYMENT', 'DEV_REACT', 'INT_RESUME'],
+      problems: [
+        { title: 'Write E2E Test Suite with Playwright', url: 'https://playwright.dev/', difficulty: 'medium' }
+      ],
+      projectTitle: 'Enterprise Component Library & E2E Tested Portfolio',
+      projectDesc: 'Design a reusable UI component design system published as an npm package, tested with Playwright E2E automation.',
+      projectDifficulty: 'advanced',
+      interviewPrep: ['E2E testing vs Integration testing trade-offs', 'Explain Module Federation in Micro-Frontends'],
+      milestones: ['Achieve 80%+ test coverage', 'Publish custom component package to npm'],
+      goal: 'Demonstrate enterprise-grade frontend architecture and testing',
+      outcome: 'Frontend Engineer placement ready',
+      readinessImprovement: 15
+    }
+  ];
+
+  const backendCurriculum: MockTemplate[] = [
+    {
+      title: 'Server Systems, Node.js Runtimes & REST Architecture',
+      why: 'Backend Engineers require strong server fundamentals, asynchronous I/O understanding, and RESTful API standards.',
+      objectives: ['Understand Node.js event loop & non-blocking I/O', 'Design clean REST API contracts & HTTP status codes', 'Implement middleware pipelines & error handlers'],
+      weeklyPlan: [
+        'Week 1: Node.js runtime, V8 engine, and native HTTP module',
+        'Week 2: Express server setup, routing, and custom middlewares',
+        'Week 3: Request validation with Zod & global error handling',
+        'Week 4: RESTful API design standards, status codes, and documentation'
+      ],
+      topics: ['Node.js', 'Express', 'REST APIs', 'Middleware', 'Zod Validation'],
+      keys: ['DEV_NODE', 'DEV_EXPRESS', 'DEV_REST_APIS'],
+      problems: [
+        { title: 'Design RESTful Resource Endpoints', url: 'https://expressjs.com/', difficulty: 'easy' }
+      ],
+      projectTitle: 'Scalable REST API Service with Express',
+      projectDesc: 'Build a production Express API server with centralized error logging, environment config, and Zod validation.',
+      projectDifficulty: 'beginner',
+      interviewPrep: ['Explain Node.js event loop & thread pool (libuv)', 'HTTP status code groups (2xx, 4xx, 5xx)'],
+      milestones: ['Build REST API backend server', 'Deploy Express service to Render'],
+      goal: 'Construct structured REST API backends with robust error handling',
+      outcome: 'Solid foundation in server-side JavaScript development',
+      readinessImprovement: 15
+    },
+    {
+      title: 'Relational Databases, SQL Schemas & Indexing',
+      why: 'Backend systems rely heavily on relational database integrity, optimized SQL queries, transactions, and indexing.',
+      objectives: ['Master SQL DDL, DML, and complex JOIN queries', 'Design normalized relational database schemas', 'Understand B-tree indexes & query performance'],
+      weeklyPlan: [
+        'Week 1: Relational database principles, tables, and foreign keys',
+        'Week 2: SQL SELECT, GROUP BY, HAVING, and JOIN queries',
+        'Week 3: Database transactions (ACID properties) & locking mechanisms',
+        'Week 4: B-tree indexing strategies & EXPLAIN query analysis'
+      ],
+      topics: ['SQL', 'PostgreSQL', 'Database Schemas', 'Indexing', 'ACID'],
+      keys: ['DEV_SQL', 'CS_DBMS'],
+      problems: [
+        { title: 'Nth Highest Salary (SQL)', url: 'https://leetcode.com/problems/nth-highest-salary/', difficulty: 'medium' }
+      ],
+      projectTitle: 'E-Commerce Database Schema & Query Engine',
+      projectDesc: 'Design a 3NF normalized relational schema for orders/inventory in PostgreSQL with optimized index plans.',
+      projectDifficulty: 'intermediate',
+      interviewPrep: ['Explain ACID properties in database transactions', 'Difference between Clustered & Non-clustered Index'],
+      milestones: ['Complete 20 SQL query exercises', 'Submit PostgreSQL schema design'],
+      goal: 'Write complex SQL queries and design resilient database schemas',
+      outcome: 'Proficient in relational database engineering',
+      readinessImprovement: 15
+    },
+    {
+      title: 'NoSQL Databases, MongoDB & Redis Caching',
+      why: 'High-throughput backend applications utilize NoSQL document stores and fast in-memory key-value caching.',
+      objectives: ['Master MongoDB document modeling & Mongoose ORM', 'Implement Redis caching to reduce database loads', 'Understand cache invalidation strategies'],
+      weeklyPlan: [
+        'Week 1: NoSQL vs SQL decision frameworks & MongoDB documents',
+        'Week 2: Mongoose schemas, validation, and aggregation pipelines',
+        'Week 3: Redis data structures (Strings, Hashes, Sorted Sets)',
+        'Week 4: Cache-aside pattern & rate-limiting with Redis'
+      ],
+      topics: ['MongoDB', 'NoSQL', 'Redis', 'Caching', 'Mongoose'],
+      keys: ['DEV_MONGODB', 'DEV_REDIS'],
+      problems: [
+        { title: 'Design In-Memory LRU Cache', url: 'https://leetcode.com/problems/lru-cache/', difficulty: 'medium' }
+      ],
+      projectTitle: 'High-Performance API with Redis Caching',
+      projectDesc: 'Implement a Redis caching layer for heavy database queries with TTL invalidation and rate limiting.',
+      projectDifficulty: 'intermediate',
+      interviewPrep: ['Cache-aside vs Write-through caching strategy', 'MongoDB indexing vs SQL indexing differences'],
+      milestones: ['Build Redis cache middleware', 'Benchmark API response times before/after caching'],
+      goal: 'Optimize server performance using Redis in-memory storage',
+      outcome: 'Capable of scaling backend read throughput using caching',
+      readinessImprovement: 15
+    },
+    {
+      title: 'Microservices, Docker & System Design Architecture',
+      why: 'Senior backend roles require system design knowledge, containerization, message queues, and cloud deployment.',
+      objectives: ['Learn high-level system design principles', 'Containerize Node/Python services using Docker', 'Implement asynchronous messaging queues (RabbitMQ/Kafka)'],
+      weeklyPlan: [
+        'Week 1: System design components: Load balancers, API Gateways, Reverse proxies',
+        'Week 2: Docker containers, Dockerfile creation, and multi-container Docker Compose',
+        'Week 3: Message queues & pub/sub architecture patterns',
+        'Week 4: Microservice deployment, environment security & AWS Basics'
+      ],
+      topics: ['System Design', 'Docker', 'Microservices', 'Message Queues', 'AWS'],
+      keys: ['CS_SYSTEM_DESIGN', 'DEV_DOCKER', 'DEV_AWS', 'DEV_DEPLOYMENT'],
+      problems: [
+        { title: 'Design Rate Limiter', url: 'https://leetcode.com/problems/encode-and-decode-tinyurl/', difficulty: 'medium' }
+      ],
+      projectTitle: 'Microservices-based Notification & Auth System',
+      projectDesc: 'Build Dockerized backend microservices communicating via message queue pub/sub architecture.',
+      projectDifficulty: 'advanced',
+      interviewPrep: ['Explain System Design for URL Shortener', 'How do Load Balancers handle health checks and routing?'],
+      milestones: ['Complete 3 System Design mock interviews', 'Deploy Dockerized microservice cluster'],
+      goal: 'Design resilient, scalable distributed backend systems',
+      outcome: 'Backend Engineering placement ready',
+      readinessImprovement: 15
+    }
+  ];
+
+  const devopsCurriculum: MockTemplate[] = [
+    {
+      title: 'Linux Systems Administration & Shell Scripting',
+      why: 'DevOps Engineers must have deep fluency in Linux server environments, Bash scripting, process management, and network troubleshooting.',
+      objectives: ['Master Linux CLI, permissions, and process control', 'Write automated Bash scripts for system maintenance', 'Understand Linux networking tools (netstat, curl, iptables)'],
+      weeklyPlan: [
+        'Week 1: Linux directory hierarchy, file permissions (chmod/chown), and user management',
+        'Week 2: Process management (ps, top, kill), systemctl services, and cron jobs',
+        'Week 3: Advanced Bash shell scripting, loops, functions, and error handling',
+        'Week 4: Linux networking commands, SSH security keys, and firewall configurations'
+      ],
+      topics: ['Linux', 'Bash Scripting', 'CLI', 'Networking', 'SSH'],
+      keys: ['CS_OS', 'DEV_GIT', 'CS_CN'],
+      problems: [
+        { title: 'Write Bash Script for Log Rotation', url: 'https://www.shellcheck.net/', difficulty: 'easy' }
+      ],
+      projectTitle: 'Automated Linux Server Backup & Audit Script',
+      projectDesc: 'Write a robust Bash utility script that audits server disk space, creates compressed backups, and sends alerts.',
+      projectDifficulty: 'beginner',
+      interviewPrep: ['Explain Linux file permission bits (755 vs 644)', 'Difference between process and thread in Linux kernel'],
+      milestones: ['Complete 5 Linux Bash automation scripts', 'Configure secure SSH key-based access'],
+      goal: 'Operate and troubleshoot Linux server environments from terminal',
+      outcome: 'Strong Linux systems engineering foundations',
+      readinessImprovement: 15
+    },
+    {
+      title: 'Containerization with Docker & Container Security',
+      why: 'Containerization is the backbone of modern cloud deployments. DevOps engineers must package applications into light, secure Docker images.',
+      objectives: ['Master multi-stage Dockerfile builds', 'Optimize Docker image size & security vulnerabilities', 'Manage multi-container stacks with Docker Compose'],
+      weeklyPlan: [
+        'Week 1: Docker engine architecture, images vs containers, and volume mounts',
+        'Week 2: Writing multi-stage Dockerfiles for minimal production footprint',
+        'Week 3: Docker networking bridges, environment isolation, and secret management',
+        'Week 4: Multi-container orchestrations using Docker Compose'
+      ],
+      topics: ['Docker', 'Containers', 'Docker Compose', 'Multi-stage Builds'],
+      keys: ['DEV_DOCKER', 'DEV_DEPLOYMENT'],
+      problems: [
+        { title: 'Containerize Fullstack Web Application', url: 'https://docs.docker.com/get-started/', difficulty: 'medium' }
+      ],
+      projectTitle: 'Multi-Container Microservice Environment',
+      projectDesc: 'Containerize a React frontend, Node API, PostgreSQL DB, and Nginx reverse proxy using Docker Compose.',
+      projectDifficulty: 'intermediate',
+      interviewPrep: ['Difference between Docker image layer caching and no-cache build', 'ENTRYPOINT vs CMD in Dockerfile'],
+      milestones: ['Build multi-stage Dockerfile under 100MB', 'Spin up multi-container environment via Compose'],
+      goal: 'Package and run any software application inside isolated Docker containers',
+      outcome: 'Fluent in Docker containerization and local orchestration',
+      readinessImprovement: 15
+    },
+    {
+      title: 'Kubernetes Cluster Orchestration & Management',
+      why: 'Kubernetes (K8s) is the industry standard for managing containerized workloads at scale across cloud environments.',
+      objectives: ['Understand K8s architecture (Control Plane & Worker Nodes)', 'Deploy Pods, Deployments, Services, and Ingress controllers', 'Manage ConfigMaps, Secrets, and Persistent Volumes'],
+      weeklyPlan: [
+        'Week 1: K8s architecture overview, Minikube/K3s setup, and kubectl CLI commands',
+        'Week 2: Writing K8s Deployment & Service YAML manifests (ClusterIP, NodePort, LoadBalancer)',
+        'Week 3: Ingress routing, SSL/TLS certificates, ConfigMaps, and Secrets',
+        'Week 4: StatefulSets, PersistentVolume Claims, and rolling update strategies'
+      ],
+      topics: ['Kubernetes', 'K8s Deployments', 'Pods', 'Ingress', 'Services'],
+      keys: ['DEV_DOCKER', 'DEV_AWS', 'DEV_DEPLOYMENT'],
+      problems: [
+        { title: 'Create K8s Deployment & Service Manifest', url: 'https://kubernetes.io/docs/tutorials/', difficulty: 'medium' }
+      ],
+      projectTitle: 'Production Kubernetes Cluster Deployment',
+      projectDesc: 'Deploy a high-availability web app to a Kubernetes cluster with auto-scaling (HPA) and ingress routing.',
+      projectDifficulty: 'advanced',
+      interviewPrep: ['Explain K8s Pod lifecycle & liveness/readiness probes', 'Deployment vs StatefulSet differences'],
+      milestones: ['Deploy app on local Kubernetes cluster', 'Configure Horizontal Pod Autoscaler (HPA)'],
+      goal: 'Orchestrate containerized services on Kubernetes clusters',
+      outcome: 'Proficient in Kubernetes container orchestration',
+      readinessImprovement: 15
+    },
+    {
+      title: 'Infrastructure as Code (Terraform), CI/CD & Cloud',
+      why: 'Modern DevOps mandates automated infrastructure provisioning using Terraform and continuous integration pipelines.',
+      objectives: ['Provision AWS infrastructure using HashiCorp Terraform', 'Build automated CI/CD pipelines with GitHub Actions', 'Implement monitoring & alerting (Prometheus & Grafana)'],
+      weeklyPlan: [
+        'Week 1: AWS Core services (EC2, S3, VPC, IAM, EKS) provisioning',
+        'Week 2: Infrastructure as Code (IaC) with Terraform syntax, state, and modules',
+        'Week 3: Automated CI/CD build, test, and deploy pipelines with GitHub Actions',
+        'Week 4: Metrics monitoring & log visualization using Prometheus & Grafana'
+      ],
+      topics: ['Terraform', 'IaC', 'AWS', 'GitHub Actions', 'CI/CD', 'Prometheus'],
+      keys: ['DEV_AWS', 'DEV_DEPLOYMENT', 'DEV_GIT', 'CS_SYSTEM_DESIGN'],
+      problems: [
+        { title: 'Write Terraform Module for AWS EC2 & Security Group', url: 'https://developer.hashicorp.com/terraform/tutorials', difficulty: 'medium' }
+      ],
+      projectTitle: 'Automated GitOps CI/CD & IaC Deployment Pipeline',
+      projectDesc: 'Build a end-to-end DevOps pipeline: Terraform provisions AWS EKS, GitHub Actions builds Docker images, and deploys to K8s.',
+      projectDifficulty: 'advanced',
+      interviewPrep: ['Explain Terraform state lock & remote backends (S3/DynamoDB)', 'CI vs CD pipeline stages'],
+      milestones: ['Provision AWS VPC with Terraform', 'Build automated GitHub Actions CI/CD deployment'],
+      goal: 'Automate entire infrastructure and deployment lifecycle',
+      outcome: 'DevOps Engineer placement ready',
+      readinessImprovement: 15
+    }
+  ];
+
+  const fullstackCurriculum: MockTemplate[] = [
+    {
+      title: 'Fullstack Web Foundations (HTML5, CSS3, JS & React)',
+      why: 'Fullstack Developers require end-to-end fluency starting from client-side interfaces up to interactive UI components.',
+      objectives: ['Master responsive frontend layouts', 'Write modern ES6+ JavaScript code', 'Build interactive user interfaces with React'],
+      weeklyPlan: [
+        'Week 1: HTML5 semantics, modern CSS Flexbox & Grid layouts',
+        'Week 2: JavaScript ES6+ features, DOM events, and async fetch API',
+        'Week 3: React components, state, props, and hook composition',
+        'Week 4: Form validation, Tailwind CSS styling, and responsive UI'
+      ],
+      topics: ['HTML5', 'CSS3', 'JavaScript', 'React', 'Tailwind CSS'],
+      keys: ['DEV_HTML', 'DEV_CSS', 'DEV_JAVASCRIPT', 'DEV_REACT'],
+      problems: [
+        { title: 'Build Fullstack UI Form Component', url: 'https://react.dev/learn', difficulty: 'easy' }
+      ],
+      projectTitle: 'Responsive Portfolio & Product Showcase',
+      projectDesc: 'Construct a responsive React & Tailwind CSS web app consuming external REST APIs.',
+      projectDifficulty: 'beginner',
+      interviewPrep: ['Explain how client-side rendering (CSR) works', 'Difference between state and props in React'],
+      milestones: ['Build responsive frontend app', 'Deploy client UI to Vercel'],
+      goal: 'Build interactive frontend user interfaces',
+      outcome: 'Solid frontend foundations for fullstack development',
+      readinessImprovement: 15
+    },
+    {
+      title: 'Backend APIs, Express Server & Database Engineering',
+      why: 'Fullstack development requires connecting React frontends to robust server APIs and persistent databases.',
+      objectives: ['Build REST API services with Express & Node.js', 'Design MongoDB & PostgreSQL database schemas', 'Handle file uploads, CORS, and request validations'],
+      weeklyPlan: [
+        'Week 1: Node.js server architecture & Express routing setup',
+        'Week 2: MongoDB document modelling & PostgreSQL relational tables',
+        'Week 3: Integrating frontend React with backend API endpoints',
+        'Week 4: File storage uploads (Cloudinary/S3) & API error handling'
+      ],
+      topics: ['Node.js', 'Express', 'MongoDB', 'PostgreSQL', 'REST APIs'],
+      keys: ['DEV_NODE', 'DEV_EXPRESS', 'DEV_MONGODB', 'DEV_SQL', 'DEV_REST_APIS'],
+      problems: [
+        { title: 'Design RESTful API for Blog Engine', url: 'https://expressjs.com/', difficulty: 'medium' }
+      ],
+      projectTitle: 'Fullstack Blog & Resource Sharing Platform',
+      projectDesc: 'Develop a Node/Express backend with MongoDB connected to a React frontend for full CRUD operations.',
+      projectDifficulty: 'intermediate',
+      interviewPrep: ['Explain CORS policy & preflight OPTIONS request', 'MongoDB vs PostgreSQL selection criteria'],
+      milestones: ['Connect React client to Express REST API', 'Implement full CRUD database persistence'],
+      goal: 'Connect frontend interfaces to database-backed server APIs',
+      outcome: 'Capable of building complete fullstack web applications',
+      readinessImprovement: 15
+    },
+    {
+      title: 'Authentication, Security & Next.js Fullstack Framework',
+      why: 'Production fullstack apps require secure user authentication (JWT/OAuth), session management, and SSR frameworks like Next.js.',
+      objectives: ['Implement JWT & OAuth2 (Google) authentication', 'Build server-rendered pages using Next.js App Router', 'Protect private routes & manage session security'],
+      weeklyPlan: [
+        'Week 1: Password hashing (bcrypt) & JWT access/refresh token rotation',
+        'Week 2: Passport.js OAuth integration & route authorization guards',
+        'Week 3: Next.js App Router, Server Components, and Server Actions',
+        'Week 4: Next.js API integration & fullstack state synchronization'
+      ],
+      topics: ['Next.js', 'JWT Auth', 'OAuth', 'Security', 'Server Components'],
+      keys: ['DEV_NEXTJS', 'DEV_AUTHENTICATION', 'DEV_REST_APIS'],
+      problems: [
+        { title: 'Implement JWT Auth Flow in React/Next.js', url: 'https://nextjs.org/docs', difficulty: 'medium' }
+      ],
+      projectTitle: 'Fullstack E-Commerce Portal with Auth & Payments',
+      projectDesc: 'Build a production Next.js fullstack portal with user auth, shopping cart, and database order processing.',
+      projectDifficulty: 'advanced',
+      interviewPrep: ['Explain JWT stored in HTTP-only cookies vs LocalStorage', 'Next.js Server Actions vs traditional REST APIs'],
+      milestones: ['Implement secure login/signup flow with JWT', 'Deploy fullstack Next.js app'],
+      goal: 'Engineer secure, authenticated fullstack web applications',
+      outcome: 'Fluent in fullstack React application architecture',
+      readinessImprovement: 15
+    },
+    {
+      title: 'Fullstack Deployment, Docker & Performance Optimization',
+      why: 'Finalizing fullstack readiness by learning containerization, caching, deployment, and cloud pipelines.',
+      objectives: ['Containerize fullstack apps with Docker Compose', 'Implement Redis caching & background queues', 'Deploy apps to cloud platforms (Vercel, Render, AWS)'],
+      weeklyPlan: [
+        'Week 1: Dockerizing frontend & backend with multi-stage builds',
+        'Week 2: Docker Compose multi-container orchestrations',
+        'Week 3: Redis caching for database speedups & session management',
+        'Week 4: Automated CI/CD deployments & web performance tuning'
+      ],
+      topics: ['Docker', 'Docker Compose', 'Redis', 'Deployment', 'CI/CD'],
+      keys: ['DEV_DOCKER', 'DEV_REDIS', 'DEV_DEPLOYMENT', 'DEV_AWS', 'CS_SYSTEM_DESIGN'],
+      problems: [
+        { title: 'Fullstack System Design Architecture', url: 'https://vercel.com/docs', difficulty: 'medium' }
+      ],
+      projectTitle: 'Dockerized Production Fullstack SaaS Product',
+      projectDesc: 'Build and deploy a fullstack SaaS application with Docker Compose, Redis caching, and automated CI/CD pipeline.',
+      projectDifficulty: 'advanced',
+      interviewPrep: ['Explain fullstack web application deployment pipeline', 'How to optimize web application initial load times?'],
+      milestones: ['Containerize fullstack application with Docker', 'Deploy SaaS app to production cloud'],
+      goal: 'Ship production-ready fullstack SaaS applications',
+      outcome: 'Fullstack Developer placement ready',
+      readinessImprovement: 15
+    }
+  ];
+
+  const aiMlCurriculum: MockTemplate[] = [
+    {
+      title: 'Python for Data Science, Math & Statistics Foundations',
+      why: 'AI/ML Engineers require strong Python fluency, linear algebra, calculus, probability, and numerical computing libraries.',
+      objectives: ['Master Python data structures & OOP principles', 'Understand Linear Algebra (Vectors, Matrices, Eigenvalues)', 'Use NumPy & Pandas for high-speed numerical data manipulation'],
+      weeklyPlan: [
+        'Week 1: Advanced Python, data structures, list comprehensions, and generators',
+        'Week 2: Linear Algebra for Machine Learning: Matrix multiplications, dot products, and transformations',
+        'Week 3: Multivariable Calculus: Gradients, partial derivatives, and optimization principles',
+        'Week 4: NumPy array operations & Pandas DataFrames wrangling'
+      ],
+      topics: ['Python', 'NumPy', 'Pandas', 'Linear Algebra', 'Calculus'],
+      keys: ['DEV_JAVASCRIPT', 'APT_QUANT'],
+      problems: [
+        { title: 'Vector & Matrix Operations in Python', url: 'https://numpy.org/doc/stable/user/absolute_beginners.html', difficulty: 'easy' }
+      ],
+      projectTitle: 'Exploratory Data Analysis (EDA) Toolkit',
+      projectDesc: 'Build a Python data analysis tool that cleans, transforms, and visualizes complex datasets with Pandas.',
+      projectDifficulty: 'beginner',
+      interviewPrep: ['Explain Gradient Descent algorithm intuition', 'Difference between Matrix dot product and element-wise multiplication'],
+      milestones: ['Complete Pandas data cleaning workflow', 'Build exploratory data analysis notebook'],
+      goal: 'Manipulate large datasets and understand ML mathematical foundations',
+      outcome: 'Strong Python & mathematical foundations for Machine Learning',
+      readinessImprovement: 15
+    },
+    {
+      title: 'Classical Machine Learning Algorithms & Scikit-Learn',
+      why: 'Mastering supervised and unsupervised learning algorithms using Scikit-Learn is essential before moving to deep learning.',
+      objectives: ['Implement Supervised Learning (Regression, Classification, Decision Trees)', 'Master Unsupervised Learning (K-Means, PCA dimensional reduction)', 'Evaluate model performance (Precision, Recall, ROC-AUC)'],
+      weeklyPlan: [
+        'Week 1: Linear & Logistic Regression math and Scikit-Learn implementations',
+        'Week 2: Decision Trees, Random Forests, and Gradient Boosting (XGBoost)',
+        'Week 3: K-Means Clustering and Principal Component Analysis (PCA)',
+        'Week 4: Model evaluation metrics, cross-validation, and hyperparameter tuning'
+      ],
+      topics: ['Machine Learning', 'Scikit-Learn', 'Regression', 'Classification', 'Random Forest'],
+      keys: ['APT_LOGICAL', 'APT_QUANT'],
+      problems: [
+        { title: 'Predict House Prices (Regression)', url: 'https://scikit-learn.org/stable/', difficulty: 'medium' }
+      ],
+      projectTitle: 'Customer Churn Prediction Engine',
+      projectDesc: 'Build a complete ML model pipeline with feature engineering, Random Forest, and model validation metrics.',
+      projectDifficulty: 'intermediate',
+      interviewPrep: ['Explain Bias-Variance Tradeoff in ML models', 'Difference between Precision and Recall'],
+      milestones: ['Train ML classification model with >85% accuracy', 'Evaluate model using ROC-AUC curves'],
+      goal: 'Build and validate classical machine learning pipelines',
+      outcome: 'Proficient in traditional ML modeling & feature engineering',
+      readinessImprovement: 15
+    },
+    {
+      title: 'Deep Learning Foundations, Neural Networks & PyTorch',
+      why: 'AI Engineers must understand neural network architectures, backpropagation, and deep learning frameworks like PyTorch.',
+      objectives: ['Understand Artificial Neural Networks (ANN) & backpropagation', 'Train deep learning models using PyTorch framework', 'Optimize neural networks with loss functions & Adam optimizer'],
+      weeklyPlan: [
+        'Week 1: Perceptrons, activation functions (ReLU, Sigmoid), and forward pass math',
+        'Week 2: Backpropagation algorithm & PyTorch tensor autograd engine',
+        'Week 3: Building multi-layer neural networks in PyTorch (nn.Module)',
+        'Week 4: Overfitting prevention (Dropout, Batch Normalization) and training loops'
+      ],
+      topics: ['Deep Learning', 'PyTorch', 'Neural Networks', 'Backpropagation', 'Tensors'],
+      keys: ['APT_QUANT', 'DEV_PYTHON'],
+      problems: [
+        { title: 'Train Image Classifier on MNIST with PyTorch', url: 'https://pytorch.org/tutorials/', difficulty: 'medium' }
+      ],
+      projectTitle: 'Digit & Image Classifier using PyTorch',
+      projectDesc: 'Construct and train a deep neural network in PyTorch to classify handwritten digits with high precision.',
+      projectDifficulty: 'intermediate',
+      interviewPrep: ['Explain Backpropagation chain rule math', 'Why do we use ReLU over Sigmoid activation in deep networks?'],
+      milestones: ['Implement PyTorch training loop from scratch', 'Achieve 98%+ accuracy on MNIST classifier'],
+      goal: 'Design and train custom deep learning models in PyTorch',
+      outcome: 'Fluent in deep learning principles & PyTorch coding',
+      readinessImprovement: 15
+    },
+    {
+      title: 'Computer Vision / NLP & Generative AI (LLMs)',
+      why: 'Modern AI Engineering demands expertise in Natural Language Processing, Transformer architectures, and Large Language Models (LLMs).',
+      objectives: ['Master Transformer architecture & Self-Attention mechanism', 'Fine-tune pre-trained models (Hugging Face Transformers)', 'Build GenAI RAG applications using LLMs & Vector Databases'],
+      weeklyPlan: [
+        'Week 1: Recurrent Neural Networks (RNNs) vs Transformer Attention mechanisms',
+        'Week 2: Hugging Face library, BERT, and GPT model fine-tuning patterns',
+        'Week 3: Vector Embeddings, Similarity Search, and Vector Databases (Pinecone/Chroma)',
+        'Week 4: Building RAG (Retrieval-Augmented Generation) pipelines with LangChain'
+      ],
+      topics: ['Generative AI', 'LLMs', 'Transformers', 'Hugging Face', 'Vector DBs', 'RAG'],
+      keys: ['CS_SYSTEM_DESIGN', 'DEV_PYTHON'],
+      problems: [
+        { title: 'Build RAG Pipeline with Vector Search', url: 'https://huggingface.co/docs', difficulty: 'hard' }
+      ],
+      projectTitle: 'AI Knowledge Assistant with RAG & Vector Search',
+      projectDesc: 'Develop a Generative AI document assistant using OpenAI/Gemini APIs, LangChain, and Vector DB embedding search.',
+      projectDifficulty: 'advanced',
+      interviewPrep: ['Explain Self-Attention mechanism in Transformers', 'What is Retrieval-Augmented Generation (RAG) and why is it useful?'],
+      milestones: ['Fine-tune LLM / Transformer model', 'Deploy RAG GenAI app to production'],
+      goal: 'Build cutting-edge Generative AI & LLM applications',
+      outcome: 'AI / ML Engineer placement ready',
+      readinessImprovement: 15
+    }
+  ];
+
+  const dataScienceCurriculum: MockTemplate[] = [
+    {
+      title: 'Data Wrangling, Advanced SQL & Python Analytics',
+      why: 'Data Scientists spend considerable time extracting, cleaning, and transforming raw data using SQL and Python.',
+      objectives: ['Master complex SQL window functions & subqueries', 'Perform advanced data cleaning with Pandas', 'Understand statistical distributions & metrics'],
+      weeklyPlan: [
+        'Week 1: Advanced SQL window functions (RANK, DENSE_RANK, LEAD/LAG)',
+        'Week 2: Pandas data cleaning, handling missing values, and data merges',
+        'Week 3: Descriptive statistics: Mean, Median, Variance, Standard Deviation, IQRs',
+        'Week 4: Data transformation pipelines and feature extraction'
+      ],
+      topics: ['SQL', 'Pandas', 'Python', 'Data Wrangling', 'Statistics'],
+      keys: ['DEV_SQL', 'CS_DBMS'],
+      problems: [
+        { title: 'SQL Window Functions Practice', url: 'https://leetcode.com/problemset/database/', difficulty: 'medium' }
+      ],
+      projectTitle: 'Automated Data Cleaning & Reporting Pipeline',
+      projectDesc: 'Write a Python script that ingests dirty CSV/SQL datasets, cleans anomalies, and generates summary stats.',
+      projectDifficulty: 'beginner',
+      interviewPrep: ['Explain difference between DENSE_RANK and RANK in SQL', 'How to handle missing data (Imputation techniques)?'],
+      milestones: ['Solve 15 advanced SQL query problems', 'Build data cleaning script'],
+      goal: 'Clean and query large datasets using SQL and Python',
+      outcome: 'Strong foundation in data manipulation and SQL querying',
+      readinessImprovement: 15
+    },
+    {
+      title: 'Exploratory Data Analysis (EDA) & Data Visualization',
+      why: 'Communicating data insights requires visual analytics tools like Matplotlib, Seaborn, and interactive dashboards.',
+      objectives: ['Create compelling data visualizations with Seaborn', 'Identify correlations, outliers, and trend patterns', 'Build executive dashboards (Tableau/PowerBI)'],
+      weeklyPlan: [
+        'Week 1: Data visualization principles, Matplotlib & Seaborn plots',
+        'Week 2: Bivariate & Multivariate exploratory analysis techniques',
+        'Week 3: Outlier detection algorithms & distribution normalization',
+        'Week 4: Building interactive data dashboards in Tableau / Streamlit'
+      ],
+      topics: ['EDA', 'Data Visualization', 'Seaborn', 'Tableau', 'Streamlit'],
+      keys: ['APT_QUANT', 'DEV_PYTHON'],
+      problems: [
+        { title: 'Create Interactive Data Dashboard', url: 'https://streamlit.io/', difficulty: 'medium' }
+      ],
+      projectTitle: 'Interactive Business Intelligence Dashboard',
+      projectDesc: 'Build an interactive web dashboard using Streamlit & Plotly visualizing business sales trends and KPIs.',
+      projectDifficulty: 'intermediate',
+      interviewPrep: ['When to use a box plot vs violin plot?', 'How do you detect and treat data outliers?'],
+      milestones: ['Publish interactive EDA notebook', 'Deploy Streamlit dashboard app'],
+      goal: 'Uncover actionable business insights from unstructured data',
+      outcome: 'Proficient in visual data analytics and storytelling',
+      readinessImprovement: 15
+    },
+    {
+      title: 'Statistical Modeling, Probability & Hypothesis Testing',
+      why: 'Data Science requires rigorous hypothesis testing, A/B experiment evaluation, and probability modeling.',
+      objectives: ['Master Hypothesis Testing (t-test, ANOVA, Chi-Square)', 'Understand A/B Testing experiment design & p-values', 'Calculate sample sizes and confidence intervals'],
+      weeklyPlan: [
+        'Week 1: Probability distributions (Normal, Binomial, Poisson)',
+        'Week 2: Hypothesis testing, Z-tests, T-tests, and p-value significance',
+        'Week 3: A/B testing experiment design, sample size calculation, and confidence bounds',
+        'Week 4: Bayesian statistics fundamentals and decision trees'
+      ],
+      topics: ['Statistics', 'Hypothesis Testing', 'A/B Testing', 'Probability', 'Bayesian'],
+      keys: ['APT_QUANT', 'APT_LOGICAL'],
+      problems: [
+        { title: 'Analyze A/B Test Results Experiment', url: 'https://scikit-learn.org/stable/', difficulty: 'medium' }
+      ],
+      projectTitle: 'A/B Test Experimentation & Statistical Evaluation Suite',
+      projectDesc: 'Analyze real-world web experiment data using hypothesis testing and statistical confidence bounds in Python.',
+      projectDifficulty: 'intermediate',
+      interviewPrep: ['Explain p-value and Type I vs Type II errors', 'How do you calculate sample size needed for an A/B test?'],
+      milestones: ['Conduct hypothesis test evaluation', 'Publish A/B testing statistical report'],
+      goal: 'Design experiments and make data-driven statistical decisions',
+      outcome: 'Capable of statistical modeling and A/B test analysis',
+      readinessImprovement: 15
+    },
+    {
+      title: 'Applied Machine Learning & Predictive Modeling',
+      why: 'Predictive analytics requires training, tuning, and evaluating supervised & unsupervised machine learning models.',
+      objectives: ['Train regression and classification algorithms in Scikit-Learn', 'Perform hyperparameter tuning & cross-validation', 'Evaluate model metrics (ROC-AUC, Precision/Recall, F1-Score)'],
+      weeklyPlan: [
+        'Week 1: Linear & Logistic Regression, Decision Trees, and Random Forests',
+        'Week 2: Gradient Boosting (XGBoost, LightGBM) & Ensemble techniques',
+        'Week 3: Unsupervised clustering (K-Means, Hierarchical) & PCA dimensionality reduction',
+        'Week 4: Hyperparameter optimization (GridSearchCV/Optuna) and model evaluation'
+      ],
+      topics: ['Machine Learning', 'Scikit-Learn', 'XGBoost', 'Clustering', 'Model Evaluation'],
+      keys: ['DEV_PYTHON', 'APT_QUANT'],
+      problems: [
+        { title: 'Train Predictive ML Model in Python', url: 'https://scikit-learn.org/stable/', difficulty: 'medium' }
+      ],
+      projectTitle: 'Customer Churn & Price Prediction ML Pipeline',
+      projectDesc: 'Build an end-to-end predictive machine learning model using XGBoost with cross-validation and feature importance analysis.',
+      projectDifficulty: 'intermediate',
+      interviewPrep: ['Precision vs Recall: when to prioritize which metric?', 'How does Gradient Boosting differ from Random Forest?'],
+      milestones: ['Achieve 85%+ ROC-AUC score on test set', 'Deploy Scikit-Learn model pipeline'],
+      goal: 'Build accurate predictive machine learning models',
+      outcome: 'Proficient in applied machine learning algorithms',
+      readinessImprovement: 15
+    },
+    {
+      title: 'Big Data Processing & Distributed Computing with PySpark',
+      why: 'Enterprise Data Science handles multi-gigabyte/terabyte datasets requiring distributed frameworks like Apache Spark.',
+      objectives: ['Process large-scale datasets using PySpark DataFrames', 'Build scalable ETL data pipelines in SQL & Python', 'Optimize Spark memory execution & partition strategies'],
+      weeklyPlan: [
+        'Week 1: Big Data architecture & PySpark DataFrame operations',
+        'Week 2: Distributed data transformations, joins, and aggregations',
+        'Week 3: PySpark MLlib for big data machine learning',
+        'Week 4: Building scalable ETL pipelines in Python & SQL'
+      ],
+      topics: ['PySpark', 'Apache Spark', 'Big Data', 'Distributed Computing', 'ETL Pipelines'],
+      keys: ['CS_SYSTEM_DESIGN', 'DEV_PYTHON', 'DEV_SQL'],
+      problems: [
+        { title: 'PySpark Big Data ETL Pipeline', url: 'https://spark.apache.org/docs/latest/api/python/', difficulty: 'medium' }
+      ],
+      projectTitle: 'Distributed Log & E-Commerce Big Data ETL Pipeline',
+      projectDesc: 'Construct a PySpark pipeline processing multi-gigabyte server logs with automated aggregation and anomaly detection.',
+      projectDifficulty: 'advanced',
+      interviewPrep: ['Spark RDD vs DataFrame memory execution', 'Explain Spark partition shuffling and how to optimize it'],
+      milestones: ['Run PySpark pipeline on multi-node cluster mockup', 'Optimize Spark job execution speed by 40%'],
+      goal: 'Scale data processing pipelines across distributed compute clusters',
+      outcome: 'Capable of big data engineering and PySpark analytics',
+      readinessImprovement: 15
+    },
+    {
+      title: 'MLOps, Model Serving APIs, Capstone & Interview Preparation',
+      why: 'Finalizing Data Science skills by serving models via REST APIs (FastAPI), monitoring model drift, and capstone presentation.',
+      objectives: ['Deploy ML models as REST API microservices with FastAPI & Docker', 'Monitor model drift & performance metrics in production', 'Complete Data Science portfolio & technical interview prep'],
+      weeklyPlan: [
+        'Week 1: Model serialization (Joblib/ONNX) & FastAPI microservice creation',
+        'Week 2: Docker containerization & cloud model deployment (AWS/GCP)',
+        'Week 3: Model monitoring, data drift detection, and retraining triggers',
+        'Week 4: Portfolio presentation, resume optimization, and mock technical interviews'
+      ],
+      topics: ['MLOps', 'FastAPI', 'Docker', 'Model Deployment', 'Portfolio'],
+      keys: ['DEV_DEPLOYMENT', 'DEV_PYTHON', 'INT_RESUME'],
+      problems: [
+        { title: 'Deploy ML Model API with FastAPI', url: 'https://fastapi.tiangolo.com/', difficulty: 'medium' }
+      ],
+      projectTitle: 'Production Data Science Platform & FastAPI Deployment',
+      projectDesc: 'Architect a complete Data Science platform: PySpark ETL, model training, FastAPI deployment, Streamlit UI, and Docker.',
+      projectDifficulty: 'advanced',
+      interviewPrep: ['How to monitor model drift in production?', 'Explain end-to-end Data Science project lifecycle'],
+      milestones: ['Deploy live FastAPI ML prediction endpoint', 'Complete mock technical interview evaluation'],
+      goal: 'Deploy Data Science models into cloud production',
+      outcome: 'Data Scientist placement ready',
+      readinessImprovement: 15
+    }
+  ];
+
+  const mobileCurriculum: MockTemplate[] = [
+    {
+      title: 'Mobile UI Fundamentals, Layouts & Frameworks',
+      why: 'Mobile Developers must master mobile design guidelines (iOS/Android), responsive component layouts, and cross-platform frameworks.',
+      objectives: ['Learn mobile framework basics (React Native / Flutter / Swift)', 'Master mobile layouts, Flexbox, and touch components', 'Understand mobile app lifecycle & navigation routing'],
+      weeklyPlan: [
+        'Week 1: Mobile UI principles: iOS Human Interface & Android Material Design',
+        'Week 2: Mobile layouts, viewports, touch controls, and styling',
+        'Week 3: Mobile navigation: Stack, Tab, and Drawer navigators',
+        'Week 4: Mobile form inputs, custom buttons, and list views (FlatList)'
+      ],
+      topics: ['Mobile UI', 'React Native', 'Flutter', 'Mobile Navigation', 'Material Design'],
+      keys: ['DEV_REACT', 'DEV_JAVASCRIPT', 'DEV_HTML'],
+      problems: [
+        { title: 'Build Mobile ListView Component', url: 'https://reactnative.dev/docs/getting-started', difficulty: 'easy' }
+      ],
+      projectTitle: 'Cross-Platform Mobile Fitness App UI',
+      projectDesc: 'Design and develop a multi-screen mobile app with tab navigation, custom workout cards, and responsive UI.',
+      projectDifficulty: 'beginner',
+      interviewPrep: ['Explain mobile app lifecycle states (Active, Inactive, Background)', 'React Native vs Native iOS/Android apps'],
+      milestones: ['Run mobile app on iOS simulator / Android emulator', 'Complete 3-screen navigation flow'],
+      goal: 'Build mobile application screens with smooth navigation',
+      outcome: 'Solid foundation in mobile app development',
+      readinessImprovement: 15
+    },
+    {
+      title: 'Mobile State Management & API Integration',
+      why: 'Mobile apps require asynchronous HTTP networking, local storage, and structured state management for smooth UX.',
+      objectives: ['Integrate REST APIs using Axios / Fetch in mobile apps', 'Master mobile state management (Zustand/Redux)', 'Handle offline caching & local async storage'],
+      weeklyPlan: [
+        'Week 1: Asynchronous API data fetching & mobile loading/error states',
+        'Week 2: Mobile state management with Zustand / Redux Toolkit',
+        'Week 3: Async Storage / SQLite for local offline persistence',
+        'Week 4: Image caching, performance tuning, and list re-render optimization'
+      ],
+      topics: ['Mobile State', 'AsyncStorage', 'REST APIs', 'Zustand', 'Performance'],
+      keys: ['DEV_REACT', 'DEV_REST_APIS'],
+      problems: [
+        { title: 'Implement Mobile Infinite Scroll List', url: 'https://reactnative.dev/docs/flatlist', difficulty: 'medium' }
+      ],
+      projectTitle: 'Mobile Weather & News Application',
+      projectDesc: 'Build a mobile app that fetches live weather & news data, saves favorite locations locally, and works offline.',
+      projectDifficulty: 'intermediate',
+      interviewPrep: ['How to optimize FlatList rendering performance in React Native?', 'AsyncStorage vs SQLite in mobile apps'],
+      milestones: ['Connect mobile app to REST API', 'Implement offline data caching'],
+      goal: 'Fetch and manage remote API data in mobile applications',
+      outcome: 'Proficient in mobile networking and data persistence',
+      readinessImprovement: 15
+    },
+    {
+      title: 'Native Device Hardware APIs & Push Notifications',
+      why: 'Mobile developers leverage hardware capabilities like camera, GPS location, push notifications, and biometrics.',
+      objectives: ['Access device hardware (Camera, GPS Location, Gyroscope)', 'Implement Push Notifications (Firebase Cloud Messaging)', 'Add biometric authentication (FaceID / Fingerprint)'],
+      weeklyPlan: [
+        'Week 1: Requesting mobile runtime permissions (Camera, Location)',
+        'Week 2: Accessing device hardware APIs (Camera capture, GPS mapping)',
+        'Week 3: Setting up Firebase Cloud Messaging (FCM) push notifications',
+        'Week 4: Biometric authentication (FaceID/TouchID) integration'
+      ],
+      topics: ['Device APIs', 'Camera API', 'GPS Mapping', 'Push Notifications', 'Firebase'],
+      keys: ['DEV_AUTHENTICATION', 'DEV_REST_APIS'],
+      problems: [
+        { title: 'Integrate Mobile Map Location Marker', url: 'https://firebase.google.com/docs/cloud-messaging', difficulty: 'medium' }
+      ],
+      projectTitle: 'Location-based Mobile Photo Journal App',
+      projectDesc: 'Create a mobile journal app that captures photos via camera, tags GPS location on a map, and triggers push alerts.',
+      projectDifficulty: 'advanced',
+      interviewPrep: ['How do Push Notifications work under the hood (APNs / FCM)?', 'Best practices for requesting mobile permissions'],
+      milestones: ['Capture image via native camera API', 'Receive FCM push notification'],
+      goal: 'Utilize native mobile device hardware in applications',
+      outcome: 'Capable of building feature-rich native mobile applications',
+      readinessImprovement: 15
+    },
+    {
+      title: 'Mobile App Testing, Build Automation & App Store Publishing',
+      why: 'Publishing mobile apps requires build signing, automated testing, CI/CD pipelines (Fastlane), and App Store submission.',
+      objectives: ['Write unit & integration tests for mobile apps', 'Automate mobile builds using Fastlane & GitHub Actions', 'Publish mobile applications to Apple App Store & Google Play Store'],
+      weeklyPlan: [
+        'Week 1: Mobile unit testing with Jest & React Native Testing Library',
+        'Week 2: Configuring Android keystores & Apple Developer provisioning profiles',
+        'Week 3: Automating mobile builds & releases with Fastlane',
+        'Week 4: App Store / Play Store guidelines, metadata, and submission'
+      ],
+      topics: ['Mobile Testing', 'Fastlane', 'App Store Publishing', 'Play Store', 'CI/CD'],
+      keys: ['DEV_DEPLOYMENT', 'DEV_GIT'],
+      problems: [
+        { title: 'Automate Mobile App Build with Fastlane', url: 'https://fastlane.tools/', difficulty: 'medium' }
+      ],
+      projectTitle: 'Production Mobile App Release & CI/CD Pipeline',
+      projectDesc: 'Prepare a production mobile app build signed with release certificates and automated Fastlane deployment pipeline.',
+      projectDifficulty: 'advanced',
+      interviewPrep: ['Explain App Store provisioning profiles & signing certificates', 'How to handle app store rejection troubleshooting?'],
+      milestones: ['Generate release APK / IPA build bundle', 'Set up automated Fastlane deployment'],
+      goal: 'Publish production mobile apps to App Store & Play Store',
+      outcome: 'Mobile App Developer placement ready',
+      readinessImprovement: 15
+    }
+  ];
+
+  // Pick curriculum list based on specific target career role
+  const preferred = (profile.preferredCareer || '').toLowerCase();
+  let templatePool = sdeProductCurriculum;
+
+  if (preferred.includes('devops')) {
+    logStage('MOCK-SELECTION', 'Selected DevOps Engineer fallback curriculum template pool');
+    templatePool = devopsCurriculum;
+  } else if (preferred.includes('frontend')) {
+    logStage('MOCK-SELECTION', 'Selected Frontend Engineer fallback curriculum template pool');
+    templatePool = frontendCurriculum;
+  } else if (preferred.includes('backend')) {
+    logStage('MOCK-SELECTION', 'Selected Backend Engineer fallback curriculum template pool');
+    templatePool = backendCurriculum;
+  } else if (preferred.includes('fullstack') || preferred.includes('full stack') || preferred.includes('web')) {
+    logStage('MOCK-SELECTION', 'Selected Fullstack Developer fallback curriculum template pool');
+    templatePool = fullstackCurriculum;
+  } else if (preferred.includes('ai') || preferred.includes('machine learning') || preferred.includes('ml')) {
+    logStage('MOCK-SELECTION', 'Selected AI/ML Engineer fallback curriculum template pool');
+    templatePool = aiMlCurriculum;
+  } else if (preferred.includes('data science') || preferred.includes('data scientist') || preferred.includes('analyst')) {
+    logStage('MOCK-SELECTION', 'Selected Data Scientist fallback curriculum template pool');
+    templatePool = dataScienceCurriculum;
+  } else if (preferred.includes('mobile') || preferred.includes('android') || preferred.includes('ios') || preferred.includes('flutter')) {
+    logStage('MOCK-SELECTION', 'Selected Mobile App Developer fallback curriculum template pool');
+    templatePool = mobileCurriculum;
+  } else if (!isProduct) {
+    logStage('MOCK-SELECTION', 'Selected Service-Based SDE fallback curriculum template pool');
+    templatePool = sdeServiceCurriculum;
+  } else {
+    logStage('MOCK-SELECTION', 'Selected Product-Based SDE fallback curriculum template pool');
+  }
   
-  // Filter out any templates if dsaLevel is Advanced (already mastered)
-  // Let's filter out basic DSA templates if the user is already advanced
   let filteredTemplates = [...templatePool];
-  if (profile.dsaLevel === 'Advanced' && isProduct) {
+  if (profile.dsaLevel === 'Advanced' && isProduct && templatePool === sdeProductCurriculum) {
     filteredTemplates = filteredTemplates.filter(t => !t.title.includes('Foundations'));
   }
 
-  // Adjust number of topics to match totalMonths
-  const selectedTemplates = filteredTemplates.slice(0, newTopicCount);
+  // Adjust number of topics to match totalMonths dynamically without duplication
+  let selectedTemplates: MockTemplate[] = [];
+  if (newTopicCount <= filteredTemplates.length) {
+    selectedTemplates = filteredTemplates.slice(0, newTopicCount);
+  } else {
+    selectedTemplates = [...filteredTemplates];
+    // Fill extra months with distinct advanced specialization topics rather than repeating earlier months
+    for (let extraIdx = filteredTemplates.length; extraIdx < newTopicCount; extraIdx++) {
+      const monthNum = skipCount + extraIdx + 1;
+      const phaseNum = extraIdx - filteredTemplates.length + 1;
+      selectedTemplates.push({
+        title: `Advanced ${profile.preferredCareer || 'Engineering'} System Specialization & Capstone (Phase ${phaseNum})`,
+        why: `Advanced practical specialization focused on real-world industry depth, architecture trade-offs, and enterprise scaling for Month ${monthNum}.`,
+        objectives: [
+          `Build real-world production-grade system features for Month ${monthNum}`,
+          'Conduct comprehensive performance benchmarking & security auditing',
+          'Prepare for senior-level technical interview rounds'
+        ],
+        weeklyPlan: [
+          `Week 1: Month ${monthNum} System architecture & design specification`,
+          `Week 2: Core feature implementation & unit test coverage`,
+          `Week 3: Performance profiling, load testing & optimization`,
+          `Week 4: Capstone demonstration, technical documentation & interview review`
+        ],
+        topics: ['System Design', 'Architecture', 'Interview Prep', 'Performance'],
+        keys: ['CS_SYSTEM_DESIGN', 'INT_MOCK_INTERVIEW'],
+        problems: [
+          { title: 'System Design & Architecture Practice', url: 'https://leetcode.com/discuss/interview-question/system-design/', difficulty: 'hard' }
+        ],
+        projectTitle: `Production Capstone Project Phase ${phaseNum}`,
+        projectDesc: `Architect and publish a production-ready capstone project demonstrating end-to-end industry mastery.`,
+        projectDifficulty: 'advanced',
+        interviewPrep: ['Explain high-level system trade-offs and scaling strategies', 'How do you structure production monitoring & alerts?'],
+        milestones: [`Complete Month ${monthNum} capstone release`, 'Score 90%+ in mock interview evaluation'],
+        goal: `Master advanced industry topics and achieve high placement readiness`,
+        outcome: `Senior level preparation for ${profile.preferredCareer || 'Engineering'} roles`,
+        readinessImprovement: 15
+      });
+    }
+  }
 
   // Assign progress baselines
   let currentReadiness = 15;
@@ -629,7 +1593,7 @@ function generateIntelligentMockRoadmap(profile: EnrichedProfileInput) {
       title: topic.projectTitle,
       description: topic.projectDesc,
       technologies: topic.projectDesc.includes('Java') ? ['Java'] : (topic.projectDesc.includes('Python') ? ['Python'] : ['C++']),
-      difficulty: topic.projectDifficulty,
+      difficulty: normalizeDifficulty(topic.projectDifficulty),
       githubSubmission: '',
       liveDemoSubmission: '',
       isCompleted: false
@@ -673,8 +1637,12 @@ ${topic.interviewPrep.map(p => `  • ${p}`).join('\n')}
     };
   });
 
-  // Attach resources statically
-  const topicsWithResources = attachCuratedResources(topics, dsaLang);
+  // Attach resources from MongoDB LearningResource collection
+  const topicsWithResources = await attachCuratedResourcesFromDB(
+    topics,
+    profile.preferredCareer || 'Software Engineer (SDE)',
+    dsaLang
+  );
 
   const summary = {
     currentPlacementReadiness: currentReadiness,
@@ -685,9 +1653,12 @@ ${topic.interviewPrep.map(p => `  • ${p}`).join('\n')}
     estimatedCompletionDate: calculateCompletionDate(timeline)
   };
 
+  const careerRole = profile.preferredCareer || 'Software Engineer';
+  const langText = profile.programmingLanguages?.length > 0 ? profile.programmingLanguages.join(', ') : (profile.preferredProgrammingLanguage || 'Java');
+
   return {
-    title: `Personalized SDE Career Path for ${profile.name}`,
-    description: `A SDE placement preparation path targeting ${profile.targetCompanyType || 'Product-Based'} companies, custom-fit for your ${timeline} timeline, using ${progLang} and ${dsaLang}.`,
+    title: `Personalized ${careerRole} Career Path for ${profile.name}`,
+    description: `A ${careerRole} preparation path targeting ${profile.targetCompanyType || 'Product-Based'} companies, custom-fit for your ${timeline} timeline, utilizing ${langText}.`,
     version: '2.0.0',
     source: 'fallback',
     topics: topicsWithResources,

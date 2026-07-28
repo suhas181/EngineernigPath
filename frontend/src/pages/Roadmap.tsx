@@ -12,6 +12,10 @@ import { softwareEngineerRoadmap } from '../utils/softwareEngineerData';
 import { devOpsRoadmap } from '../utils/devOpsData';
 import { flutterRoadmap } from '../utils/flutterData';
 import { pythonBackendRoadmap } from '../utils/pythonBackendData';
+import { frontendRoadmap } from '../utils/frontendData';
+import { fullstackRoadmap } from '../utils/fullstackData';
+import { backendRoadmap } from '../utils/backendData';
+import { mobileRoadmap } from '../utils/mobileData';
 
 import { AlertOctagon, Sparkles, Map, ArrowRight, Target } from 'lucide-react';
 
@@ -641,22 +645,30 @@ export function Roadmap() {
                 key={activeTab}
                 track={activeTab}
                 roadmapData={
-                  activeTab === 'ai-engineer'
+                  activeTab === 'software-engineer'
+                    ? softwareEngineerRoadmap
+                    : activeTab === 'frontend-engineer'
+                    ? (frontendRoadmap as any)
+                    : activeTab === 'backend-engineer'
+                    ? (backendRoadmap as any)
+                    : activeTab === 'fullstack-developer'
+                    ? (fullstackRoadmap as any)
+                    : activeTab === 'ai-ml-engineer'
                     ? aiEngineerRoadmap
-                    : activeTab === 'data-scientist'
+                    : activeTab === 'data-scientist-analyst'
                     ? dataScientistRoadmap
-                    : activeTab === 'data-analyst'
-                    ? dataAnalystRoadmap
-                    : activeTab === 'cybersecurity'
-                    ? cyberSecurityRoadmap
+                    : activeTab === 'devops-engineer'
+                    ? devOpsRoadmap
+                    : activeTab === 'mobile-app-developer'
+                    ? (mobileRoadmap as any)
                     : activeTab === 'java-developer'
                     ? javaDeveloperRoadmap
-                    : activeTab === 'software-engineer'
-                    ? softwareEngineerRoadmap
-                    : activeTab === 'devops'
-                    ? devOpsRoadmap
                     : activeTab === 'flutter'
                     ? flutterRoadmap
+                    : activeTab === 'cybersecurity'
+                    ? cyberSecurityRoadmap
+                    : (activeTab as string) === 'data-analyst'
+                    ? dataAnalystRoadmap
                     : pythonBackendRoadmap
                 }
               />

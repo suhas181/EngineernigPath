@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getRoadmap, generateRoadmap, toggleRoadmapItem, submitWeeklyReview } from '../controllers/roadmapController';
+import { getRoadmap, generateRoadmap, toggleRoadmapItem, submitWeeklyReview, selectActiveRoadmap } from '../controllers/roadmapController';
 import { protect } from '../middlewares/auth';
 
 const router = Router();
@@ -11,5 +11,6 @@ router.get('/', getRoadmap);
 router.post('/generate', generateRoadmap);
 router.patch('/toggle', toggleRoadmapItem);
 router.post('/weekly-review', submitWeeklyReview);
+router.post('/select-active', selectActiveRoadmap);
 
 export default router;

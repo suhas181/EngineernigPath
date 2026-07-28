@@ -3,11 +3,12 @@ import { z } from 'zod';
 import { User } from '../models/User';
 import { AuthenticatedRequest } from '../types';
 import { uploadToCloudinary } from '../services/uploadService';
+import { syncUserLeetCodeStats } from '../services/leetcodeService';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const SKILL_LEVELS = ['Beginner', 'Intermediate', 'Advanced'] as const;
 const CAREER_GOALS = ['Placement', 'Internship', 'Higher Studies', 'Freelancing', 'Startup'] as const;
-const PLACEMENT_TIMELINES = ['3 Months', '6 Months', '8 Months', '1 Year'] as const;
+const PLACEMENT_TIMELINES = ['3 Months', '4 Months', '5 Months', '6 Months', '8 Months'] as const;
 
 // ─── Reusable Zod sub-schemas ─────────────────────────────────────────────────
 const trimmedString = z.string().transform((s) => s.trim());
@@ -64,6 +65,7 @@ const updateProfileSchema = z.object({
     .optional(),
   programmingLanguages: uniqueStringArray,
   frameworks: uniqueStringArray,
+  leetcodeUsername: trimmedString.optional(),
 
   // LeetCode (granular)
   leetcodeEasyCount: z
@@ -126,6 +128,7 @@ const UPDATABLE_FIELDS = [
   'dailyStudyHours',
   'programmingLanguages',
   'frameworks',
+  'leetcodeUsername',
   'leetcodeEasyCount',
   'leetcodeMediumCount',
   'leetcodeHardCount',
@@ -170,9 +173,12 @@ function serializeUser(user: any) {
     dailyStudyHours: user.dailyStudyHours,
     programmingLanguages: user.programmingLanguages,
     frameworks: user.frameworks,
-    leetcodeEasyCount: user.leetcodeEasyCount,
-    leetcodeMediumCount: user.leetcodeMediumCount,
-    leetcodeHardCount: user.leetcodeHardCount,
+    leetcodeUsername: user.leetcodeUsername || '',
+    leetcodeRanking: user.leetcodeRanking || 0,
+    leetcodeStatsLastFetchedAt: user.leetcodeStatsLastFetchedAt || null,
+    leetcodeEasyCount: user.leetcodeEasyCount || 0,
+    leetcodeMediumCount: user.leetcodeMediumCount || 0,
+    leetcodeHardCount: user.leetcodeHardCount || 0,
     dsaLevel: user.dsaLevel,
     frontendLevel: user.frontendLevel,
     backendLevel: user.backendLevel,
@@ -199,10 +205,14 @@ export const getProfile = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const user = req.user;
+    let user = req.user;
     if (!user) {
       res.status(404).json({ message: 'User profile not found' });
       return;
+    }
+
+    if (user.leetcodeUsername) {
+      user = await syncUserLeetCodeStats(user, false);
     }
 
     res.status(200).json({ user: serializeUser(user) });
@@ -282,6 +292,34 @@ export const uploadAvatar = async (
       message: 'Profile image uploaded successfully',
       profileImage: imageUrl,
       user: serializeUser(user),
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ─── POST /users/leetcode/refresh ───────────────────────────────────────────
+export const refreshLeetCodeStatsController = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const user = req.user;
+    if (!user) {
+      res.status(404).json({ message: 'User profile not found' });
+      return;
+    }
+
+    if (!user.leetcodeUsername) {
+      res.status(400).json({ message: 'No LeetCode username linked to profile' });
+      return;
+    }
+
+    const updatedUser = await syncUserLeetCodeStats(user, true);
+    res.status(200).json({
+      message: 'LeetCode stats refreshed successfully',
+      user: serializeUser(updatedUser),
     });
   } catch (error) {
     next(error);

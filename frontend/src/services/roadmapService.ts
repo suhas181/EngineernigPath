@@ -73,3 +73,11 @@ export const submitProjectLinks = async (
     }
   });
 };
+
+/**
+ * Set active roadmap track by tab slug or roadmapId
+ */
+export const selectActiveRoadmap = async (trackSlug: string, roadmapId?: string, title?: string) => {
+  const response = await api.post('/roadmaps/select-active', { trackSlug, roadmapId, title });
+  return response.data;
+};

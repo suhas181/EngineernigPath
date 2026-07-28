@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { AuthenticatedRequest } from '../types';
 import { Roadmap } from '../models/Roadmap';
 import { generateRoadmapWithAI, EnrichedProfileInput } from '../services/geminiService';
+import { getActiveRoadmap } from '../services/roadmapHelper';
 import mongoose from 'mongoose';
 import crypto from 'crypto';
 
@@ -92,7 +93,7 @@ export const getRoadmap = async (
       return;
     }
 
-    const roadmap = await Roadmap.findOne({ userId: user.id });
+    const roadmap = await getActiveRoadmap(user.id);
     let pendingWeeklyReview = false;
     let profileChanged = false;
     if (roadmap) {
@@ -230,12 +231,14 @@ export const generateRoadmap = async (
       completedMonths,
     };
 
-    console.log('[ROADMAP-CTRL] Calling AI pipeline with enriched profile:', {
+    console.log('[ROADMAP-CTRL] Invoking AI Roadmap Pipeline:', {
       name: enrichedProfile.name,
+      preferredCareer: enrichedProfile.preferredCareer,
       careerGoal: enrichedProfile.careerGoal,
       placementTimeline: enrichedProfile.placementTimeline,
-      completedMonths: enrichedProfile.completedMonths.length,
+      completedMonthsCount: enrichedProfile.completedMonths.length,
       resumeScore: enrichedProfile.resumeScore,
+      executionMode: process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== 'your-gemini-api-key' ? 'GEMINI_API' : 'MOCK_FALLBACK_ENGINE'
     });
 
     // 6. Call AI Service
@@ -292,12 +295,20 @@ export const generateRoadmap = async (
       userId: user.id,
       title: generated.title || `Personalized Roadmap for ${user.preferredCareer}`,
       description: generated.description || 'Custom tailored learning roadmap.',
+      careerTrack: user.preferredCareer || 'Personalized Pathway',
+      targetGoal: (user as any).careerGoal || 'Placement',
+      durationMonths: (user as any).placementTimeline || '6 Months',
       topics: allTopics,
       progress,
       version: generated.version || '2.0.0',
       profileHash: currentProfileHash,
       source: generated.source || 'gemini',
+      lastUpdated: new Date(),
+      estimatedCompletionDate: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000),
     });
+
+    user.activeRoadmapId = newRoadmap._id as any;
+    await user.save();
 
     console.log(`[ROADMAP-CTRL] Roadmap saved: ${allTopics.length} topics (${preservedTopics.length} preserved, ${generated.topics.length} new), progress: ${progress}%`);
 
@@ -338,7 +349,7 @@ export const toggleRoadmapItem = async (
 
     const { topicId, resourceId, problemId, project, isCompleted } = parseResult.data;
 
-    const roadmap = await Roadmap.findOne({ userId: user.id });
+    const roadmap = await getActiveRoadmap(user.id);
     if (!roadmap) {
       res.status(404).json({ success: false, message: 'Roadmap not found' });
       return;
@@ -580,3 +591,74 @@ export const submitWeeklyReview = async (
     next(error);
   }
 };
+
+export const selectActiveRoadmap = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const user = req.user;
+    if (!user) {
+      res.status(401).json({ success: false, message: 'Not authorized' });
+      return;
+    }
+
+    const { roadmapId, trackSlug, title, targetGoal, durationMonths } = req.body;
+
+    let targetRoadmap = null;
+
+    if (roadmapId) {
+      targetRoadmap = await Roadmap.findOne({ _id: roadmapId, userId: user.id });
+    } else if (trackSlug) {
+      const cleanTrackName = trackSlug === 'personalized'
+        ? (user.preferredCareer || 'Personalized Pathway')
+        : trackSlug.split('-').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+
+      // Search for an existing roadmap document matching user & track
+      targetRoadmap = await Roadmap.findOne({
+        userId: user.id,
+        $or: [
+          { careerTrack: { $regex: new RegExp(cleanTrackName, 'i') } },
+          { title: { $regex: new RegExp(cleanTrackName, 'i') } },
+        ],
+      });
+
+      // If not existing, create a new Roadmap document in MongoDB for this track
+      if (!targetRoadmap) {
+        targetRoadmap = await Roadmap.create({
+          userId: user.id,
+          title: cleanTrackName.includes('Roadmap') || cleanTrackName.includes('Track') ? cleanTrackName : `${cleanTrackName} Track`,
+          description: `Structured learning pathway for ${cleanTrackName}.`,
+          careerTrack: cleanTrackName,
+          targetGoal: targetGoal || (user as any).careerGoal || 'Placement',
+          durationMonths: durationMonths || (user as any).placementTimeline || '5 Months',
+          progress: 0,
+          topics: [],
+          lastUpdated: new Date(),
+          estimatedCompletionDate: new Date(Date.now() + 150 * 24 * 60 * 60 * 1000),
+          source: 'fallback',
+        });
+      }
+    }
+
+    if (!targetRoadmap) {
+      targetRoadmap = await getActiveRoadmap(user.id);
+    }
+
+    if (targetRoadmap) {
+      user.activeRoadmapId = targetRoadmap._id as any;
+      await user.save();
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Active roadmap updated successfully',
+      activeRoadmapId: user.activeRoadmapId,
+      roadmap: targetRoadmap,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+

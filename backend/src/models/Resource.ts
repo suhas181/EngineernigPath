@@ -1,11 +1,12 @@
 import { Schema, model, Document } from 'mongoose';
+import { CANONICAL_RESOURCE_TYPES, CANONICAL_DIFFICULTIES, CanonicalResourceType, CanonicalDifficulty } from '../constants/resourceTypes';
 
 export interface IResource extends Document {
   title: string;
   description: string;
   url: string;
-  category: 'video' | 'article' | 'documentation' | 'practice' | 'course';
-  difficulty: 'beginner' | 'intermediate' | 'advanced';
+  category: CanonicalResourceType;
+  difficulty: CanonicalDifficulty;
   estimatedTime: number; // in minutes
   tags: string[];
   clicks: number;
@@ -33,12 +34,12 @@ const ResourceSchema = new Schema<IResource>(
     },
     category: {
       type: String,
-      enum: ['video', 'article', 'documentation', 'practice', 'course'],
+      enum: CANONICAL_RESOURCE_TYPES,
       required: [true, 'Resource category is required'],
     },
     difficulty: {
       type: String,
-      enum: ['beginner', 'intermediate', 'advanced'],
+      enum: CANONICAL_DIFFICULTIES,
       required: [true, 'Resource difficulty is required'],
     },
     estimatedTime: {

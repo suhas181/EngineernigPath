@@ -13,6 +13,7 @@ import {
   BookOpen,
   Calendar,
   FileText,
+  Settings,
 } from 'lucide-react';
 
 export function Navbar() {
@@ -96,24 +97,38 @@ export function Navbar() {
           <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-blue-500" />
         </button>
         
-        {/* User Card & Logout */}
+        {/* User Card & Settings & Logout */}
         <div className="flex items-center space-x-2 sm:space-x-3 pl-2 border-l border-white/10">
-          <div className="h-8 w-8 sm:h-9 sm:w-9 rounded-full overflow-hidden border border-white/15 bg-slate-800 flex items-center justify-center">
-            {user?.profileImage ? (
-              <img src={user.profileImage} alt={user.name} className="h-full w-full object-cover" />
-            ) : (
-              <User className="h-5 w-5 text-muted-foreground" />
-            )}
-          </div>
-          <div className="hidden md:block text-left">
-            <div className="flex items-center space-x-1.5">
-              <p className="text-xs font-semibold max-w-[80px] truncate">{user?.name}</p>
-              <span className="text-[9px] font-bold px-1.5 py-0.5 bg-indigo-500/20 text-indigo-400 rounded-full border border-indigo-500/30">
-                Lvl {level}
-              </span>
+          <Link
+            to="/settings"
+            className="flex items-center space-x-2 p-1 rounded-xl hover:bg-white/5 transition"
+            title="Edit Profile & Settings"
+          >
+            <div className="h-8 w-8 sm:h-9 sm:w-9 rounded-full overflow-hidden border border-white/15 bg-slate-800 flex items-center justify-center">
+              {user?.profileImage ? (
+                <img src={user.profileImage} alt={user.name} className="h-full w-full object-cover" />
+              ) : (
+                <User className="h-5 w-5 text-muted-foreground" />
+              )}
             </div>
-            <p className="text-[10px] text-muted-foreground capitalize">{user?.role}</p>
-          </div>
+            <div className="hidden md:block text-left">
+              <div className="flex items-center space-x-1.5">
+                <p className="text-xs font-semibold max-w-[80px] truncate text-white">{user?.name}</p>
+                <span className="text-[9px] font-bold px-1.5 py-0.5 bg-indigo-500/20 text-indigo-400 rounded-full border border-indigo-500/30">
+                  Lvl {level}
+                </span>
+              </div>
+              <p className="text-[10px] text-muted-foreground capitalize">{user?.role}</p>
+            </div>
+          </Link>
+
+          <Link
+            to="/settings"
+            className="p-1.5 sm:p-2 text-muted-foreground hover:text-white transition rounded-full hover:bg-white/5"
+            title="Profile Settings"
+          >
+            <Settings className="h-4 w-4 sm:h-5 sm:w-5" />
+          </Link>
           
           <button
             onClick={handleLogout}

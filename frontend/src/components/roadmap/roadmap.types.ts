@@ -2,8 +2,8 @@ export interface Resource {
   id: string;
   title: string;
   url: string;
-  type: 'video' | 'article' | 'book';
-  difficulty: 'beginner' | 'intermediate' | 'advanced';
+  type: 'video' | 'article' | 'book' | 'documentation' | 'course' | 'practice';
+  difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
   isCompleted: boolean;
 }
 
@@ -19,7 +19,7 @@ export interface MonthProject {
   title: string;
   description: string;
   technologies: string[];
-  difficulty: 'beginner' | 'intermediate' | 'advanced';
+  difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
   githubSubmission?: string;
   liveDemoSubmission?: string;
   isCompleted: boolean;

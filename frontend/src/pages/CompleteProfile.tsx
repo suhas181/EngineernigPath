@@ -25,6 +25,7 @@ import {
   Save,
   Trophy,
 } from 'lucide-react';
+import { CANONICAL_CAREER_PATHS } from '../constants/careerPaths';
 
 const POPULAR_SKILLS = [
   'React',
@@ -504,14 +505,11 @@ export function CompleteProfile() {
                       className="w-full bg-white/5 border border-white/10 rounded-xl py-3.5 px-4 focus:outline-none focus:border-primary/50 transition appearance-none"
                       {...register('preferredCareer')}
                     >
-                      <option value="Software Engineer (SDE)" className="bg-slate-900">Software Engineer (SDE)</option>
-                      <option value="Frontend Engineer" className="bg-slate-900">Frontend Engineer</option>
-                      <option value="Backend Engineer" className="bg-slate-900">Backend Engineer</option>
-                      <option value="Full Stack Developer" className="bg-slate-900">Full Stack Developer</option>
-                      <option value="AI / ML Engineer" className="bg-slate-900">AI / ML Engineer</option>
-                      <option value="Data Scientist / Analyst" className="bg-slate-900">Data Scientist / Analyst</option>
-                      <option value="DevOps Engineer" className="bg-slate-900">DevOps Engineer</option>
-                      <option value="Mobile App Developer" className="bg-slate-900">Mobile App Developer</option>
+                      {CANONICAL_CAREER_PATHS.map((career) => (
+                        <option key={career} value={career} className="bg-slate-900">
+                          {career}
+                        </option>
+                      ))}
                     </select>
                   </div>
 
@@ -1107,8 +1105,8 @@ export function CompleteProfile() {
                   {/* Placement Timeline - Segmented buttons */}
                   <div className="space-y-2 text-left">
                     <label className="text-xs font-semibold text-muted-foreground uppercase">Preparation Timeline</label>
-                    <div className="flex bg-white/5 border border-white/10 p-1 rounded-xl gap-1 max-w-md">
-                      {['3 Months', '6 Months', '8 Months', '1 Year'].map((time) => {
+                    <div className="flex bg-white/5 border border-white/10 p-1 rounded-xl gap-1 max-w-lg">
+                      {['3 Months', '4 Months', '5 Months', '6 Months', '8 Months'].map((time) => {
                         const isSelected = watchedValues.placementTimeline === time;
                         return (
                           <button
@@ -1126,6 +1124,9 @@ export function CompleteProfile() {
                         );
                       })}
                     </div>
+                    <p className="text-[11px] text-slate-400 mt-1">
+                      Choose 3 months for high-intensity, fast-track preparation, or 8 months for comprehensive, in-depth preparation.
+                    </p>
                   </div>
 
                   {/* Target Company Type */}

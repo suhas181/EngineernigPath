@@ -1,11 +1,12 @@
 import { Schema, model, Document } from 'mongoose';
+import { CANONICAL_RESOURCE_TYPES, CANONICAL_DIFFICULTIES, CanonicalResourceType, CanonicalDifficulty } from '../constants/resourceTypes';
 
 export interface IResource {
   id: string;
   title: string;
   url: string;
-  type: 'video' | 'article' | 'book';
-  difficulty: 'beginner' | 'intermediate' | 'advanced';
+  type: CanonicalResourceType;
+  difficulty: CanonicalDifficulty;
   isCompleted: boolean;
 }
 
@@ -21,7 +22,7 @@ export interface IMonthProject {
   title: string;
   description: string;
   technologies: string[];
-  difficulty: 'beginner' | 'intermediate' | 'advanced';
+  difficulty: CanonicalDifficulty;
   githubSubmission: string;
   liveDemoSubmission: string;
   isCompleted: boolean;
@@ -53,9 +54,14 @@ export interface IRoadmap extends Document {
   userId: Schema.Types.ObjectId;
   title: string;
   description: string;
+  careerTrack?: string;
+  targetGoal?: string;
+  durationMonths?: string;
   progress: number; // percentage
   topics: ITopic[];
   lastWeeklyReviewDate?: Date;
+  lastUpdated?: Date;
+  estimatedCompletionDate?: Date;
   version?: string;
   profileHash?: string;
   source?: 'gemini' | 'fallback';
@@ -67,8 +73,17 @@ const ResourceSchema = new Schema<IResource>({
   id: { type: String, required: true },
   title: { type: String, required: true },
   url: { type: String, required: true },
-  type: { type: String, enum: ['video', 'article', 'book'], required: true },
-  difficulty: { type: String, enum: ['beginner', 'intermediate', 'advanced'], required: true },
+  type: {
+    type: String,
+    enum: CANONICAL_RESOURCE_TYPES,
+    required: true,
+  },
+  difficulty: {
+    type: String,
+    enum: CANONICAL_DIFFICULTIES,
+    required: true,
+    default: 'Beginner',
+  },
   isCompleted: { type: Boolean, default: false },
 });
 
@@ -84,7 +99,12 @@ const MonthProjectSchema = new Schema<IMonthProject>({
   title: { type: String, required: true },
   description: { type: String, required: true },
   technologies: { type: [String], default: [] },
-  difficulty: { type: String, enum: ['beginner', 'intermediate', 'advanced'], required: true },
+  difficulty: {
+    type: String,
+    enum: CANONICAL_DIFFICULTIES,
+    required: true,
+    default: 'Beginner',
+  },
   githubSubmission: { type: String, default: '' },
   liveDemoSubmission: { type: String, default: '' },
   isCompleted: { type: Boolean, default: false },
@@ -128,6 +148,18 @@ const RoadmapSchema = new Schema<IRoadmap>(
       type: String,
       required: [true, 'Roadmap description is required'],
     },
+    careerTrack: {
+      type: String,
+      default: '',
+    },
+    targetGoal: {
+      type: String,
+      default: 'Placement',
+    },
+    durationMonths: {
+      type: String,
+      default: '6 Months',
+    },
     progress: {
       type: Number,
       default: 0,
@@ -139,6 +171,11 @@ const RoadmapSchema = new Schema<IRoadmap>(
       type: Date,
       default: Date.now,
     },
+    lastUpdated: {
+      type: Date,
+      default: Date.now,
+    },
+    estimatedCompletionDate: Date,
     version: {
       type: String,
       default: '2.0.0',
