@@ -18,6 +18,9 @@ export interface UserProfile {
   leetcodeHardCount?: number;
   programmingLanguages?: string[];
   frameworks?: string[];
+  preferredProgrammingLanguage?: string;
+  preferredDsaLanguage?: string;
+  targetCompanyType?: string;
 }
 
 export function calculateAiAccuracy(user: UserProfile | null | undefined): number {

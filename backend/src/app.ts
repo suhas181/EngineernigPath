@@ -30,7 +30,25 @@ app.use(express.urlencoded({ extended: true }));
 app.use(morgan('dev'));
 app.use(passport.initialize());
 
-// Base health check
+// Base health checks
+app.get('/', (req, res) => {
+  res.status(200).json({
+    name: 'EngineerPath Backend API',
+    status: 'online',
+    frontendUrl: process.env.FRONTEND_URL || 'http://localhost:5173',
+    healthCheck: '/health',
+    endpoints: [
+      '/api/auth',
+      '/api/users',
+      '/api/dashboard',
+      '/api/roadmaps',
+      '/api/resources',
+      '/api/productivity',
+      '/api/resume'
+    ]
+  });
+});
+
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok', timestamp: new Date() });
 });

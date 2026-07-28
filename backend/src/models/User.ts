@@ -31,6 +31,11 @@ export interface IUser extends Document {
   dailyStudyHours?: number;
   programmingLanguages?: string[];
   frameworks?: string[];
+  // LeetCode Live Sync Fields
+  leetcodeUsername?: string;
+  leetcodeRanking?: number;
+  leetcodeStatsLastFetchedAt?: Date | null;
+
   leetcodeEasyCount?: number;
   leetcodeMediumCount?: number;
   leetcodeHardCount?: number;
@@ -42,7 +47,10 @@ export interface IUser extends Document {
   aptitudeLevel?: 'Beginner' | 'Intermediate' | 'Advanced';
   communicationLevel?: 'Beginner' | 'Intermediate' | 'Advanced';
   careerGoal?: 'Placement' | 'Internship' | 'Higher Studies' | 'Freelancing' | 'Startup';
-  placementTimeline?: '3 Months' | '6 Months' | '8 Months' | '1 Year';
+  placementTimeline?: '3 Months' | '4 Months' | '5 Months' | '6 Months' | '8 Months' | '1 Year';
+  preferredProgrammingLanguage?: 'Java' | 'Python' | 'C++';
+  preferredDsaLanguage?: 'Java' | 'Python' | 'C++';
+  targetCompanyType?: 'Product-Based' | 'Service-Based';
   strongSubjects?: string[];
   weakSubjects?: string[];
   projects?: Array<{
@@ -55,6 +63,8 @@ export interface IUser extends Document {
     isCompleted?: boolean;
   }>;
   
+  activeRoadmapId?: Schema.Types.ObjectId;
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -163,6 +173,19 @@ const UserSchema = new Schema<IUser>(
       type: [String],
       default: [],
     },
+    leetcodeUsername: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    leetcodeRanking: {
+      type: Number,
+      default: 0,
+    },
+    leetcodeStatsLastFetchedAt: {
+      type: Date,
+      default: null,
+    },
     leetcodeEasyCount: {
       type: Number,
       default: 0,
@@ -217,8 +240,23 @@ const UserSchema = new Schema<IUser>(
     },
     placementTimeline: {
       type: String,
-      enum: ['3 Months', '6 Months', '8 Months', '1 Year'],
+      enum: ['3 Months', '4 Months', '5 Months', '6 Months', '8 Months', '1 Year'],
       default: '6 Months',
+    },
+    preferredProgrammingLanguage: {
+      type: String,
+      enum: ['Java', 'Python', 'C++'],
+      default: 'Java',
+    },
+    preferredDsaLanguage: {
+      type: String,
+      enum: ['Java', 'Python', 'C++'],
+      default: 'Java',
+    },
+    targetCompanyType: {
+      type: String,
+      enum: ['Product-Based', 'Service-Based'],
+      default: 'Product-Based',
     },
     strongSubjects: {
       type: [String],
@@ -241,6 +279,11 @@ const UserSchema = new Schema<IUser>(
         },
       ],
       default: [],
+    },
+    activeRoadmapId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Roadmap',
+      index: true,
     },
   },
   {

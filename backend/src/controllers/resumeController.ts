@@ -83,7 +83,7 @@ export const uploadResume = async (
     let analysisResult: any;
     if (genAI) {
       try {
-        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+        const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
         const prompt = `
 You are an expert recruiter and Resume ATS grader. Analyze the following raw resume text.
 Extract parsed details and evaluate formatting to calculate an ATS Score and a Readiness Score (0-100).
@@ -240,7 +240,7 @@ export const matchJob = async (
 
     if (genAI) {
       try {
-        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+        const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
         const prompt = `
 Compare this resume raw text against the following Job Description (JD).
 Evaluate the match percentage, extract keywords present, identify missing keywords, and suggest resume customize updates.

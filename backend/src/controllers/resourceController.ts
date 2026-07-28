@@ -279,7 +279,7 @@ export const getAIRecommendations = async (
 
     if (genAI) {
       try {
-        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+        const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
         const prompt = `
 You are an expert AI Career Mentor. Give me a list of exactly 3 tags or query terms that an engineering student interested in "${userCareer}" should search for.
 The student has current skills: [${userSkills.join(', ')}] and interests: [${userInterests.join(', ')}].

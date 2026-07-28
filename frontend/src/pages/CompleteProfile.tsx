@@ -25,6 +25,7 @@ import {
   Save,
   Trophy,
 } from 'lucide-react';
+import { CANONICAL_CAREER_PATHS } from '../constants/careerPaths';
 
 const POPULAR_SKILLS = [
   'React',
@@ -74,6 +75,9 @@ const completeProfileSchema = z.object({
   leetcodeEasyCount: z.preprocess((val) => (val === '' ? undefined : Number(val)), z.number().int().min(0).optional()),
   leetcodeMediumCount: z.preprocess((val) => (val === '' ? undefined : Number(val)), z.number().int().min(0).optional()),
   leetcodeHardCount: z.preprocess((val) => (val === '' ? undefined : Number(val)), z.number().int().min(0).optional()),
+  preferredProgrammingLanguage: z.enum(['Java', 'Python', 'C++']).optional(),
+  preferredDsaLanguage: z.enum(['Java', 'Python', 'C++']).optional(),
+  targetCompanyType: z.enum(['Product-Based', 'Service-Based']).optional(),
 });
 
 type CompleteProfileFormValues = z.infer<typeof completeProfileSchema>;
@@ -149,6 +153,9 @@ export function CompleteProfile() {
       leetcodeEasyCount: user?.leetcodeEasyCount || undefined,
       leetcodeMediumCount: user?.leetcodeMediumCount || undefined,
       leetcodeHardCount: user?.leetcodeHardCount || undefined,
+      preferredProgrammingLanguage: user?.preferredProgrammingLanguage || 'Java',
+      preferredDsaLanguage: user?.preferredDsaLanguage || 'Java',
+      targetCompanyType: user?.targetCompanyType || 'Product-Based',
     },
   });
 
@@ -307,6 +314,10 @@ export function CompleteProfile() {
       if (data.leetcodeEasyCount !== undefined && data.leetcodeEasyCount !== null) payload.leetcodeEasyCount = Number(data.leetcodeEasyCount);
       if (data.leetcodeMediumCount !== undefined && data.leetcodeMediumCount !== null) payload.leetcodeMediumCount = Number(data.leetcodeMediumCount);
       if (data.leetcodeHardCount !== undefined && data.leetcodeHardCount !== null) payload.leetcodeHardCount = Number(data.leetcodeHardCount);
+
+      if (data.preferredProgrammingLanguage) payload.preferredProgrammingLanguage = data.preferredProgrammingLanguage;
+      if (data.preferredDsaLanguage) payload.preferredDsaLanguage = data.preferredDsaLanguage;
+      if (data.targetCompanyType) payload.targetCompanyType = data.targetCompanyType;
 
       payload.programmingLanguages = programmingLanguages;
       payload.frameworks = frameworks;
@@ -494,14 +505,11 @@ export function CompleteProfile() {
                       className="w-full bg-white/5 border border-white/10 rounded-xl py-3.5 px-4 focus:outline-none focus:border-primary/50 transition appearance-none"
                       {...register('preferredCareer')}
                     >
-                      <option value="Software Engineer (SDE)" className="bg-slate-900">Software Engineer (SDE)</option>
-                      <option value="Frontend Engineer" className="bg-slate-900">Frontend Engineer</option>
-                      <option value="Backend Engineer" className="bg-slate-900">Backend Engineer</option>
-                      <option value="Full Stack Developer" className="bg-slate-900">Full Stack Developer</option>
-                      <option value="AI / ML Engineer" className="bg-slate-900">AI / ML Engineer</option>
-                      <option value="Data Scientist / Analyst" className="bg-slate-900">Data Scientist / Analyst</option>
-                      <option value="DevOps Engineer" className="bg-slate-900">DevOps Engineer</option>
-                      <option value="Mobile App Developer" className="bg-slate-900">Mobile App Developer</option>
+                      {CANONICAL_CAREER_PATHS.map((career) => (
+                        <option key={career} value={career} className="bg-slate-900">
+                          {career}
+                        </option>
+                      ))}
                     </select>
                   </div>
 
@@ -662,6 +670,54 @@ export function CompleteProfile() {
                             }`}
                           >
                             {lvl}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Preferred Programming Language */}
+                  <div className="space-y-2 text-left">
+                    <label className="text-xs font-semibold text-muted-foreground uppercase">Preferred Programming Language</label>
+                    <div className="flex bg-white/5 border border-white/10 p-1 rounded-xl gap-1 max-w-md">
+                      {['Java', 'Python', 'C++'].map((lang) => {
+                        const isSelected = watchedValues.preferredProgrammingLanguage === lang;
+                        return (
+                          <button
+                            key={lang}
+                            type="button"
+                            onClick={() => setValue('preferredProgrammingLanguage', lang as any)}
+                            className={`flex-1 text-center py-2 text-xs sm:text-sm font-semibold rounded-lg transition duration-200 ${
+                              isSelected
+                                ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25'
+                                : 'text-muted-foreground hover:text-white hover:bg-white/5'
+                            }`}
+                          >
+                            {lang}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Preferred DSA Language */}
+                  <div className="space-y-2 text-left">
+                    <label className="text-xs font-semibold text-muted-foreground uppercase">Preferred DSA Language</label>
+                    <div className="flex bg-white/5 border border-white/10 p-1 rounded-xl gap-1 max-w-md">
+                      {['Java', 'Python', 'C++'].map((lang) => {
+                        const isSelected = watchedValues.preferredDsaLanguage === lang;
+                        return (
+                          <button
+                            key={lang}
+                            type="button"
+                            onClick={() => setValue('preferredDsaLanguage', lang as any)}
+                            className={`flex-1 text-center py-2 text-xs sm:text-sm font-semibold rounded-lg transition duration-200 ${
+                              isSelected
+                                ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25'
+                                : 'text-muted-foreground hover:text-white hover:bg-white/5'
+                            }`}
+                          >
+                            {lang}
                           </button>
                         );
                       })}
@@ -1049,8 +1105,8 @@ export function CompleteProfile() {
                   {/* Placement Timeline - Segmented buttons */}
                   <div className="space-y-2 text-left">
                     <label className="text-xs font-semibold text-muted-foreground uppercase">Preparation Timeline</label>
-                    <div className="flex bg-white/5 border border-white/10 p-1 rounded-xl gap-1 max-w-md">
-                      {['3 Months', '6 Months', '8 Months', '1 Year'].map((time) => {
+                    <div className="flex bg-white/5 border border-white/10 p-1 rounded-xl gap-1 max-w-lg">
+                      {['3 Months', '4 Months', '5 Months', '6 Months', '8 Months'].map((time) => {
                         const isSelected = watchedValues.placementTimeline === time;
                         return (
                           <button
@@ -1068,6 +1124,38 @@ export function CompleteProfile() {
                         );
                       })}
                     </div>
+                    <p className="text-[11px] text-slate-400 mt-1">
+                      Choose 3 months for high-intensity, fast-track preparation, or 8 months for comprehensive, in-depth preparation.
+                    </p>
+                  </div>
+
+                  {/* Target Company Type */}
+                  <div className="space-y-2 text-left">
+                    <label className="text-xs font-semibold text-muted-foreground uppercase">Target Company Type</label>
+                    <div className="flex bg-white/5 border border-white/10 p-1 rounded-xl gap-1 max-w-md">
+                      {['Product-Based', 'Service-Based'].map((type) => {
+                        const isSelected = watchedValues.targetCompanyType === type;
+                        return (
+                          <button
+                            key={type}
+                            type="button"
+                            onClick={() => setValue('targetCompanyType', type as any)}
+                            className={`flex-1 text-center py-2 text-xs sm:text-sm font-semibold rounded-lg transition duration-200 ${
+                              isSelected
+                                ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25'
+                                : 'text-muted-foreground hover:text-white hover:bg-white/5'
+                            }`}
+                          >
+                            {type}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <span className="text-[10px] text-muted-foreground italic block mt-1">
+                      {watchedValues.targetCompanyType === 'Product-Based'
+                        ? 'Product-Based focus: Strong DSA, dynamic projects, CS Fundamentals, and System Design.'
+                        : 'Service-Based focus: Aptitude, communication/soft skills, resume building, and foundational development.'}
+                    </span>
                   </div>
                 </div>
               )}
