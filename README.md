@@ -141,7 +141,7 @@ EngineerPath/
    npm run dev
    ```
 
-4. Open your browser at **http://localhost:5173**.
+
 
 ---
 
