@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Link } from 'react-router-dom';
-import api from '../services/api';
+import { api } from '../services/api';
 import toast from 'react-hot-toast';
 import { Mail, Loader2, ArrowLeft, Send } from 'lucide-react';
 
@@ -15,7 +15,7 @@ type ForgotPasswordFormValues = z.infer<typeof forgotPasswordSchema>;
 
 export function ForgotPassword() {
   const [isLoading, setIsLoading] = useState(false);
-  const [isSent, setIsSent] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
 
   const {
     register,
@@ -29,93 +29,86 @@ export function ForgotPassword() {
     setIsLoading(true);
     try {
       await api.post('/auth/forgot-password', data);
-      setIsSent(true);
-      toast.success('Password reset link sent to your email.');
+      setIsSubmitted(true);
+      toast.success('Password reset instructions sent to your email.');
     } catch (error: any) {
       console.error('Forgot password error:', error);
-      toast.error(error.response?.data?.message || 'Something went wrong. Please try again.');
+      toast.error(error.response?.data?.message || 'Failed to process request.');
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
-      <div className="glass-panel max-w-md w-full rounded-2xl p-8 shadow-2xl glow-primary text-center">
-        {!isSent ? (
-          <>
-            <div className="space-y-2 mb-8">
-              <h2 className="text-3xl font-bold font-heading text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">
-                Reset Password
-              </h2>
-              <p className="text-muted-foreground text-sm">
-                Enter your email address and we'll send you a link to reset your password.
-              </p>
-            </div>
+    <div className="min-h-screen bg-[var(--page-bg)] flex items-center justify-center p-6 text-left">
+      <div className="mosaic-card max-w-md w-full p-8 space-y-6 shadow-lg bg-white border border-[var(--card-border)]">
+        <div className="text-center space-y-2">
+          <Link to="/" className="inline-flex items-center space-x-2">
+            <span className="font-heading font-extrabold text-2xl text-[var(--ink-900)]">
+              Engineer<span className="text-teal-600">Path</span>
+            </span>
+          </Link>
+          <h2 className="text-lg font-bold text-[var(--ink-900)] font-heading">Reset Your Password</h2>
+          <p className="text-xs text-[var(--ink-muted)]">
+            Enter your account email to receive a password reset link.
+          </p>
+        </div>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-              {/* Email */}
-              <div className="space-y-1 text-left">
-                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  Email Address
-                </label>
-                <div className="relative">
-                  <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-muted-foreground">
-                    <Mail className="h-5 w-5" />
-                  </span>
-                  <input
-                    type="email"
-                    placeholder="you@college.edu"
-                    className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition duration-200"
-                    {...register('email')}
-                  />
-                </div>
-                {errors.email && (
-                  <span className="text-xs text-destructive">{errors.email.message}</span>
-                )}
-              </div>
-
-              {/* Submit */}
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="w-full bg-primary text-primary-foreground font-semibold py-3.5 rounded-xl transition duration-200 hover:opacity-90 shadow-lg glow-primary flex items-center justify-center space-x-2 disabled:opacity-50"
-              >
-                {isLoading ? (
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                ) : (
-                  <>
-                    <span>Send Reset Link</span>
-                    <Send className="h-4 w-4" />
-                  </>
-                )}
-              </button>
-            </form>
-          </>
-        ) : (
-          <div className="space-y-6 py-4">
-            <div className="h-16 w-16 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded-full flex items-center justify-center mx-auto">
-              <Mail className="h-8 w-8" />
+        {isSubmitted ? (
+          <div className="text-center py-6 space-y-4">
+            <div className="h-12 w-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
+              <Send className="h-6 w-6" />
             </div>
-            <div className="space-y-2">
-              <h2 className="text-2xl font-bold font-heading">Check Your Email</h2>
-              <p className="text-muted-foreground text-sm leading-relaxed">
-                We have sent a password reset link to your email inbox. Please click the link inside that email to choose a new password.
-              </p>
-            </div>
+            <p className="text-xs text-[var(--ink-700)] leading-relaxed">
+              We've emailed password reset instructions. Please check your inbox.
+            </p>
+            <Link to="/login" className="mosaic-btn-outline inline-flex !py-2 !px-4 !text-xs">
+              Return to Login
+            </Link>
           </div>
+        ) : (
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold uppercase tracking-wider text-[var(--ink-muted)]">
+                Email Address
+              </label>
+              <div className="relative">
+                <Mail className="h-4 w-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="email"
+                  placeholder="name@university.edu"
+                  {...register('email')}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-sm text-[var(--ink-900)] focus:outline-none focus:border-teal-600 focus:bg-white transition"
+                />
+              </div>
+              {errors.email && (
+                <p className="text-xs text-rose-600 font-medium">{errors.email.message}</p>
+              )}
+            </div>
+
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full mosaic-btn-primary !py-3 !text-sm flex items-center justify-center space-x-2 mt-2"
+            >
+              {isLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <>
+                  <Send className="h-4 w-4" />
+                  <span>Send Reset Link</span>
+                </>
+              )}
+            </button>
+          </form>
         )}
 
-        {/* Footer */}
-        <p className="mt-8 text-center text-sm text-muted-foreground">
-          <Link
-            to="/login"
-            className="hover:underline font-semibold inline-flex items-center space-x-1"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            <span>Back to Sign In</span>
+        <div className="pt-4 border-t border-slate-100 text-center">
+          <Link to="/login" className="text-xs font-bold text-slate-600 hover:text-slate-900 inline-flex items-center space-x-1">
+            <ArrowLeft className="h-3.5 w-3.5" />
+            <span>Back to Login</span>
           </Link>
-        </p>
+        </div>
       </div>
     </div>
   );

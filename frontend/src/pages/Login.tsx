@@ -4,9 +4,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/useAuthStore';
-import { api, API_URL } from '../services/api';
+import { api } from '../services/api';
 import toast from 'react-hot-toast';
-import { Mail, Lock, Loader2, LogIn, ArrowRight } from 'lucide-react';
+import { Mail, Lock, Loader2, LogIn, ShieldCheck, UserCheck } from 'lucide-react';
 
 const loginSchema = z.object({
   email: z.string().min(1, 'Email is required').email('Invalid email address'),
@@ -16,6 +16,7 @@ const loginSchema = z.object({
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 export function Login() {
+  const [activeTab, setActiveTab] = useState<'student' | 'admin'>('student');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const loginStore = useAuthStore((state) => state.login);
@@ -33,12 +34,19 @@ export function Login() {
     try {
       const response = await api.post('/auth/login', data);
       const { accessToken, refreshToken, user } = response.data;
-      
-      loginStore(user, accessToken, refreshToken);
-      toast.success('Successfully logged in!');
 
-      // Redirect based on whether profile details are completed
-      if (!user.college || !user.graduationYear || !user.preferredCareer) {
+      if (activeTab === 'admin' && user.role !== 'admin') {
+        toast.error('Access denied: Selected account does not have Admin privileges.');
+        setIsLoading(false);
+        return;
+      }
+
+      loginStore(user, accessToken, refreshToken);
+      toast.success(`Welcome back, ${user.name}!`);
+
+      if (user.role === 'admin') {
+        navigate('/admin');
+      } else if (!user.college || !user.graduationYear || !user.preferredCareer) {
         navigate('/profile-setup');
       } else {
         navigate('/dashboard');
@@ -51,140 +59,115 @@ export function Login() {
     }
   };
 
-  const handleGoogleLogin = () => {
-    // Redirect browser to passport endpoint on backend
-    window.location.href = `${API_URL}/auth/google`;
-  };
-
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
-      <div className="glass-panel max-w-md w-full rounded-2xl p-8 shadow-2xl glow-primary">
-        <div className="text-center space-y-2 mb-8">
-          <h2 className="text-3xl font-bold font-heading text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">
-            Welcome Back
-          </h2>
-          <p className="text-muted-foreground text-sm">
-            Sign in to continue your career preparation journey.
+    <div className="min-h-screen bg-[var(--page-bg)] flex items-center justify-center p-6 text-left">
+      <div className="mosaic-card max-w-md w-full p-8 space-y-6 shadow-lg bg-white border border-[var(--card-border)]">
+        
+        {/* Header */}
+        <div className="text-center space-y-2">
+          <Link to="/" className="inline-flex items-center space-x-2">
+            <span className="font-heading font-extrabold text-2xl text-[var(--ink-900)]">
+              Engineer<span className="text-teal-600">Path</span>
+            </span>
+          </Link>
+          <p className="text-xs text-[var(--ink-muted)]">
+            Sign in to access your workspace dashboard.
           </p>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-          {/* Email */}
-          <div className="space-y-1 text-left">
-            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+        {/* Role Tab Switcher */}
+        <div className="flex bg-slate-100 p-1 rounded-full border border-slate-200">
+          <button
+            type="button"
+            onClick={() => setActiveTab('student')}
+            className={`flex-1 py-2 text-xs font-bold rounded-full flex items-center justify-center space-x-2 transition ${
+              activeTab === 'student'
+                ? 'bg-white text-[var(--ink-900)] shadow-sm'
+                : 'text-[var(--ink-muted)] hover:text-[var(--ink-900)]'
+            }`}
+          >
+            <UserCheck className="h-3.5 w-3.5" />
+            <span>Student Portal</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('admin')}
+            className={`flex-1 py-2 text-xs font-bold rounded-full flex items-center justify-center space-x-2 transition ${
+              activeTab === 'admin'
+                ? 'bg-[#101826] text-white shadow-sm'
+                : 'text-[var(--ink-muted)] hover:text-[var(--ink-900)]'
+            }`}
+          >
+            <ShieldCheck className="h-3.5 w-3.5" />
+            <span>Admin Login</span>
+          </button>
+        </div>
+
+        {/* Form */}
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold uppercase tracking-wider text-[var(--ink-muted)]">
               Email Address
             </label>
             <div className="relative">
-              <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-muted-foreground">
-                <Mail className="h-5 w-5" />
-              </span>
+              <Mail className="h-4 w-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 type="email"
-                placeholder="you@college.edu"
-                className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition duration-200"
+                placeholder="name@university.edu"
                 {...register('email')}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-sm text-[var(--ink-900)] focus:outline-none focus:border-teal-600 focus:bg-white transition"
               />
             </div>
             {errors.email && (
-              <span className="text-xs text-destructive">{errors.email.message}</span>
+              <p className="text-xs text-rose-600 font-medium">{errors.email.message}</p>
             )}
           </div>
 
-          {/* Password */}
-          <div className="space-y-1 text-left">
-            <div className="flex justify-between items-center">
-              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold uppercase tracking-wider text-[var(--ink-muted)]">
                 Password
               </label>
-              <Link
-                to="/forgot-password"
-                className="text-xs text-primary hover:underline font-medium"
-              >
-                Forgot Password?
+              <Link to="/forgot-password" className="text-xs font-bold text-teal-700 hover:underline">
+                Forgot password?
               </Link>
             </div>
             <div className="relative">
-              <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-muted-foreground">
-                <Lock className="h-5 w-5" />
-              </span>
+              <Lock className="h-4 w-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 type="password"
                 placeholder="••••••••"
-                className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition duration-200"
                 {...register('password')}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-sm text-[var(--ink-900)] focus:outline-none focus:border-teal-600 focus:bg-white transition"
               />
             </div>
             {errors.password && (
-              <span className="text-xs text-destructive">{errors.password.message}</span>
+              <p className="text-xs text-rose-600 font-medium">{errors.password.message}</p>
             )}
           </div>
 
-          {/* Submit */}
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-primary text-primary-foreground font-semibold py-3.5 rounded-xl transition duration-200 hover:opacity-90 shadow-lg glow-primary flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full mosaic-btn-primary !py-3 !text-sm flex items-center justify-center space-x-2 mt-2"
           >
             {isLoading ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
+              <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               <>
-                <span>Sign In</span>
-                <LogIn className="h-5 w-5" />
+                <LogIn className="h-4 w-4" />
+                <span>Sign In to {activeTab === 'admin' ? 'Admin Portal' : 'Student Dashboard'}</span>
               </>
             )}
           </button>
         </form>
 
-        {/* Divider */}
-        <div className="flex items-center my-6">
-          <div className="flex-grow border-t border-white/10" />
-          <span className="text-xs text-muted-foreground px-3 uppercase tracking-wider font-semibold">
-            Or continue with
-          </span>
-          <div className="flex-grow border-t border-white/10" />
-        </div>
-
-        {/* Google OAuth */}
-        <button
-          onClick={handleGoogleLogin}
-          type="button"
-          className="w-full bg-white/5 border border-white/10 hover:bg-white/10 text-white font-semibold py-3.5 rounded-xl transition duration-200 flex items-center justify-center space-x-2.5"
-        >
-          <svg className="h-5 w-5" viewBox="0 0 24 24" width="24" height="24">
-            <g transform="matrix(1, 0, 0, 1, 0, 0)">
-              <path
-                d="M21.35,11.1H12v2.7h5.38c-0.24,1.28 -0.96,2.37 -2.04,3.1v2.6h3.29c1.92,-1.78 3.03,-4.4 3.03,-7.4C21.65,11.83 21.54,11.41 21.35,11.1z"
-                fill="#4285F4"
-              />
-              <path
-                d="M12,20.5c2.3,0 4.23,-0.76 5.64,-2.07l-3.29,-2.6c-0.91,0.61 -2.08,0.97 -3.35,0.97 -2.58,0 -4.76,-1.74 -5.54,-4.07H2.12v2.7C3.59,17.8 7.55,20.5 12,20.5z"
-                fill="#34A853"
-              />
-              <path
-                d="M6.46,12.73c-0.2,-0.61 -0.31,-1.26 -0.31,-1.93s0.11,-1.32 0.31,-1.93V6.2H2.12c-0.78,1.55 -1.22,3.31 -1.22,5.2s0.44,3.65 1.22,5.2L6.46,12.73z"
-                fill="#FBBC05"
-              />
-              <path
-                d="M12,5.7c1.25,0 2.37,0.43 3.25,1.27l2.43,-2.43C16.22,3.17 14.3,2.5 12,2.5 7.55,2.5 3.59,5.2 2.12,7.7l4.34,3.37c0.78,-2.33 2.96,-4.07 5.54,-4.07z"
-                fill="#EA4335"
-              />
-            </g>
-          </svg>
-          <span>Sign in with Google</span>
-        </button>
-
-        {/* Footer */}
-        <p className="mt-8 text-center text-sm text-muted-foreground">
+        <div className="pt-4 border-t border-slate-100 text-center text-xs text-[var(--ink-muted)]">
           Don't have an account?{' '}
-          <Link
-            to="/signup"
-            className="text-primary hover:underline font-semibold inline-flex items-center space-x-1"
-          >
-            <span>Create Account</span>
-            <ArrowRight className="h-4 w-4" />
+          <Link to="/signup" className="font-bold text-teal-700 hover:underline">
+            Create account
           </Link>
-        </p>
+        </div>
       </div>
     </div>
   );

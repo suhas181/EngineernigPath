@@ -95,28 +95,29 @@ export const signup = async (
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    // Create verification token
-    const verificationToken = crypto.randomBytes(32).toString('hex');
-    const verificationTokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
-
-    // Create user
+    // Create user (automatically verified for immediate dashboard access)
     const newUser = await User.create({
       name,
       email,
       password: hashedPassword,
-      verificationToken,
-      verificationTokenExpires,
-      isVerified: false,
+      isVerified: true,
     });
 
-    console.log(`[AUTH] [SIGNUP] User registered: ${email} (ID: ${newUser._id})`);
+    // Generate tokens for automatic sign-in
+    const accessToken = generateAccessToken(newUser.id);
+    const refreshToken = generateRefreshToken(newUser.id);
 
-    // Send verification email
-    await sendVerificationEmail(email, name, verificationToken);
+    // Save refresh token to user
+    newUser.refreshToken = refreshToken;
+    await newUser.save();
+
+    console.log(`[AUTH] [SIGNUP] User registered & automatically logged in: ${email} (ID: ${newUser._id})`);
 
     res.status(201).json({
-      message: 'Registration successful. Please check your email to verify your account.',
-      userId: newUser._id,
+      message: 'Account created successfully!',
+      accessToken,
+      refreshToken,
+      user: serializeUser(newUser),
     });
   } catch (error) {
     next(error);
@@ -190,13 +191,6 @@ export const login = async (
     if (!isMatch) {
       console.log(`[AUTH] [LOGIN] Login failed: Password mismatch for ${email}`);
       res.status(401).json({ message: 'Invalid email or password' });
-      return;
-    }
-
-    // Reject unverified users
-    if (!user.isVerified) {
-      console.log(`[AUTH] [LOGIN] Login rejected: Email unverified for ${email}`);
-      res.status(401).json({ message: 'Please verify your email address before logging in' });
       return;
     }
 

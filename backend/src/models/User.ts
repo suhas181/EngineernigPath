@@ -102,7 +102,7 @@ const UserSchema = new Schema<IUser>(
     },
     isVerified: {
       type: Boolean,
-      default: false,
+      default: true,
     },
     verificationToken: String,
     verificationTokenExpires: Date,

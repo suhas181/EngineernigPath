@@ -36,11 +36,11 @@ function App() {
 
   if (isInitializing) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#0d111c] text-white">
+      <div className="flex min-h-screen items-center justify-center bg-[var(--bg-dark)] text-white">
         <div className="text-center space-y-4">
-          <Loader2 className="h-12 w-12 animate-spin text-blue-500 mx-auto" />
+          <Loader2 className="h-12 w-12 animate-spin text-purple-400 mx-auto" />
           <h2 className="text-xl font-semibold tracking-wide">Initializing Session...</h2>
-          <p className="text-muted-foreground text-sm">Please wait while we verify your authentication status.</p>
+          <p className="text-[var(--text-on-dark-muted)] text-sm">Please wait while we verify your authentication status.</p>
         </div>
       </div>
     );

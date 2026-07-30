@@ -29,51 +29,54 @@ export const TodayFocusCard: React.FC<TodayFocusCardProps> = ({
   };
 
   return (
-    <div className="glass-card rounded-2xl p-5 border border-white/5 bg-slate-900/40 space-y-4 text-left">
-      <h3 className="text-xs font-bold text-indigo-400 uppercase tracking-widest flex items-center gap-1.5">
-        <Zap className="h-4 w-4" /> Today's Focus
+    <div className="mosaic-card p-6 bg-white space-y-4 text-left">
+      <h3 className="text-xs font-bold text-teal-700 uppercase tracking-widest flex items-center gap-1.5 font-heading">
+        <Zap className="h-4 w-4 text-teal-600" /> Today's Priority Focus
       </h3>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-1">
         <div className="space-y-1">
-          <span className="text-[10px] text-slate-400 uppercase block font-semibold">
+          <span className="text-[10px] text-slate-400 uppercase block font-bold">
             Active Month Goal
           </span>
           <span
-            className="text-xs font-bold text-white truncate block"
+            className="text-xs font-bold text-slate-900 truncate block"
             title={activeMonth?.monthlyGoal || 'Learn core concepts'}
           >
             {activeMonth?.monthlyGoal || 'Learn core concepts'}
           </span>
         </div>
+
         <div className="space-y-1">
-          <span className="text-[10px] text-slate-400 uppercase block font-semibold">
+          <span className="text-[10px] text-slate-400 uppercase block font-bold">
             Next Task
           </span>
           {nextTaskType !== 'none' ? (
             <button
               onClick={nextTaskAction}
-              className="text-xs font-bold text-blue-400 hover:underline truncate block w-full text-left bg-transparent border-none p-0 focus:outline-none"
+              className="text-xs font-bold text-teal-600 hover:underline truncate block w-full text-left bg-transparent border-none p-0 focus:outline-none"
             >
               {nextTaskTitle.split(': ')[1] || 'Next Item'}
             </button>
           ) : (
-            <span className="text-xs font-bold text-slate-400 block">Completed</span>
+            <span className="text-xs font-bold text-emerald-600 block">Completed</span>
           )}
         </div>
+
         <div className="space-y-1">
-          <span className="text-[10px] text-slate-400 uppercase block font-semibold">
+          <span className="text-[10px] text-slate-400 uppercase block font-bold">
             Remaining Problems
           </span>
-          <span className="text-xs font-bold text-white block">
+          <span className="text-xs font-bold text-slate-900 block">
             {remainingProblems} Problems
           </span>
         </div>
+
         <div className="space-y-1">
-          <span className="text-[10px] text-slate-400 uppercase block font-semibold">
+          <span className="text-[10px] text-slate-400 uppercase block font-bold">
             Est. Study Time
           </span>
-          <span className="text-xs font-bold text-white block">
+          <span className="text-xs font-bold text-slate-900 block">
             {getEstimatedHoursLeft()} Hours Left
           </span>
         </div>

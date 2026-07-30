@@ -1,5 +1,79 @@
 import { Schema, model, Document } from 'mongoose';
 
+export interface IExtractionMetadata {
+  garbledTextRatio: number;
+  tablesDetected: boolean;
+  multiColumnSuspected: boolean;
+  extractionConfidence: number;
+}
+
+export interface IStage1ExtractionResult {
+  contact_info: {
+    name?: string | null;
+    email?: string | null;
+    phone?: string | null;
+    location?: string | null;
+    links?: string[];
+  };
+  skills: {
+    technical: string[];
+    tools_and_technologies: string[];
+    soft: string[];
+  };
+  projects: Array<{
+    name: string;
+    description: string[];
+    technologies: string[];
+    duration?: string | null;
+  }>;
+  education: Array<{
+    institution: string;
+    degree?: string | null;
+    field?: string | null;
+    duration?: string | null;
+    score?: string | null;
+  }>;
+  experience: Array<{
+    company: string;
+    role: string;
+    duration?: string | null;
+    responsibilities: string[];
+  }>;
+  certifications: Array<{
+    name: string;
+    issuer?: string | null;
+    date?: string | null;
+  }>;
+  achievements: Array<{
+    title: string;
+    description?: string | null;
+  }>;
+  parsing_warnings: string[];
+}
+
+export interface IImprovementSuggestion {
+  section: string;
+  reference: string;
+  issue: string;
+  suggestion: string;
+  priority: 'high' | 'medium' | 'low';
+}
+
+export interface IStage2ScoringResult {
+  overall_score: number;
+  job_match_score?: number | null;
+  content_quality_score: number;
+  ats_compatibility_score: number;
+  matched_keywords: string[];
+  missing_keywords: string[];
+  strengths: string[];
+  weaknesses: string[];
+  improvement_suggestions: IImprovementSuggestion[];
+  summary: string;
+  targetRole?: string;
+  jobDescription?: string;
+}
+
 export interface IEducationParsed {
   institution: string;
   degree: string;
@@ -35,11 +109,15 @@ export interface IProjectRecommendation {
 export interface IResume extends Document {
   userId: Schema.Types.ObjectId;
   fileName: string;
-  fileUrl: string; // Cloudinary secure URL
+  fileUrl: string;
+  fileHash: string;
   rawText: string;
   version: number;
   atsScore: number;
   readinessScore: number;
+  extractionMetadata: IExtractionMetadata;
+  extractionResult: IStage1ExtractionResult;
+  scoringResult: IStage2ScoringResult;
   parsedDetails: {
     name: string;
     email: string;
@@ -62,21 +140,21 @@ export interface IResume extends Document {
 
 const EducationParsedSchema = new Schema<IEducationParsed>({
   institution: { type: String, required: true },
-  degree: { type: String, required: true },
-  year: { type: String, required: true },
+  degree: { type: String, default: '' },
+  year: { type: String, default: '' },
   cgpa: String,
 });
 
 const ExperienceParsedSchema = new Schema<IExperienceParsed>({
   company: { type: String, required: true },
   role: { type: String, required: true },
-  duration: { type: String, required: true },
-  description: { type: String, required: true },
+  duration: { type: String, default: '' },
+  description: { type: String, default: '' },
 });
 
 const ProjectParsedSchema = new Schema<IProjectParsed>({
   title: { type: String, required: true },
-  description: { type: String, required: true },
+  description: { type: String, default: '' },
   technologies: { type: [String], default: [] },
 });
 
@@ -108,6 +186,11 @@ const ResumeSchema = new Schema<IResume>(
       type: String,
       required: [true, 'FileUrl is required'],
     },
+    fileHash: {
+      type: String,
+      index: true,
+      default: '',
+    },
     rawText: {
       type: String,
       required: [true, 'Raw text is required'],
@@ -127,6 +210,20 @@ const ResumeSchema = new Schema<IResume>(
       default: 0,
       min: 0,
       max: 100,
+    },
+    extractionMetadata: {
+      garbledTextRatio: { type: Number, default: 0 },
+      tablesDetected: { type: Boolean, default: false },
+      multiColumnSuspected: { type: Boolean, default: false },
+      extractionConfidence: { type: Number, default: 1.0 },
+    },
+    extractionResult: {
+      type: Schema.Types.Mixed,
+      default: null,
+    },
+    scoringResult: {
+      type: Schema.Types.Mixed,
+      default: null,
     },
     parsedDetails: {
       name: { type: String, default: '' },
@@ -150,8 +247,8 @@ const ResumeSchema = new Schema<IResume>(
   }
 );
 
-// Compound index for fast queries of student resume versions
 ResumeSchema.index({ userId: 1, version: -1 });
+ResumeSchema.index({ userId: 1, fileHash: 1 });
 
 export const Resume = model<IResume>('Resume', ResumeSchema);
 export default Resume;

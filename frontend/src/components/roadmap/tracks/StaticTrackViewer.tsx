@@ -13,6 +13,7 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { StaticTrackMonth } from '../roadmap.types';
+import { Badge } from '../../mosaic/Badge';
 
 interface StaticTrackViewerProps {
   track: string;
@@ -30,12 +31,10 @@ export const StaticTrackViewer: React.FC<StaticTrackViewerProps> = ({
   const completedTopicsKey = `${track}_completed_topics`;
   const completedProjectsKey = `${track}_completed_projects`;
 
-  // Local storage state
   const [completedTopics, setCompletedTopics] = useState<Record<string, boolean>>({});
   const [completedProjects, setCompletedProjects] = useState<Record<number, boolean>>({});
   const [expandedMonths, setExpandedMonths] = useState<Record<number, boolean>>({ 1: true });
 
-  // Sync state when track changes (using useEffect since state needs to match localStorage)
   useEffect(() => {
     const savedTopics = localStorage.getItem(completedTopicsKey);
     setCompletedTopics(savedTopics ? JSON.parse(savedTopics) : {});
@@ -46,7 +45,6 @@ export const StaticTrackViewer: React.FC<StaticTrackViewerProps> = ({
     setExpandedMonths({ 1: true });
   }, [track, completedTopicsKey, completedProjectsKey]);
 
-  // Update localStorage when state changes
   useEffect(() => {
     if (Object.keys(completedTopics).length > 0 || localStorage.getItem(completedTopicsKey)) {
       localStorage.setItem(completedTopicsKey, JSON.stringify(completedTopics));
@@ -81,7 +79,6 @@ export const StaticTrackViewer: React.FC<StaticTrackViewerProps> = ({
     }));
   };
 
-  // Progress Calculations
   const totalTopics = roadmapData.reduce((sum, month) => sum + month.topics.length, 0);
   const totalProjects = roadmapData.length;
   const totalItems = totalTopics + totalProjects;
@@ -95,17 +92,17 @@ export const StaticTrackViewer: React.FC<StaticTrackViewerProps> = ({
   return (
     <div className="space-y-8 animate-fadeIn text-left font-sans">
       {/* Overall Progress Widget */}
-      <div className="glass-panel rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-between border border-white/10 gap-6">
+      <div className="mosaic-card p-6 flex flex-col sm:flex-row items-center justify-between border border-[var(--card-border)] bg-white gap-6">
         <div className="flex items-center space-x-4">
-          <div className="h-12 w-12 rounded-xl bg-purple-500/10 border border-purple-500/25 flex items-center justify-center flex-shrink-0">
+          <div className="h-12 w-12 rounded-xl bg-teal-50 border border-teal-200 flex items-center justify-center flex-shrink-0">
             {track === 'ai-engineer' ? (
-              <Cpu className="h-6 w-6 text-purple-400" />
+              <Cpu className="h-6 w-6 text-teal-600" />
             ) : (
-              <TrendingUp className="h-6 w-6 text-blue-400" />
+              <TrendingUp className="h-6 w-6 text-blue-600" />
             )}
           </div>
           <div className="text-left">
-            <h3 className="text-lg font-bold text-white">
+            <h3 className="text-lg font-bold text-[var(--ink-900)] font-heading">
               {trackTitle ||
                 (track === 'ai-engineer'
                   ? 'AI Engineer Curriculum'
@@ -113,7 +110,7 @@ export const StaticTrackViewer: React.FC<StaticTrackViewerProps> = ({
                   ? 'Data Scientist Curriculum'
                   : `${track.replace(/-/g, ' ').toUpperCase()} Curriculum`)}
             </h3>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-[var(--ink-muted)]">
               {trackDescription ||
                 (track === 'ai-engineer'
                   ? 'Practical, project-first path to production LLM apps'
@@ -121,20 +118,17 @@ export const StaticTrackViewer: React.FC<StaticTrackViewerProps> = ({
             </p>
           </div>
         </div>
+
         <div className="w-full sm:w-64 space-y-2">
-          <div className="flex justify-between text-xs font-semibold text-white/90">
+          <div className="flex justify-between text-xs font-semibold text-[var(--ink-900)]">
             <span>{progress}% Completed</span>
-            <span className="text-slate-400">
+            <span className="text-[var(--ink-muted)]">
               {totalCompletedItems} / {totalItems} Milestones
             </span>
           </div>
-          <div className="h-3 w-full bg-white/5 rounded-full overflow-hidden border border-white/5 relative">
+          <div className="h-2.5 w-full bg-slate-100 rounded-full overflow-hidden border border-slate-200">
             <div
-              className={`h-full rounded-full transition-all duration-500 ease-out ${
-                track === 'ai-engineer'
-                  ? 'bg-gradient-to-r from-purple-500 to-indigo-500'
-                  : 'bg-gradient-to-r from-blue-500 to-indigo-500'
-              }`}
+              className="h-full rounded-full bg-teal-600 transition-all duration-500 ease-out"
               style={{ width: `${progress}%` }}
             />
           </div>
@@ -142,12 +136,11 @@ export const StaticTrackViewer: React.FC<StaticTrackViewerProps> = ({
       </div>
 
       {/* Timeline detailing months */}
-      <div className="relative border-l border-white/10 ml-4 pl-8 space-y-8 text-left">
+      <div className="relative border-l border-slate-200 ml-4 pl-8 space-y-8 text-left">
         {roadmapData.map((month) => {
           const isExpanded = !!expandedMonths[month.number];
           const completedProjectsInMonth = completedProjects[month.number] ? 1 : 0;
 
-          // Calculate completed topics in this month
           const completedTopicsInMonth = month.topics.filter(
             (_, idx) => !!completedTopics[`m${month.number}-t${idx}`]
           ).length;
@@ -163,13 +156,11 @@ export const StaticTrackViewer: React.FC<StaticTrackViewerProps> = ({
                 onClick={() => {
                   const targetState = !isMonthCompleted;
 
-                  // Toggle project
                   setCompletedProjects((prev) => ({
                     ...prev,
                     [month.number]: targetState,
                   }));
 
-                  // Toggle all topics
                   setCompletedTopics((prev) => {
                     const updated = { ...prev };
                     month.topics.forEach((_, idx) => {
@@ -178,52 +169,52 @@ export const StaticTrackViewer: React.FC<StaticTrackViewerProps> = ({
                     return updated;
                   });
                 }}
-                className={`absolute -left-[45px] top-1 h-8 w-8 rounded-full border-2 flex items-center justify-center transition-all bg-slate-950 z-10 cursor-pointer focus:outline-none ${
+                className={`absolute -left-[45px] top-4 h-8 w-8 rounded-full border-2 flex items-center justify-center transition-all z-10 cursor-pointer focus:outline-none ${
                   isMonthCompleted
-                    ? 'border-purple-500 text-purple-400 shadow-[0_0_10px_rgba(168,85,247,0.2)]'
-                    : 'border-white/15 text-slate-400 group-hover:border-white/30'
+                    ? 'bg-teal-600 border-teal-700 text-white'
+                    : 'bg-white border-slate-300 text-slate-700 hover:border-teal-600'
                 }`}
                 title={isMonthCompleted ? 'Mark Month Incomplete' : 'Mark Month Complete'}
               >
                 {isMonthCompleted ? (
-                  <CheckCircle2 className="h-5 w-5 fill-purple-500/10" />
+                  <CheckCircle2 className="h-5 w-5" />
                 ) : (
                   <span className="text-xs font-bold font-heading">{month.number}</span>
                 )}
               </button>
 
               {/* Month Content Card */}
-              <div className="glass-card rounded-2xl border border-white/5 overflow-hidden transition-all hover:border-white/10 bg-slate-900/15">
+              <div className="mosaic-card p-0 bg-white border border-[var(--card-border)] overflow-hidden transition-all duration-200">
                 {/* Header Summary */}
                 <div
                   onClick={() => toggleMonthExpand(month.number)}
-                  className="p-5 flex items-center justify-between cursor-pointer hover:bg-white/[0.01] select-none"
+                  className="p-5 flex items-center justify-between cursor-pointer hover:bg-slate-50/60 select-none"
                 >
                   <div className="space-y-1 pr-4 text-left">
                     <h3
-                      className={`text-lg font-bold font-heading transition ${
-                        isMonthCompleted ? 'text-white/60 line-through' : 'text-white'
+                      className={`text-base font-extrabold font-heading transition ${
+                        isMonthCompleted ? 'text-slate-400 line-through' : 'text-[var(--ink-900)]'
                       }`}
                     >
                       Month {month.number}: {month.title}
                     </h3>
-                    <p className="text-slate-400 text-xs">
-                      Focus: <span className="text-indigo-400 font-medium">{month.focus}</span> •{' '}
+                    <p className="text-[var(--ink-muted)] text-xs">
+                      Focus: <span className="text-teal-700 font-bold">{month.focus}</span> •{' '}
                       {monthProgress} / {totalMonthItems} completed
                     </p>
                   </div>
-                  <button className="p-1 text-slate-400 hover:text-white transition rounded-full hover:bg-white/5 bg-transparent border-none focus:outline-none">
+                  <button className="p-1.5 text-slate-400 hover:text-slate-700 transition rounded-full hover:bg-slate-100 bg-transparent border-none focus:outline-none">
                     {isExpanded ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
                   </button>
                 </div>
 
                 {/* Expanded Content */}
                 {isExpanded && (
-                  <div className="px-5 pb-6 pt-2 border-t border-white/5 bg-white/[0.005] space-y-6">
+                  <div className="px-6 pb-6 pt-3 border-t border-slate-100 bg-slate-50/50 space-y-6">
                     {/* Topics List */}
                     <div className="space-y-3">
-                      <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                        <Code className="h-4 w-4 text-indigo-400" />
+                      <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5 font-heading">
+                        <Code className="h-4 w-4 text-teal-600" />
                         <span>Core Concepts to Master</span>
                       </h4>
 
@@ -234,18 +225,18 @@ export const StaticTrackViewer: React.FC<StaticTrackViewerProps> = ({
                             <div
                               key={idx}
                               onClick={() => toggleTopic(month.number, idx)}
-                              className="flex items-start space-x-3 p-3 rounded-xl bg-white/[0.02] border border-white/5 hover:border-white/10 transition cursor-pointer select-none"
+                              className="flex items-start space-x-3 p-3 rounded-xl bg-white border border-slate-200 hover:border-slate-300 transition cursor-pointer select-none"
                             >
-                              <button className="mt-0.5 flex-shrink-0 text-slate-400 hover:text-white transition bg-transparent border-none p-0 focus:outline-none">
+                              <button className="mt-0.5 flex-shrink-0 text-slate-400 hover:text-slate-700 transition bg-transparent border-none p-0 focus:outline-none">
                                 {isTopicCompleted ? (
-                                  <CheckCircle2 className="h-4.5 w-4.5 text-purple-400 fill-purple-500/10" />
+                                  <CheckCircle2 className="h-4.5 w-4.5 text-emerald-600" />
                                 ) : (
-                                  <Circle className="h-4.5 w-4.5 text-white/20" />
+                                  <Circle className="h-4.5 w-4.5 text-slate-300" />
                                 )}
                               </button>
                               <span
                                 className={`text-xs leading-relaxed ${
-                                  isTopicCompleted ? 'text-white/40 line-through' : 'text-white/85'
+                                  isTopicCompleted ? 'text-slate-400 line-through' : 'text-slate-900 font-medium'
                                 }`}
                               >
                                 {topic}
@@ -258,37 +249,34 @@ export const StaticTrackViewer: React.FC<StaticTrackViewerProps> = ({
 
                     {/* Tools list */}
                     <div className="space-y-2.5">
-                      <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                        <Wrench className="h-4 w-4 text-cyan-400" />
+                      <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5 font-heading">
+                        <Wrench className="h-4 w-4 text-blue-600" />
                         <span>Recommended Tools & Tech Stack</span>
                       </h4>
                       <div className="flex flex-wrap gap-2">
                         {month.tools.map((tool, idx) => (
-                          <span
-                            key={idx}
-                            className="text-[11px] font-medium bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 px-2.5 py-1 rounded-lg"
-                          >
+                          <Badge key={idx} tone="info">
                             {tool}
-                          </span>
+                          </Badge>
                         ))}
                       </div>
                     </div>
 
                     {/* YouTube Channels */}
                     <div className="space-y-3">
-                      <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                        <Youtube className="h-4 w-4 text-rose-500" />
+                      <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5 font-heading">
+                        <Youtube className="h-4 w-4 text-rose-600" />
                         <span>Curated YouTube Channels</span>
                       </h4>
                       <div className="grid sm:grid-cols-2 gap-3">
                         {month.youtube.map((yt, idx) => (
                           <div
                             key={idx}
-                            className="flex items-center justify-between p-3 rounded-xl bg-white/[0.02] border border-white/5 hover:border-white/10 transition gap-4"
+                            className="flex items-center justify-between p-3 rounded-xl bg-white border border-slate-200 hover:border-slate-300 transition gap-4"
                           >
                             <div className="min-w-0">
-                              <h5 className="text-xs font-bold text-white/90">{yt.channel}</h5>
-                              <p className="text-[10px] text-slate-400 truncate mt-0.5">
+                              <h5 className="text-xs font-bold text-slate-900">{yt.channel}</h5>
+                              <p className="text-[10px] text-slate-500 truncate mt-0.5">
                                 {yt.bestFor}
                               </p>
                             </div>
@@ -296,7 +284,7 @@ export const StaticTrackViewer: React.FC<StaticTrackViewerProps> = ({
                               href={yt.searchUrl}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="flex-shrink-0 text-slate-400 hover:text-white transition bg-white/5 hover:bg-white/10 p-2 rounded-lg"
+                              className="flex-shrink-0 text-teal-600 hover:text-teal-800 transition bg-slate-50 hover:bg-slate-100 p-2 rounded-lg"
                               title={`Search ${yt.channel}`}
                             >
                               <ExternalLink className="h-3.5 w-3.5" />
@@ -308,43 +296,40 @@ export const StaticTrackViewer: React.FC<StaticTrackViewerProps> = ({
 
                     {/* Month Project Card */}
                     <div className="space-y-3">
-                      <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                        <FolderGit2 className="h-4 w-4 text-emerald-400" />
+                      <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5 font-heading">
+                        <FolderGit2 className="h-4 w-4 text-emerald-600" />
                         <span>Monthly Build Challenge</span>
                       </h4>
 
                       <div
                         onClick={() => toggleProject(month.number)}
-                        className={`p-4 rounded-2xl border transition-all cursor-pointer select-none bg-gradient-to-br from-indigo-500/[0.01] to-purple-500/[0.01] relative overflow-hidden ${
+                        className={`p-4 rounded-xl border transition-all cursor-pointer select-none bg-white ${
                           completedProjects[month.number]
-                            ? 'border-purple-500/40 bg-purple-500/[0.02]'
-                            : 'border-white/10 hover:border-white/20 hover:shadow-[0_0_15px_rgba(168,85,247,0.05)]'
+                            ? 'border-emerald-300 bg-emerald-50/40'
+                            : 'border-slate-200 hover:border-slate-300'
                         }`}
                       >
-                        {/* Light background glow effect */}
-                        <div className="absolute -right-10 -bottom-10 h-28 w-28 bg-indigo-500/5 rounded-full blur-2xl" />
-
-                        <div className="flex items-start space-x-4">
-                          <button className="mt-0.5 flex-shrink-0 text-slate-400 hover:text-white transition bg-transparent border-none p-0 focus:outline-none">
+                        <div className="flex items-start space-x-3">
+                          <button className="mt-0.5 flex-shrink-0 text-slate-400 hover:text-slate-700 transition bg-transparent border-none p-0 focus:outline-none">
                             {completedProjects[month.number] ? (
-                              <CheckCircle2 className="h-5 w-5 text-purple-400 fill-purple-500/10" />
+                              <CheckCircle2 className="h-5 w-5 text-emerald-600" />
                             ) : (
-                              <Circle className="h-5 w-5 text-white/20" />
+                              <Circle className="h-5 w-5 text-slate-300" />
                             )}
                           </button>
                           <div className="text-left space-y-1">
                             <h5
-                              className={`text-sm font-bold ${
-                                completedProjects[month.number] ? 'text-white/40 line-through' : 'text-white'
+                              className={`text-xs font-bold ${
+                                completedProjects[month.number] ? 'text-slate-400 line-through' : 'text-slate-900'
                               }`}
                             >
                               {month.project.title}
                             </h5>
                             <p
-                              className={`text-xs leading-relaxed ${
+                              className={`text-[11px] leading-relaxed ${
                                 completedProjects[month.number]
-                                  ? 'text-slate-400/50'
-                                  : 'text-slate-400'
+                                  ? 'text-slate-400'
+                                  : 'text-slate-600'
                               }`}
                             >
                               {month.project.description}

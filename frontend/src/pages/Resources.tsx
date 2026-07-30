@@ -1,10 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useAuthStore } from '../store/useAuthStore';
 import api from '../services/api';
-import Navbar from '../components/Navbar';
 import toast from 'react-hot-toast';
 import {
-  Search,
   Sparkles,
   Star,
   CheckCircle2,
@@ -14,10 +12,11 @@ import {
   Book,
   ExternalLink,
   Clock,
-  Filter,
-  ListFilter,
   AlertOctagon,
 } from 'lucide-react';
+import { MosaicShell } from '../components/mosaic/MosaicShell';
+import { TopHeader } from '../components/mosaic/TopHeader';
+import { Badge } from '../components/mosaic/Badge';
 
 interface Resource {
   id: string;
@@ -69,383 +68,256 @@ export function Resources() {
       if (response.data && response.data.recommendations) {
         setRecommendations(response.data.recommendations);
       }
-    } catch (err) {
-      console.error('Failed to load AI recommendations:', err);
+    } catch (error) {
+      console.error('Error fetching recommendations:', error);
     }
   };
 
   useEffect(() => {
-    const init = async () => {
+    const loadAll = async () => {
       setIsLoading(true);
       await Promise.all([fetchResources(), fetchRecommendations()]);
       setIsLoading(false);
     };
-    init();
-  }, [category, difficulty, bookmarkedOnly]);
+    loadAll();
+  }, []);
 
-  // Debounced/Triggered search execution
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  useEffect(() => {
     fetchResources();
-  };
+  }, [category, difficulty, search, bookmarkedOnly]);
 
-  const handleToggleComplete = async (resourceId: string, currentStatus: boolean) => {
-    // Optimistic toggle local list
-    const updateList = (list: Resource[]) =>
-      list.map((r) => {
-        if (r.id !== resourceId) return r;
-        return { ...r, isCompleted: !currentStatus };
-      });
-
-    setResources((prev) => updateList(prev));
-    setRecommendations((prev) => updateList(prev));
+  const handleToggleState = async (resourceId: string, action: 'toggle-complete' | 'toggle-bookmark') => {
+    setResources((prev) =>
+      prev.map((r) => {
+        if (r.id === resourceId) {
+          return {
+            ...r,
+            isCompleted: action === 'toggle-complete' ? !r.isCompleted : r.isCompleted,
+            isBookmarked: action === 'toggle-bookmark' ? !r.isBookmarked : r.isBookmarked,
+          };
+        }
+        return r;
+      })
+    );
 
     try {
-      await api.patch(`/resources/${resourceId}/toggle-complete`, {
-        isCompleted: !currentStatus,
-      });
-      toast.success(!currentStatus ? 'Marked as completed!' : 'Marked as incomplete');
+      const endpoint = action === 'toggle-complete' ? 'complete' : 'bookmark';
+      await api.post(`/resources/${resourceId}/${endpoint}`);
+      toast.success(action === 'toggle-complete' ? 'Resource status updated!' : 'Bookmark updated!');
     } catch (error) {
-      console.error('Failed to toggle completion status:', error);
-      toast.error('Failed to update completion status.');
-      // Rollback
+      console.error(`Error updating resource ${action}:`, error);
+      toast.error('Failed to save state.');
       fetchResources();
-      fetchRecommendations();
     }
   };
 
-  const handleToggleBookmark = async (resourceId: string, currentStatus: boolean) => {
-    // Optimistic toggle local list
-    const updateList = (list: Resource[]) =>
-      list.map((r) => {
-        if (r.id !== resourceId) return r;
-        return { ...r, isBookmarked: !currentStatus };
-      });
-
-    setResources((prev) => updateList(prev));
-    setRecommendations((prev) => updateList(prev));
-
+  const handleTrackClick = async (resource: Resource) => {
     try {
-      await api.patch(`/resources/${resourceId}/bookmark`, {
-        isBookmarked: !currentStatus,
-      });
-      toast.success(!currentStatus ? 'Added to Bookmarks!' : 'Removed from Bookmarks');
-    } catch (error) {
-      console.error('Failed to toggle bookmark:', error);
-      toast.error('Failed to update bookmark.');
-      // Rollback
-      fetchResources();
-      fetchRecommendations();
+      await api.post(`/resources/${resource.id}/click`);
+    } catch (err) {
+      console.error('Failed to log click', err);
     }
+    window.open(resource.url, '_blank', 'noopener,noreferrer');
   };
 
-  const getResourceIcon = (type: string) => {
-    switch (type) {
+  const getCategoryIcon = (cat: string) => {
+    switch (cat) {
       case 'video':
-        return <Video className="h-4 w-4 text-blue-400" />;
-      case 'book':
-        return <Book className="h-4 w-4 text-emerald-400" />;
+        return <Video className="h-4 w-4 text-purple-600" />;
+      case 'documentation':
+        return <Book className="h-4 w-4 text-blue-600" />;
+      case 'article':
+        return <BookOpen className="h-4 w-4 text-teal-600" />;
       default:
-        return <BookOpen className="h-4 w-4 text-amber-400" />;
+        return <BookOpen className="h-4 w-4 text-slate-600" />;
     }
   };
 
-  const getDifficultyStyles = (level: string) => {
-    switch (level) {
-      case 'advanced':
-        return 'text-rose-400 bg-rose-400/10 border-rose-400/20';
-      case 'intermediate':
-        return 'text-purple-400 bg-purple-400/10 border-purple-400/20';
-      default:
-        return 'text-cyan-400 bg-cyan-400/10 border-cyan-400/20';
-    }
-  };
-
-  const formatEstimatedTime = (minutes: number) => {
-    if (minutes >= 60) {
-      const hours = Math.round((minutes / 60) * 10) / 10;
-      return `${hours} hour${hours > 1 ? 's' : ''}`;
-    }
-    return `${minutes} mins`;
-  };
-
-  if (isLoading && resources.length === 0) {
+  if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background text-foreground">
+      <div className="flex min-h-screen items-center justify-center bg-[var(--page-bg)] text-[var(--ink-900)]">
         <div className="text-center space-y-3">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto"></div>
-          <p className="text-muted-foreground text-sm">Loading Learning Hub...</p>
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-teal-600 border-t-transparent mx-auto"></div>
+          <p className="text-[var(--ink-muted)] text-sm font-medium">Loading Learning Hub Catalog...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen text-white font-sans flex flex-col">
-      <Navbar />
+    <MosaicShell>
+      <TopHeader
+        title="Learning Hub & Resources"
+        subtitle={`Curated Documentation & Tutorial Videos • ${user?.preferredCareer || 'Engineering Pathway'}`}
+        searchPlaceholder="Filter resources by topic or skill..."
+        searchValue={search}
+        onSearchChange={setSearch}
+      />
 
-      <main className="flex-1 max-w-7xl mx-auto w-full px-6 py-8 space-y-10 text-left">
-        {/* Header Summary */}
-        <div className="space-y-2">
-          <h1 className="text-3xl sm:text-4xl font-bold font-heading">Learning Hub</h1>
-          <p className="text-muted-foreground text-sm sm:text-base max-w-2xl">
-            Browse through curated tutorials, practice platforms, documentation guides, and video bootcamps. Sync updates directly to your active roadmap topics.
-          </p>
+      {/* Filter Tabs Row */}
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[var(--card-border)] pb-4">
+        {/* Category Pills */}
+        <div className="flex flex-wrap items-center gap-2">
+          {['all', 'video', 'article', 'documentation', 'practice', 'course'].map((cat) => (
+            <button
+              key={cat}
+              onClick={() => setCategory(cat)}
+              className={`px-3.5 py-1.5 rounded-full text-xs font-bold capitalize transition ${
+                category === cat
+                  ? 'bg-[var(--btn-primary-bg)] text-white shadow-sm'
+                  : 'bg-white text-[var(--ink-700)] border border-[var(--card-border)] hover:bg-slate-50'
+              }`}
+            >
+              {cat}
+            </button>
+          ))}
         </div>
 
-        {/* AI Recommendations Panel */}
-        {recommendations.length > 0 && (
-          <div className="glass-panel rounded-2xl p-6 border border-indigo-500/10 space-y-6 relative overflow-hidden bg-gradient-to-r from-indigo-500/[0.02] to-transparent">
-            <div className="absolute top-0 right-0 h-40 w-40 bg-indigo-500/5 rounded-full blur-3xl" />
-            
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <div className="h-8 w-8 rounded-lg bg-indigo-500/15 border border-indigo-500/25 flex items-center justify-center">
-                  <Sparkles className="h-4.5 w-4.5 text-indigo-400" />
+        {/* Difficulty & Bookmarks Filter */}
+        <div className="flex items-center space-x-3">
+          <select
+            value={difficulty}
+            onChange={(e) => setDifficulty(e.target.value)}
+            className="bg-white border border-[var(--card-border)] rounded-full px-3 py-1.5 text-xs text-[var(--ink-900)] font-semibold focus:outline-none focus:border-teal-600 shadow-sm"
+          >
+            <option value="all">All Difficulties</option>
+            <option value="beginner">Beginner</option>
+            <option value="intermediate">Intermediate</option>
+            <option value="advanced">Advanced</option>
+          </select>
+
+          <button
+            onClick={() => setBookmarkedOnly(!bookmarkedOnly)}
+            className={`px-3 py-1.5 rounded-full text-xs font-bold flex items-center space-x-1.5 transition ${
+              bookmarkedOnly
+                ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                : 'bg-white text-[var(--ink-muted)] border border-[var(--card-border)] hover:text-slate-900'
+            }`}
+          >
+            <Star className={`h-3.5 w-3.5 ${bookmarkedOnly ? 'fill-amber-500 text-amber-500' : ''}`} />
+            <span>Saved Only</span>
+          </button>
+        </div>
+      </div>
+
+      {/* AI Recommendations Highlight Banner */}
+      {recommendations.length > 0 && !search && category === 'all' && (
+        <div className="mosaic-card p-6 space-y-4 text-left border-teal-200 bg-teal-50/50">
+          <div className="flex items-center space-x-2">
+            <Sparkles className="h-5 w-5 text-teal-600" />
+            <h3 className="text-sm font-bold text-teal-950 font-heading">
+              AI Recommendations for {user?.preferredCareer || 'Your Pathway'}
+            </h3>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-4">
+            {recommendations.slice(0, 3).map((rec) => (
+              <div
+                key={rec.id}
+                onClick={() => handleTrackClick(rec)}
+                className="bg-white p-4 rounded-xl border border-teal-200/80 hover:border-teal-400 transition cursor-pointer space-y-2 flex flex-col justify-between"
+              >
+                <div>
+                  <div className="flex items-center justify-between text-[10px] font-bold text-teal-700">
+                    <span className="uppercase">{rec.category}</span>
+                    <span>{rec.estimatedTime} min</span>
+                  </div>
+                  <h4 className="text-xs font-bold text-slate-900 mt-1 line-clamp-2">{rec.title}</h4>
                 </div>
-                <h3 className="text-lg font-bold font-heading">AI Recommendations For You</h3>
+
+                <span className="text-[11px] font-bold text-teal-700 flex items-center space-x-1 pt-2">
+                  <span>Explore Now</span>
+                  <ExternalLink className="h-3 w-3" />
+                </span>
               </div>
-              <span className="text-xs text-muted-foreground">Customized for {user?.preferredCareer || 'your role'}</span>
-            </div>
+            ))}
+          </div>
+        </div>
+      )}
 
-            <div className="grid md:grid-cols-3 gap-6">
-              {recommendations.map((item) => (
-                <div
-                  key={item.id}
-                  className="glass-card rounded-xl p-5 border border-white/5 flex flex-col justify-between hover:border-white/10 transition relative bg-white/[0.01]"
-                >
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="flex items-center space-x-1 text-[10px] text-muted-foreground font-medium capitalize">
-                        {getResourceIcon(item.category)}
-                        <span>{item.category}</span>
-                      </span>
-                      <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border ${getDifficultyStyles(item.difficulty)}`}>
-                        {item.difficulty}
-                      </span>
-                    </div>
-                    <h4 className="text-sm font-bold line-clamp-1">{item.title}</h4>
-                    <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">{item.description}</p>
+      {/* Main Resources Catalog Grid */}
+      <div className="space-y-4">
+        {isError ? (
+          <div className="mosaic-card p-8 text-center space-y-3 max-w-md mx-auto">
+            <AlertOctagon className="h-10 w-10 text-rose-500 mx-auto" />
+            <h3 className="text-base font-bold text-[var(--ink-900)]">Failed to Load Catalog</h3>
+            <button onClick={fetchResources} className="mosaic-btn-primary !py-2 !px-4 !text-xs">
+              Retry
+            </button>
+          </div>
+        ) : resources.length === 0 ? (
+          <div className="mosaic-card p-12 text-center space-y-3">
+            <BookOpen className="h-10 w-10 text-slate-400 mx-auto" />
+            <h3 className="text-base font-bold text-[var(--ink-900)]">No Resources Found</h3>
+            <p className="text-xs text-[var(--ink-muted)]">
+              Try adjusting your search filters or clearing the bookmark selection.
+            </p>
+          </div>
+        ) : (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {resources.map((res) => (
+              <div
+                key={res.id}
+                className="mosaic-card p-5 space-y-3 text-left flex flex-col justify-between hover:border-teal-400/50 transition bg-white"
+              >
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Badge tone="purple" icon={getCategoryIcon(res.category)}>
+                      {res.category}
+                    </Badge>
+
+                    <button
+                      onClick={() => handleToggleState(res.id, 'toggle-bookmark')}
+                      className="text-slate-400 hover:text-amber-500 transition p-1"
+                      title={res.isBookmarked ? 'Remove Bookmark' : 'Bookmark'}
+                    >
+                      <Star className={`h-4 w-4 ${res.isBookmarked ? 'fill-amber-400 text-amber-500' : ''}`} />
+                    </button>
                   </div>
 
-                  <div className="mt-5 pt-3 border-t border-white/5 flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <button
-                        onClick={() => handleToggleComplete(item.id, item.isCompleted)}
-                        className="p-1 text-muted-foreground hover:text-white transition"
-                        title={item.isCompleted ? 'Mark incomplete' : 'Mark complete'}
-                      >
-                        {item.isCompleted ? (
-                          <CheckCircle2 className="h-4.5 w-4.5 text-indigo-400 fill-indigo-500/5" />
-                        ) : (
-                          <Circle className="h-4.5 w-4.5 text-white/30" />
-                        )}
-                      </button>
-                      <button
-                        onClick={() => handleToggleBookmark(item.id, item.isBookmarked)}
-                        className="p-1 text-muted-foreground hover:text-white transition"
-                        title={item.isBookmarked ? 'Remove bookmark' : 'Bookmark resource'}
-                      >
-                        <Star className={`h-4.5 w-4.5 ${item.isBookmarked ? 'text-amber-400 fill-amber-400' : 'text-white/30'}`} />
-                      </button>
-                    </div>
+                  <h4 className="text-sm font-bold text-[var(--ink-900)] line-clamp-2">{res.title}</h4>
+                  <p className="text-xs text-[var(--ink-muted)] line-clamp-2 leading-relaxed">
+                    {res.description}
+                  </p>
+                </div>
 
-                    <a
-                      href={item.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs text-muted-foreground hover:text-white flex items-center space-x-1 border border-white/5 px-2.5 py-1 rounded bg-white/5 transition"
+                <div className="space-y-3 pt-3 border-t border-slate-100">
+                  <div className="flex items-center justify-between text-[11px] text-[var(--ink-muted)]">
+                    <span className="flex items-center space-x-1">
+                      <Clock className="h-3 w-3" />
+                      <span>{res.estimatedTime} mins</span>
+                    </span>
+                    <span className="font-semibold capitalize">{res.difficulty}</span>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-2">
+                    <button
+                      onClick={() => handleToggleState(res.id, 'toggle-complete')}
+                      className="flex items-center space-x-1.5 text-xs font-semibold text-slate-600 hover:text-teal-700 transition"
                     >
-                      <span>Study</span>
+                      {res.isCompleted ? (
+                        <CheckCircle2 className="h-4 w-4 text-emerald-600 fill-emerald-100" />
+                      ) : (
+                        <Circle className="h-4 w-4 text-slate-300" />
+                      )}
+                      <span>{res.isCompleted ? 'Completed' : 'Mark Done'}</span>
+                    </button>
+
+                    <button
+                      onClick={() => handleTrackClick(res)}
+                      className="mosaic-btn-brand !py-1.5 !px-3 !text-xs flex items-center space-x-1"
+                    >
+                      <span>Open Link</span>
                       <ExternalLink className="h-3 w-3" />
-                    </a>
+                    </button>
                   </div>
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
           </div>
         )}
-
-        {/* Search, Filter Tabs & Main Catalog Grid */}
-        <div className="grid lg:grid-cols-12 gap-8 items-start">
-          {/* Left Panel: Search and Filters */}
-          <div className="lg:col-span-4 space-y-6">
-            <div className="glass-panel rounded-2xl p-6 border border-white/5 space-y-6">
-              <div className="flex items-center space-x-2">
-                <Filter className="h-5 w-5 text-blue-400" />
-                <h3 className="text-lg font-bold font-heading">Filter Resources</h3>
-              </div>
-
-              {/* Text Search Form */}
-              <form onSubmit={handleSearchSubmit} className="relative">
-                <input
-                  type="text"
-                  placeholder="Search resources, tags..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 pl-10 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition text-white"
-                />
-                <Search className="absolute left-3.5 top-3 h-4.5 w-4.5 text-muted-foreground" />
-                <button type="submit" className="hidden">Search</button>
-              </form>
-
-              {/* Dropdown Filters */}
-              <div className="space-y-4">
-                {/* Category Selection */}
-                <div className="space-y-1.5 text-left">
-                  <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Category</label>
-                  <select
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value)}
-                    className="w-full bg-slate-900 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:border-blue-500 text-white"
-                  >
-                    <option value="all">All Categories</option>
-                    <option value="video">Videos</option>
-                    <option value="article">Articles</option>
-                    <option value="documentation">Documentation</option>
-                    <option value="practice">Practice Websites</option>
-                    <option value="course">Structured Courses</option>
-                  </select>
-                </div>
-
-                {/* Difficulty Selection */}
-                <div className="space-y-1.5 text-left">
-                  <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Difficulty</label>
-                  <select
-                    value={difficulty}
-                    onChange={(e) => setDifficulty(e.target.value)}
-                    className="w-full bg-slate-900 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:border-blue-500 text-white"
-                  >
-                    <option value="all">All Difficulties</option>
-                    <option value="beginner">Beginner</option>
-                    <option value="intermediate">Intermediate</option>
-                    <option value="advanced">Advanced</option>
-                  </select>
-                </div>
-
-                {/* Bookmarked Filter Checkbox */}
-                <label className="flex items-center space-x-3 cursor-pointer select-none py-2 text-sm text-left">
-                  <input
-                    type="checkbox"
-                    checked={bookmarkedOnly}
-                    onChange={(e) => setBookmarkedOnly(e.target.checked)}
-                    className="h-4 w-4 rounded bg-white/5 border border-white/10 text-indigo-500 focus:ring-indigo-500"
-                  />
-                  <span className="font-semibold text-white/90">Show Bookmarked Only</span>
-                </label>
-              </div>
-            </div>
-          </div>
-
-          {/* Right Panel: Catalog Grid list */}
-          <div className="lg:col-span-8 space-y-6">
-            {isError ? (
-              <div className="glass-panel rounded-2xl p-10 text-center space-y-4">
-                <AlertOctagon className="h-10 w-10 text-rose-500 mx-auto" />
-                <h3 className="text-lg font-bold">Failed to load resource library</h3>
-                <p className="text-muted-foreground text-sm max-w-sm mx-auto">
-                  We encountered an error query. Please click retry to synchronize search indexes.
-                </p>
-                <button
-                  onClick={fetchResources}
-                  className="bg-primary px-5 py-2 rounded-lg font-semibold text-xs transition hover:opacity-90"
-                >
-                  Retry Search
-                </button>
-              </div>
-            ) : resources.length === 0 ? (
-              <div className="glass-panel rounded-2xl p-12 text-center text-muted-foreground space-y-3">
-                <ListFilter className="h-10 w-10 text-white/20 mx-auto" />
-                <h3 className="text-base font-bold text-white/80">No Resources Found</h3>
-                <p className="text-xs max-w-xs mx-auto leading-relaxed">
-                  No matches matched your category, search tags, or bookmark selection. Try relaxing your filters.
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between text-xs text-muted-foreground px-1">
-                  <span>Showing {resources.length} resources</span>
-                  <span>Sort: popularity</span>
-                </div>
-
-                <div className="grid sm:grid-cols-2 gap-6">
-                  {resources.map((item) => (
-                    <div
-                      key={item.id}
-                      className="glass-card rounded-2xl p-5 border border-white/5 hover:border-white/10 transition flex flex-col justify-between min-h-[220px]"
-                    >
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          <span className="flex items-center space-x-1.5 text-[10px] text-muted-foreground font-medium capitalize">
-                            {getResourceIcon(item.category)}
-                            <span>{item.category}</span>
-                          </span>
-                          <div className="flex items-center space-x-2">
-                            <span className="flex items-center space-x-1 text-[10px] text-muted-foreground font-semibold">
-                              <Clock className="h-3 w-3" />
-                              <span>{formatEstimatedTime(item.estimatedTime)}</span>
-                            </span>
-                            <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border ${getDifficultyStyles(item.difficulty)}`}>
-                              {item.difficulty}
-                            </span>
-                          </div>
-                        </div>
-
-                        <h3 className="text-base font-bold text-left line-clamp-1">{item.title}</h3>
-                        <p className="text-xs text-muted-foreground text-left line-clamp-2 leading-relaxed">
-                          {item.description}
-                        </p>
-
-                        <div className="flex flex-wrap gap-1.5 pt-1.5">
-                          {item.tags.slice(0, 3).map((t, idx) => (
-                            <span key={idx} className="text-[9px] px-2 py-0.5 rounded bg-white/5 border border-white/5 text-white/60">
-                              #{t}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div className="mt-6 pt-3.5 border-t border-white/5 flex items-center justify-between">
-                        <div className="flex items-center space-x-3">
-                          <button
-                            onClick={() => handleToggleComplete(item.id, item.isCompleted)}
-                            className="p-1.5 text-muted-foreground hover:text-white transition rounded-full hover:bg-white/5"
-                            title={item.isCompleted ? 'Mark incomplete' : 'Mark complete'}
-                          >
-                            {item.isCompleted ? (
-                              <CheckCircle2 className="h-5 w-5 text-indigo-400 fill-indigo-500/5" />
-                            ) : (
-                              <Circle className="h-5 w-5 text-white/30" />
-                            )}
-                          </button>
-                          <button
-                            onClick={() => handleToggleBookmark(item.id, item.isBookmarked)}
-                            className="p-1.5 text-muted-foreground hover:text-white transition rounded-full hover:bg-white/5"
-                            title={item.isBookmarked ? 'Remove bookmark' : 'Bookmark resource'}
-                          >
-                            <Star className={`h-5 w-5 ${item.isBookmarked ? 'text-amber-400 fill-amber-400' : 'text-white/30'}`} />
-                          </button>
-                        </div>
-
-                        <a
-                          href={item.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="bg-primary hover:opacity-90 transition text-primary-foreground font-semibold px-4 py-2 rounded-lg text-xs flex items-center space-x-1.5"
-                        >
-                          <span>Open Link</span>
-                          <ExternalLink className="h-3.5 w-3.5" />
-                        </a>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </main>
-    </div>
+      </div>
+    </MosaicShell>
   );
 }
 
