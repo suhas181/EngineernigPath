@@ -22,11 +22,11 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({
   const getResourceIcon = (type: string) => {
     switch (type) {
       case 'video':
-        return <Video className="h-4 w-4 text-blue-400" />;
+        return <Video className="h-3.5 w-3.5 text-blue-600" />;
       case 'book':
-        return <Book className="h-4 w-4 text-emerald-400" />;
+        return <Book className="h-3.5 w-3.5 text-emerald-600" />;
       default:
-        return <BookOpen className="h-4 w-4 text-amber-400" />;
+        return <BookOpen className="h-3.5 w-3.5 text-amber-600" />;
     }
   };
 
@@ -46,7 +46,7 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({
   };
 
   return (
-    <div className="glass-card rounded-xl p-3 border border-white/5 bg-slate-900/40 hover:border-white/10 transition flex flex-col justify-between h-full space-y-3 text-left">
+    <div className="bg-white border border-[var(--card-border)] rounded-xl p-3.5 hover:shadow-sm transition flex flex-col justify-between h-full space-y-3 text-left">
       <div className="space-y-1">
         <div className="flex justify-between items-start">
           <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
@@ -54,26 +54,26 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({
           </span>
           <button
             onClick={() => onToggle(topicId, resource.id, undefined, undefined)}
-            className="text-slate-400 hover:text-white transition bg-transparent border-none p-0 focus:outline-none"
+            className="text-slate-400 hover:text-slate-700 transition bg-transparent border-none p-0 focus:outline-none cursor-pointer"
           >
             {resource.isCompleted ? (
-              <CheckCircle2 className="h-4 w-4 text-emerald-400 fill-emerald-500/10" />
+              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
             ) : (
-              <Circle className="h-4 w-4 text-white/30" />
+              <Circle className="h-4 w-4 text-slate-300" />
             )}
           </button>
         </div>
         <h6
           className={`text-xs font-bold leading-snug line-clamp-2 ${
-            resource.isCompleted ? 'text-slate-500 line-through' : 'text-white'
+            resource.isCompleted ? 'text-slate-400 line-through' : 'text-slate-900'
           }`}
         >
           {resource.title}
         </h6>
       </div>
 
-      <div className="flex justify-between items-center pt-1">
-        <span className="flex items-center space-x-1 text-[9px] text-slate-400 capitalize">
+      <div className="flex justify-between items-center pt-1 border-t border-slate-100">
+        <span className="flex items-center space-x-1 text-[10px] font-semibold text-slate-500 capitalize">
           {getResourceIcon(resource.type)}
           <span>{resource.type}</span>
         </span>
@@ -81,7 +81,7 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({
           href={resource.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-xs text-indigo-400 hover:text-white transition flex items-center space-x-1 font-semibold"
+          className="text-xs text-teal-600 hover:text-teal-800 transition flex items-center space-x-1 font-bold"
         >
           <span>Study</span>
           <ExternalLink className="h-3 w-3" />

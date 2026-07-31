@@ -13,13 +13,14 @@ export interface TogglePayload {
 }
 
 export interface WeeklyReviewPayload {
-  easySolved: number;
-  mediumSolved: number;
-  hardSolved: number;
-  completedTopicIds: string[];
-  difficultTopics: string[];
-  projectCompleted: boolean;
-  adaptRoadmap: boolean;
+  easySolved?: number;
+  mediumSolved?: number;
+  hardSolved?: number;
+  completedTopicIds?: string[];
+  difficultTopics?: string[];
+  projectCompleted?: boolean;
+  adaptRoadmap?: boolean;
+  weekNumber?: number;
 }
 
 /**
@@ -28,7 +29,7 @@ export interface WeeklyReviewPayload {
 export const getRoadmap = async (debugWeeklyReview?: boolean) => {
   const url = debugWeeklyReview ? '/roadmaps?debugWeeklyReview=true' : '/roadmaps';
   const response = await api.get(url);
-  return response.data;
+  return response.data && response.data.roadmap !== undefined ? response.data.roadmap : response.data;
 };
 
 /**
@@ -36,7 +37,7 @@ export const getRoadmap = async (debugWeeklyReview?: boolean) => {
  */
 export const generateRoadmap = async (regenerate: boolean = false) => {
   const response = await api.post('/roadmaps/generate', { regenerate });
-  return response.data;
+  return response.data && response.data.roadmap !== undefined ? response.data.roadmap : response.data;
 };
 
 /**
@@ -44,7 +45,23 @@ export const generateRoadmap = async (regenerate: boolean = false) => {
  */
 export const toggleRoadmapItem = async (payload: TogglePayload) => {
   const response = await api.patch('/roadmaps/toggle', payload);
-  return response.data;
+  return response.data && response.data.roadmap !== undefined ? response.data.roadmap : response.data;
+};
+
+export const updateRoadmapProgress = async (
+  topicId: string,
+  resourceId?: string,
+  problemId?: string,
+  projectPayload?: any,
+  isCompletedMonth?: boolean
+) => {
+  return toggleRoadmapItem({
+    topicId,
+    resourceId,
+    problemId,
+    project: projectPayload,
+    isCompleted: isCompletedMonth,
+  });
 };
 
 /**
@@ -69,8 +86,8 @@ export const submitProjectLinks = async (
     project: {
       githubSubmission: github,
       liveDemoSubmission: demo,
-      isCompleted
-    }
+      isCompleted,
+    },
   });
 };
 
@@ -79,5 +96,5 @@ export const submitProjectLinks = async (
  */
 export const selectActiveRoadmap = async (trackSlug: string, roadmapId?: string, title?: string) => {
   const response = await api.post('/roadmaps/select-active', { trackSlug, roadmapId, title });
-  return response.data;
+  return response.data && response.data.roadmap !== undefined ? response.data.roadmap : response.data;
 };

@@ -1,6 +1,7 @@
 import React from 'react';
 import { ExternalLink, CheckCircle2, Circle } from 'lucide-react';
 import { PracticeProblem } from '../roadmap.types';
+import { Badge } from '../../mosaic/Badge';
 
 interface PracticeProblemsProps {
   topicId: string;
@@ -19,64 +20,60 @@ export const PracticeProblems: React.FC<PracticeProblemsProps> = ({
   problems,
   onToggle,
 }) => {
-  const getDifficultyStyles = (difficulty: string) => {
-    switch (difficulty) {
+  const getDifficultyTone = (difficulty: string) => {
+    switch (difficulty?.toLowerCase()) {
       case 'advanced':
       case 'hard':
-        return 'text-rose-400 bg-rose-400/10 border-rose-400/20';
+        return 'danger';
       case 'intermediate':
       case 'medium':
-        return 'text-purple-400 bg-purple-400/10 border-purple-400/20';
+        return 'warning';
       default:
-        return 'text-cyan-400 bg-cyan-400/10 border-cyan-400/20';
+        return 'success';
     }
   };
 
   return (
     <div className="space-y-2 text-left">
-      <span className="text-[10px] text-slate-400 uppercase font-bold block">
-        Target Practice Problems:
+      <span className="text-[10px] text-[var(--ink-muted)] uppercase font-bold tracking-wider block">
+        Target Practice Problems
       </span>
       <div className="space-y-1.5 font-sans">
         {problems.map((prob) => (
           <div
             key={prob.id}
-            className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.01] border border-white/5 hover:border-white/10 transition text-xs"
+            className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-200 hover:border-slate-300 transition text-xs"
           >
-            <div className="flex items-center space-x-2 min-w-0">
+            <div className="flex items-center space-x-2.5 min-w-0">
               <button
                 onClick={() => onToggle(topicId, undefined, prob.id, undefined)}
-                className="text-slate-400 hover:text-white transition flex-shrink-0 bg-transparent border-none p-0 focus:outline-none"
+                className="text-slate-400 hover:text-slate-700 transition flex-shrink-0 bg-transparent border-none p-0 focus:outline-none cursor-pointer"
               >
                 {prob.isCompleted ? (
-                  <CheckCircle2 className="h-4 w-4 text-emerald-400 fill-emerald-500/10" />
+                  <CheckCircle2 className="h-4 w-4 text-emerald-600" />
                 ) : (
-                  <Circle className="h-4 w-4 text-white/30" />
+                  <Circle className="h-4 w-4 text-slate-300" />
                 )}
               </button>
               <span
                 className={`font-semibold truncate block ${
-                  prob.isCompleted ? 'text-slate-500 line-through' : 'text-white'
+                  prob.isCompleted ? 'text-slate-400 line-through' : 'text-slate-900'
                 }`}
               >
                 {prob.title}
               </span>
-              <span
-                className={`text-[8px] font-bold uppercase px-1.5 py-0.5 rounded border ${getDifficultyStyles(
-                  prob.difficulty
-                )}`}
-              >
+              <Badge tone={getDifficultyTone(prob.difficulty) as any}>
                 {prob.difficulty}
-              </span>
+              </Badge>
             </div>
 
             <a
               href={prob.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-slate-400 hover:text-white transition p-1 bg-white/5 hover:bg-white/10 rounded"
+              className="text-teal-600 hover:text-teal-800 transition p-1 rounded"
             >
-              <ExternalLink className="h-3 w-3" />
+              <ExternalLink className="h-3.5 w-3.5" />
             </a>
           </div>
         ))}

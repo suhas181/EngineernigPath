@@ -2,23 +2,18 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/useAuthStore';
 import api from '../services/api';
-import Navbar from '../components/Navbar';
-import Footer from '../components/Footer';
 import toast from 'react-hot-toast';
 import {
   GraduationCap,
-  Briefcase,
-  Sparkles,
   Save,
-  RefreshCw,
-  Github,
-  Linkedin,
   BookOpen,
-  ArrowLeft,
   Code2,
   RotateCw,
+  User,
 } from 'lucide-react';
 import { CANONICAL_CAREER_PATHS } from '../constants/careerPaths';
+import { MosaicShell } from '../components/mosaic/MosaicShell';
+import { TopHeader } from '../components/mosaic/TopHeader';
 
 const POPULAR_SKILLS = [
   'React',
@@ -35,16 +30,7 @@ const POPULAR_SKILLS = [
   'AWS',
 ];
 
-const POPULAR_INTERESTS = [
-  'Open Source',
-  'Competitive Coding',
-  'Web Development',
-  'Mobile Development',
-  'Machine Learning',
-  'Cloud Computing',
-  'System Design',
-  'UI/UX Design',
-];
+
 
 const toggleCommaSeparatedItem = (currentStr: string, item: string): string => {
   const items = currentStr
@@ -74,6 +60,8 @@ const isItemInCommaString = (currentStr: string, item: string): boolean => {
 export function ProfileSettings() {
   const { user, setUser } = useAuthStore();
   const navigate = useNavigate();
+
+  const [activeTab, setActiveTab] = useState<'profile' | 'academic' | 'social'>('profile');
 
   const [formData, setFormData] = useState({
     name: user?.name || '',
@@ -108,7 +96,6 @@ export function ProfileSettings() {
     setIsSaving(true);
 
     try {
-      // Parse skills & interests from comma-separated strings
       const skillsArray = formData.skills
         .split(',')
         .map((s) => s.trim())
@@ -161,11 +148,9 @@ export function ProfileSettings() {
 
     setIsSyncingLeetCode(true);
     try {
-      // First save username if changed
       const patchRes = await api.patch('/users/profile', { leetcodeUsername: formData.leetcodeUsername.trim() });
       setUser(patchRes.data.user);
 
-      // Now trigger force refresh
       const res = await api.post('/users/leetcode/refresh');
       setUser(res.data.user);
       const total = (res.data.user.leetcodeEasyCount || 0) + (res.data.user.leetcodeMediumCount || 0) + (res.data.user.leetcodeHardCount || 0);
@@ -179,370 +164,259 @@ export function ProfileSettings() {
   };
 
   return (
-    <div className="min-h-screen text-white font-sans flex flex-col">
-      <Navbar />
+    <MosaicShell>
+      <TopHeader
+        title="Settings & Profile Preferences"
+        subtitle="Manage academic status, target career path, and profile configurations"
+        primaryActionLabel={isSaving ? 'Saving...' : 'Save Changes'}
+        onPrimaryAction={() => {
+          const btn = document.getElementById('submit-profile-form');
+          if (btn) btn.click();
+        }}
+        primaryActionIcon={<Save className="h-4 w-4" />}
+      />
 
-      <main className="flex-1 max-w-4xl mx-auto w-full px-6 py-10 space-y-8 text-left">
-        {/* Header Bar */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-white/10 pb-6">
-          <div className="space-y-1">
+      <div className="grid lg:grid-cols-12 gap-8 items-start text-left">
+        {/* Left Sub-Nav Panel */}
+        <div className="lg:col-span-3 space-y-2">
+          <div className="mosaic-card p-3 space-y-1">
             <button
-              onClick={() => navigate('/dashboard')}
-              className="text-xs text-muted-foreground hover:text-white flex items-center space-x-1 mb-2 transition"
+              type="button"
+              onClick={() => setActiveTab('profile')}
+              className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center space-x-2.5 transition ${
+                activeTab === 'profile'
+                  ? 'bg-teal-50 text-teal-800 font-extrabold'
+                  : 'text-slate-600 hover:bg-slate-50'
+              }`}
             >
-              <ArrowLeft className="h-3.5 w-3.5" />
-              <span>Back to Dashboard</span>
+              <User className="h-4 w-4 text-teal-600" />
+              <span>General Profile</span>
             </button>
-            <h1 className="text-3xl font-bold font-heading">Profile & Career Settings</h1>
-            <p className="text-sm text-muted-foreground">
-              Update your academic status, target career path, and skills anytime.
-            </p>
-          </div>
 
-          <div className="flex items-center space-x-2 bg-indigo-500/10 border border-indigo-500/20 px-3.5 py-2 rounded-xl text-xs text-indigo-400 font-semibold">
-            <Sparkles className="h-4 w-4" />
-            <span>Keeps your AI Roadmaps accurate</span>
+            <button
+              type="button"
+              onClick={() => setActiveTab('academic')}
+              className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center space-x-2.5 transition ${
+                activeTab === 'academic'
+                  ? 'bg-teal-50 text-teal-800 font-extrabold'
+                  : 'text-slate-600 hover:bg-slate-50'
+              }`}
+            >
+              <GraduationCap className="h-4 w-4 text-purple-600" />
+              <span>Academic & Role</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('social')}
+              className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center space-x-2.5 transition ${
+                activeTab === 'social'
+                  ? 'bg-teal-50 text-teal-800 font-extrabold'
+                  : 'text-slate-600 hover:bg-slate-50'
+              }`}
+            >
+              <BookOpen className="h-4 w-4 text-blue-600" />
+              <span>Skills & LeetCode</span>
+            </button>
           </div>
         </div>
 
-        {/* Form Container */}
-        <form onSubmit={handleSubmit} className="space-y-8">
-          {/* Section 1: Academic & Personal Info */}
-          <div className="glass-panel rounded-2xl p-6 space-y-6">
-            <div className="flex items-center space-x-2 border-b border-white/5 pb-4">
-              <GraduationCap className="h-5 w-5 text-blue-400" />
-              <h2 className="text-xl font-bold font-heading">Academic Profile</h2>
-            </div>
-
-            <div className="grid sm:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="text-xs font-semibold uppercase text-muted-foreground">Full Name</label>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  required
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500 transition"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-semibold uppercase text-muted-foreground">College / University</label>
-                <input
-                  type="text"
-                  name="college"
-                  value={formData.college}
-                  onChange={handleChange}
-                  required
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500 transition"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-semibold uppercase text-muted-foreground">Branch / Stream</label>
-                <input
-                  type="text"
-                  name="branch"
-                  value={formData.branch}
-                  onChange={handleChange}
-                  placeholder="e.g. Computer Science, ISE, ECE"
-                  required
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500 transition"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold uppercase text-muted-foreground">Current Semester</label>
-                  <select
-                    name="currentSemester"
-                    value={formData.currentSemester}
-                    onChange={handleChange}
-                    className="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500 transition"
-                  >
-                    {[1, 2, 3, 4, 5, 6, 7, 8].map((sem) => (
-                      <option key={sem} value={sem}>
-                        Semester {sem}
-                      </option>
-                    ))}
-                  </select>
+        {/* Form Panel */}
+        <div className="lg:col-span-9">
+          <form onSubmit={handleSubmit} className="mosaic-card p-8 space-y-8 bg-white">
+            {activeTab === 'profile' && (
+              <div className="space-y-6">
+                <div className="flex items-center space-x-2 border-b border-slate-100 pb-3">
+                  <User className="h-5 w-5 text-teal-600" />
+                  <h3 className="text-base font-bold text-[var(--ink-900)] font-heading">
+                    Personal Information
+                  </h3>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold uppercase text-muted-foreground">Graduation Year</label>
-                  <input
-                    type="number"
-                    name="graduationYear"
-                    value={formData.graduationYear}
-                    onChange={handleChange}
-                    min="2024"
-                    max="2030"
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500 transition"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Section 2: Career Goals & Target Role */}
-          <div className="glass-panel rounded-2xl p-6 space-y-6">
-            <div className="flex items-center space-x-2 border-b border-white/5 pb-4">
-              <Briefcase className="h-5 w-5 text-indigo-400" />
-              <h2 className="text-xl font-bold font-heading">Career Goal & Preferences</h2>
-            </div>
-
-            <div className="grid sm:grid-cols-2 gap-6">
-              <div className="space-y-2 sm:col-span-2">
-                <label className="text-xs font-semibold uppercase text-muted-foreground">Target Career Track</label>
-                <select
-                  name="preferredCareer"
-                  value={formData.preferredCareer}
-                  onChange={handleChange}
-                  className="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-white font-semibold focus:outline-none focus:border-indigo-500 transition"
-                >
-                  {CANONICAL_CAREER_PATHS.map((opt) => (
-                    <option key={opt} value={opt}>
-                      {opt}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-semibold uppercase text-muted-foreground">Dream Company (Optional)</label>
-                <input
-                  type="text"
-                  name="dreamCompany"
-                  value={formData.dreamCompany}
-                  onChange={handleChange}
-                  placeholder="e.g. Google, Microsoft, Atlassian"
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 transition"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-semibold uppercase text-muted-foreground">Target Company Type</label>
-                <select
-                  name="targetCompanyType"
-                  value={formData.targetCompanyType}
-                  onChange={handleChange}
-                  className="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 transition"
-                >
-                  <option value="Product-Based">Product-Based (FAANG, Unicorns)</option>
-                  <option value="Service-Based">Service-Based (TCS, Infosys, Wipro)</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          {/* Section 3: Skills & Social Profiles */}
-          <div className="glass-panel rounded-2xl p-6 space-y-6">
-            <div className="flex items-center space-x-2 border-b border-white/5 pb-4">
-              <BookOpen className="h-5 w-5 text-emerald-400" />
-              <h2 className="text-xl font-bold font-heading">Skills & Online Profiles</h2>
-            </div>
-
-            <div className="space-y-6">
-              <div className="space-y-2">
-                <label className="text-xs font-semibold uppercase text-muted-foreground">Current Skills (Comma Separated)</label>
-                <textarea
-                  name="skills"
-                  value={formData.skills}
-                  onChange={handleChange}
-                  rows={2}
-                  placeholder="e.g. HTML, CSS, JavaScript, React, Python, Git"
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 transition"
-                />
-                <div className="space-y-1.5 pt-1">
-                  <span className="text-[10px] text-muted-foreground uppercase font-bold block">Popular Skill Suggestions:</span>
-                  <div className="flex flex-wrap gap-1.5">
-                    {POPULAR_SKILLS.map((popSkill) => {
-                      const isSelected = isItemInCommaString(formData.skills, popSkill);
-                      return (
-                        <button
-                          key={popSkill}
-                          type="button"
-                          onClick={() => {
-                            setFormData((prev) => ({
-                              ...prev,
-                              skills: toggleCommaSeparatedItem(prev.skills, popSkill),
-                            }));
-                          }}
-                          className={`px-3 py-1 rounded-full text-xs font-medium border transition duration-200 ${
-                            isSelected
-                              ? 'bg-blue-500/20 border-blue-500 text-blue-300 font-semibold'
-                              : 'bg-white/5 border-white/10 text-muted-foreground hover:text-white hover:bg-white/10'
-                          }`}
-                        >
-                          {isSelected ? `✓ ${popSkill}` : popSkill}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-semibold uppercase text-muted-foreground">Interests / Domains (Comma Separated)</label>
-                <input
-                  type="text"
-                  name="interests"
-                  value={formData.interests}
-                  onChange={handleChange}
-                  placeholder="e.g. Web Development, Machine Learning, System Design"
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 transition"
-                />
-                <div className="space-y-1.5 pt-1">
-                  <span className="text-[10px] text-muted-foreground uppercase font-bold block">Popular Domain Suggestions:</span>
-                  <div className="flex flex-wrap gap-1.5">
-                    {POPULAR_INTERESTS.map((popInt) => {
-                      const isSelected = isItemInCommaString(formData.interests, popInt);
-                      return (
-                        <button
-                          key={popInt}
-                          type="button"
-                          onClick={() => {
-                            setFormData((prev) => ({
-                              ...prev,
-                              interests: toggleCommaSeparatedItem(prev.interests, popInt),
-                            }));
-                          }}
-                          className={`px-3 py-1 rounded-full text-xs font-medium border transition duration-200 ${
-                            isSelected
-                              ? 'bg-purple-500/20 border-purple-500 text-purple-300 font-semibold'
-                              : 'bg-white/5 border-white/10 text-muted-foreground hover:text-white hover:bg-white/10'
-                          }`}
-                        >
-                          {isSelected ? `✓ ${popInt}` : popInt}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid sm:grid-cols-2 gap-6 pt-2">
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold uppercase text-muted-foreground flex items-center space-x-1.5">
-                    <Linkedin className="h-4 w-4 text-blue-400" />
-                    <span>LinkedIn URL</span>
-                  </label>
-                  <input
-                    type="url"
-                    name="linkedinUrl"
-                    value={formData.linkedinUrl}
-                    onChange={handleChange}
-                    placeholder="https://linkedin.com/in/yourprofile"
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500 transition"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold uppercase text-muted-foreground flex items-center space-x-1.5">
-                    <Github className="h-4 w-4 text-purple-400" />
-                    <span>GitHub URL</span>
-                  </label>
-                  <input
-                    type="url"
-                    name="githubUrl"
-                    value={formData.githubUrl}
-                    onChange={handleChange}
-                    placeholder="https://github.com/yourusername"
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-purple-500 transition"
-                  />
-                </div>
-
-                <div className="space-y-2 sm:col-span-2 bg-white/[0.02] border border-amber-500/20 p-4 rounded-xl">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-semibold uppercase text-amber-400 flex items-center space-x-1.5">
-                      <Code2 className="h-4 w-4 text-amber-400" />
-                      <span>LeetCode Username (Live Problem Tracking)</span>
-                    </label>
-                    {user?.leetcodeUsername && (
-                      <span className="text-[11px] text-muted-foreground">
-                        Last Synced: {user.leetcodeStatsLastFetchedAt ? new Date(user.leetcodeStatsLastFetchedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Never'}
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex gap-3">
+                <div className="grid sm:grid-cols-2 gap-6 text-xs">
+                  <div className="space-y-1.5">
+                    <label className="font-bold uppercase tracking-wider text-slate-500">Full Name</label>
                     <input
                       type="text"
-                      name="leetcodeUsername"
-                      value={formData.leetcodeUsername}
+                      name="name"
+                      value={formData.name}
                       onChange={handleChange}
-                      placeholder="e.g. neal_wu or your_leetcode_handle"
-                      className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500 transition"
+                      required
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 focus:outline-none focus:border-teal-600"
                     />
-                    <button
-                      type="button"
-                      onClick={handleSyncLeetCode}
-                      disabled={isSyncingLeetCode}
-                      className="bg-amber-500/20 text-amber-300 border border-amber-500/30 hover:bg-amber-500/30 px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition disabled:opacity-50"
-                    >
-                      <RotateCw className={`h-3.5 w-3.5 ${isSyncingLeetCode ? 'animate-spin' : ''}`} />
-                      <span>{isSyncingLeetCode ? 'Syncing...' : 'Sync LeetCode'}</span>
-                    </button>
                   </div>
-                  {user?.leetcodeUsername && (
-                    <p className="text-xs text-muted-foreground flex items-center gap-3 pt-1">
-                      <span>Total Solved: <strong className="text-white font-semibold">{(user.leetcodeEasyCount || 0) + (user.leetcodeMediumCount || 0) + (user.leetcodeHardCount || 0)}</strong> (Easy: {user.leetcodeEasyCount || 0}, Med: {user.leetcodeMediumCount || 0}, Hard: {user.leetcodeHardCount || 0})</span>
-                      {user.leetcodeRanking ? <span>• Rank: <strong className="text-white font-semibold">#{user.leetcodeRanking.toLocaleString()}</strong></span> : null}
-                    </p>
-                  )}
+
+                  <div className="space-y-1.5">
+                    <label className="font-bold uppercase tracking-wider text-slate-500">College / University</label>
+                    <input
+                      type="text"
+                      name="college"
+                      value={formData.college}
+                      onChange={handleChange}
+                      required
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 focus:outline-none focus:border-teal-600"
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
+            )}
 
-          {/* Regenerate AI Roadmap Checkbox Callout */}
-          <div className="glass-panel rounded-2xl p-5 border border-indigo-500/30 bg-gradient-to-r from-indigo-500/10 to-blue-500/10 flex items-center justify-between gap-4">
-            <div className="space-y-1">
-              <h4 className="text-sm font-semibold flex items-center space-x-2">
-                <RefreshCw className="h-4 w-4 text-indigo-400" />
-                <span>Regenerate AI Roadmap on Save?</span>
-              </h4>
-              <p className="text-xs text-muted-foreground">
-                Check this if you changed your Target Career or Semester and want a fresh AI learning plan.
-              </p>
-            </div>
-            <input
-              type="checkbox"
-              checked={regenerateRoadmap}
-              onChange={(e) => setRegenerateRoadmap(e.target.checked)}
-              className="h-5 w-5 rounded bg-slate-900 border-white/20 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
-            />
-          </div>
+            {activeTab === 'academic' && (
+              <div className="space-y-6">
+                <div className="flex items-center space-x-2 border-b border-slate-100 pb-3">
+                  <GraduationCap className="h-5 w-5 text-purple-600" />
+                  <h3 className="text-base font-bold text-[var(--ink-900)] font-heading">
+                    Academic Timeline & Target Track
+                  </h3>
+                </div>
 
-          {/* Submit Controls */}
-          <div className="flex items-center justify-end space-x-4 pt-4">
-            <button
-              type="button"
-              onClick={() => navigate('/dashboard')}
-              className="px-6 py-3 rounded-xl border border-white/10 text-sm font-semibold text-muted-foreground hover:text-white hover:bg-white/5 transition"
-            >
-              Cancel
+                <div className="grid sm:grid-cols-2 gap-6 text-xs">
+                  <div className="space-y-1.5 sm:col-span-2">
+                    <label className="font-bold uppercase tracking-wider text-slate-500">Target Career Track</label>
+                    <select
+                      name="preferredCareer"
+                      value={formData.preferredCareer}
+                      onChange={handleChange}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-semibold text-slate-900 focus:outline-none focus:border-teal-600"
+                    >
+                      {CANONICAL_CAREER_PATHS.map((opt) => (
+                        <option key={opt} value={opt}>
+                          {opt}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="font-bold uppercase tracking-wider text-slate-500">Current Semester</label>
+                    <select
+                      name="currentSemester"
+                      value={formData.currentSemester}
+                      onChange={handleChange}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-900 focus:outline-none focus:border-teal-600"
+                    >
+                      {[1, 2, 3, 4, 5, 6, 7, 8].map((sem) => (
+                        <option key={sem} value={sem}>
+                          Semester {sem}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="font-bold uppercase tracking-wider text-slate-500">Graduation Year</label>
+                    <input
+                      type="number"
+                      name="graduationYear"
+                      value={formData.graduationYear}
+                      onChange={handleChange}
+                      min="2024"
+                      max="2030"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 focus:outline-none focus:border-teal-600"
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-2 flex items-center space-x-2 text-xs">
+                  <input
+                    type="checkbox"
+                    id="regen"
+                    checked={regenerateRoadmap}
+                    onChange={(e) => setRegenerateRoadmap(e.target.checked)}
+                    className="h-4 w-4 rounded text-teal-600"
+                  />
+                  <label htmlFor="regen" className="text-slate-700 font-semibold cursor-pointer">
+                    Regenerate AI Roadmap on Save
+                  </label>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'social' && (
+              <div className="space-y-6">
+                <div className="flex items-center space-x-2 border-b border-slate-100 pb-3">
+                  <BookOpen className="h-5 w-5 text-blue-600" />
+                  <h3 className="text-base font-bold text-[var(--ink-900)] font-heading">
+                    Skills & Live Tracking Integrations
+                  </h3>
+                </div>
+
+                <div className="space-y-4 text-xs">
+                  <div className="space-y-1.5">
+                    <label className="font-bold uppercase tracking-wider text-slate-500">Current Skills</label>
+                    <textarea
+                      name="skills"
+                      value={formData.skills}
+                      onChange={handleChange}
+                      rows={2}
+                      placeholder="e.g. React, Node.js, Python, TypeScript"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 focus:outline-none focus:border-teal-600"
+                    />
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {POPULAR_SKILLS.map((popSkill) => {
+                        const isSelected = isItemInCommaString(formData.skills, popSkill);
+                        return (
+                          <button
+                            key={popSkill}
+                            type="button"
+                            onClick={() => {
+                              setFormData((prev) => ({
+                                ...prev,
+                                skills: toggleCommaSeparatedItem(prev.skills, popSkill),
+                              }));
+                            }}
+                            className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold border transition ${
+                              isSelected
+                                ? 'bg-teal-100 border-teal-300 text-teal-800'
+                                : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                            }`}
+                          >
+                            {isSelected ? `✓ ${popSkill}` : popSkill}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="font-bold text-amber-950 flex items-center space-x-1.5 uppercase tracking-wider">
+                        <Code2 className="h-4 w-4 text-amber-600" />
+                        <span>LeetCode Username Sync</span>
+                      </label>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        name="leetcodeUsername"
+                        value={formData.leetcodeUsername}
+                        onChange={handleChange}
+                        placeholder="e.g. leetcode_handle"
+                        className="flex-1 bg-white border border-amber-300 rounded-xl px-3 py-2 text-slate-900 focus:outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleSyncLeetCode}
+                        disabled={isSyncingLeetCode}
+                        className="mosaic-btn-brand !py-2 !px-4 !text-xs flex items-center space-x-1"
+                      >
+                        <RotateCw className={`h-3.5 w-3.5 ${isSyncingLeetCode ? 'animate-spin' : ''}`} />
+                        <span>{isSyncingLeetCode ? 'Syncing...' : 'Sync Now'}</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <button type="submit" id="submit-profile-form" className="hidden">
+              Submit
             </button>
-            <button
-              type="submit"
-              disabled={isSaving}
-              className="bg-primary hover:opacity-90 transition text-primary-foreground font-semibold px-8 py-3 rounded-xl shadow-lg glow-primary flex items-center space-x-2 text-sm disabled:opacity-50"
-            >
-              {isSaving ? (
-                <span>Saving Changes...</span>
-              ) : (
-                <>
-                  <Save className="h-4 w-4" />
-                  <span>Save Profile</span>
-                </>
-              )}
-            </button>
-          </div>
-        </form>
-      </main>
-
-      <Footer />
-    </div>
+          </form>
+        </div>
+      </div>
+    </MosaicShell>
   );
 }
 

@@ -1,6 +1,8 @@
+import path from 'path';
 import dotenv from 'dotenv';
 // Load environment variables before importing other modules that depend on them
 dotenv.config();
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 import app from './app';
 import { connectDB } from './config/db';

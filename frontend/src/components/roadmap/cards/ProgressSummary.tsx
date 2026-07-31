@@ -1,5 +1,6 @@
 import React from 'react';
 import { RoadmapData } from '../roadmap.types';
+import { Badge } from '../../mosaic/Badge';
 
 interface ProgressSummaryProps {
   roadmap: RoadmapData;
@@ -9,32 +10,38 @@ export const ProgressSummary: React.FC<ProgressSummaryProps> = ({ roadmap }) => 
   const getResourceProgress = () => {
     let total = 0;
     let done = 0;
-    roadmap.topics.forEach((t) => {
-      total += t.resources.length;
-      done += t.resources.filter((r) => r.isCompleted).length;
-    });
+    if (roadmap && roadmap.topics) {
+      roadmap.topics.forEach((t) => {
+        total += t.resources?.length || 0;
+        done += t.resources?.filter((r) => r.isCompleted).length || 0;
+      });
+    }
     return total > 0 ? Math.round((done / total) * 100) : 0;
   };
 
   const getPracticeProgress = () => {
     let total = 0;
     let done = 0;
-    roadmap.topics.forEach((t) => {
-      total += t.practiceProblems?.length || 0;
-      done += t.practiceProblems?.filter((p) => p.isCompleted).length || 0;
-    });
+    if (roadmap && roadmap.topics) {
+      roadmap.topics.forEach((t) => {
+        total += t.practiceProblems?.length || 0;
+        done += t.practiceProblems?.filter((p) => p.isCompleted).length || 0;
+      });
+    }
     return total > 0 ? Math.round((done / total) * 100) : 0;
   };
 
   const getProjectProgress = () => {
     let total = 0;
     let done = 0;
-    roadmap.topics.forEach((t) => {
-      if (t.project) {
-        total += 1;
-        if (t.project.isCompleted) done += 1;
-      }
-    });
+    if (roadmap && roadmap.topics) {
+      roadmap.topics.forEach((t) => {
+        if (t.project) {
+          total += 1;
+          if (t.project.isCompleted) done += 1;
+        }
+      });
+    }
     return total > 0 ? Math.round((done / total) * 100) : 0;
   };
 
@@ -45,69 +52,61 @@ export const ProgressSummary: React.FC<ProgressSummaryProps> = ({ roadmap }) => 
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-left">
       {/* Overall Progress */}
-      <div className="glass-card rounded-xl p-4 border border-white/5 bg-slate-900/30 text-left">
-        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
-          Roadmap Progress
+      <div className="mosaic-card p-4 bg-white text-left">
+        <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--ink-muted)] block mb-1">
+          Overall Progress
         </span>
         <div className="flex justify-between items-end">
-          <span className="text-2xl font-black text-white">{roadmap.progress}%</span>
-          <span className="text-[10px] text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20 font-bold">
-            Overall
-          </span>
+          <span className="text-2xl font-black text-[var(--ink-900)]">{roadmap.progress || 0}%</span>
+          <Badge tone="brand">Overall</Badge>
         </div>
-        <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden mt-3 border border-white/5">
+        <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden mt-3 border border-slate-200">
           <div
-            className="h-full bg-gradient-to-r from-blue-500 to-indigo-500"
-            style={{ width: `${roadmap.progress}%` }}
+            className="h-full bg-teal-600 rounded-full transition-all duration-300"
+            style={{ width: `${roadmap.progress || 0}%` }}
           />
         </div>
       </div>
 
       {/* Resources Progress */}
-      <div className="glass-card rounded-xl p-4 border border-white/5 bg-slate-900/30 text-left">
-        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
-          Resource Progress
+      <div className="mosaic-card p-4 bg-white text-left">
+        <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--ink-muted)] block mb-1">
+          Resource Lessons
         </span>
         <div className="flex justify-between items-end">
-          <span className="text-2xl font-black text-white">{resProgress}%</span>
-          <span className="text-[10px] text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20 font-bold">
-            Lessons
-          </span>
+          <span className="text-2xl font-black text-[var(--ink-900)]">{resProgress}%</span>
+          <Badge tone="info">Lessons</Badge>
         </div>
-        <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden mt-3 border border-white/5">
-          <div className="h-full bg-blue-500" style={{ width: `${resProgress}%` }} />
+        <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden mt-3 border border-slate-200">
+          <div className="h-full bg-blue-600 rounded-full transition-all duration-300" style={{ width: `${resProgress}%` }} />
         </div>
       </div>
 
-      {/* Problems Progress */}
-      <div className="glass-card rounded-xl p-4 border border-white/5 bg-slate-900/30 text-left">
-        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
-          Practice Progress
+      {/* Practice Problems Progress */}
+      <div className="mosaic-card p-4 bg-white text-left">
+        <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--ink-muted)] block mb-1">
+          LeetCode Practice
         </span>
         <div className="flex justify-between items-end">
-          <span className="text-2xl font-black text-white">{pracProgress}%</span>
-          <span className="text-[10px] text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded border border-purple-500/20 font-bold">
-            Leetcode
-          </span>
+          <span className="text-2xl font-black text-[var(--ink-900)]">{pracProgress}%</span>
+          <Badge tone="purple">LeetCode</Badge>
         </div>
-        <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden mt-3 border border-white/5">
-          <div className="h-full bg-purple-500" style={{ width: `${pracProgress}%` }} />
+        <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden mt-3 border border-slate-200">
+          <div className="h-full bg-purple-600 rounded-full transition-all duration-300" style={{ width: `${pracProgress}%` }} />
         </div>
       </div>
 
       {/* Project Progress */}
-      <div className="glass-card rounded-xl p-4 border border-white/5 bg-slate-900/30 text-left">
-        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
-          Project Progress
+      <div className="mosaic-card p-4 bg-white text-left">
+        <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--ink-muted)] block mb-1">
+          Capstone Builds
         </span>
         <div className="flex justify-between items-end">
-          <span className="text-2xl font-black text-white">{projProgress}%</span>
-          <span className="text-[10px] text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 font-bold">
-            Builds
-          </span>
+          <span className="text-2xl font-black text-[var(--ink-900)]">{projProgress}%</span>
+          <Badge tone="success">Builds</Badge>
         </div>
-        <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden mt-3 border border-white/5">
-          <div className="h-full bg-emerald-500" style={{ width: `${projProgress}%` }} />
+        <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden mt-3 border border-slate-200">
+          <div className="h-full bg-emerald-600 rounded-full transition-all duration-300" style={{ width: `${projProgress}%` }} />
         </div>
       </div>
     </div>

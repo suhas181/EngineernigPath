@@ -9,7 +9,6 @@ import Signup from '../pages/Signup';
 import VerifyEmail from '../pages/VerifyEmail';
 import ForgotPassword from '../pages/ForgotPassword';
 import ResetPassword from '../pages/ResetPassword';
-import OAuthSuccess from '../pages/OAuthSuccess';
 import ProfileSetup from '../pages/ProfileSetup';
 import CompleteProfile from '../pages/CompleteProfile';
 import Dashboard from '../pages/Dashboard';
@@ -18,12 +17,40 @@ import Resources from '../pages/Resources';
 import ResumeAnalyzer from '../pages/ResumeAnalyzer';
 import Planner from '../pages/Planner';
 import ProfileSettings from '../pages/ProfileSettings';
+import AdminDashboard from '../pages/AdminDashboard';
 import NotFound from '../pages/NotFound';
 
 // Wrapper for routes requiring authentication
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />;
+  const user = useAuthStore((state) => state.user);
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // If admin tries to access student pages, redirect to Admin dashboard
+  if (user?.role === 'admin') {
+    return <Navigate to="/admin" replace />;
+  }
+
+  return <>{children}</>;
+}
+
+// Wrapper for admin routes
+function AdminRoute({ children }: { children: React.ReactNode }) {
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const user = useAuthStore((state) => state.user);
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (user?.role !== 'admin') {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return <>{children}</>;
 }
 
 // Wrapper for routes that are for unauthenticated users only
@@ -32,6 +59,9 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
   const user = useAuthStore((state) => state.user);
 
   if (isAuthenticated) {
+    if (user?.role === 'admin') {
+      return <Navigate to="/admin" replace />;
+    }
     if (!user?.college || !user?.graduationYear || !user?.preferredCareer) {
       return <Navigate to="/profile-setup" replace />;
     }
@@ -80,7 +110,16 @@ export function AppRouter() {
           </PublicRoute>
         }
       />
-      <Route path="/oauth-success" element={<OAuthSuccess />} />
+
+      {/* Admin Route */}
+      <Route
+        path="/admin"
+        element={
+          <AdminRoute>
+            <AdminDashboard />
+          </AdminRoute>
+        }
+      />
 
       {/* Protected Student Routes */}
       <Route

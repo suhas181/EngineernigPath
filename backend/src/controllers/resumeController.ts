@@ -5,16 +5,21 @@ import mammoth from 'mammoth';
 import { AuthenticatedRequest } from '../types';
 import { Resume } from '../models/Resume';
 import { uploadToCloudinary } from '../services/uploadService';
-import { GoogleGenerativeAI } from '@google/generative-ai';
-
-// Initialize Gemini API
-const apiKey = process.env.GEMINI_API_KEY;
-const isApiKeyConfigured = apiKey && apiKey !== 'your-gemini-api-key' && apiKey.trim() !== '';
-const genAI = isApiKeyConfigured ? new GoogleGenerativeAI(apiKey) : null;
+import {
+  calculateFileHash,
+  computeExtractionMetadata,
+  rasterizeDocumentToPageImages,
+  executeVisionStage,
+  executeStage1Extraction,
+  executeStage2Scoring,
+} from '../services/resumePipelineService';
 
 // Validation schemas
 const matchJobSchema = z.object({
-  jdText: z.string({ required_error: 'Job description text is required' }).min(50, 'Job description must be at least 50 characters long'),
+  jobTitle: z.string().optional(),
+  jdText: z
+    .string({ required_error: 'Job description text is required' })
+    .min(30, 'Job description must be at least 30 characters long'),
 });
 
 export const uploadResume = async (
@@ -29,130 +34,218 @@ export const uploadResume = async (
       return;
     }
 
-    if (!req.file) {
-      res.status(400).json({ success: false, message: 'Please upload a file' });
-      return;
-    }
-
-    const fileBuffer = req.file.buffer;
-    const fileName = req.file.originalname;
-    const mimeType = req.file.mimetype;
-
-    // 1. Raw Text Parsing
+    let fileBuffer: Buffer | null = null;
+    let fileName = 'resume.txt';
+    let mimeType = 'text/plain';
     let rawText = '';
-    try {
-      if (mimeType === 'application/pdf' || fileName.toLowerCase().endsWith('.pdf')) {
-        const parsedPdf = await (pdfParse as any)(fileBuffer);
-        rawText = parsedPdf.text;
-      } else if (
-        mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
-        fileName.toLowerCase().endsWith('.docx')
+    let isTextFormat = false;
+
+    // Check if raw resume text was pasted directly in body
+    const bodyText = req.body.resumeText || req.body.rawText;
+    if (bodyText && typeof bodyText === 'string' && bodyText.trim().length > 0) {
+      rawText = bodyText.trim();
+      fileName = req.body.fileName || 'Pasted_Resume.txt';
+      fileBuffer = Buffer.from(rawText, 'utf-8');
+      isTextFormat = true;
+    } else if (req.file) {
+      fileBuffer = req.file.buffer;
+      fileName = req.file.originalname;
+      mimeType = req.file.mimetype;
+
+      const lowerName = fileName.toLowerCase();
+      if (
+        lowerName.endsWith('.txt') ||
+        lowerName.endsWith('.md') ||
+        lowerName.endsWith('.markdown') ||
+        mimeType.startsWith('text/')
       ) {
+        isTextFormat = true;
+        rawText = fileBuffer.toString('utf-8');
+      } else if (mimeType === 'application/pdf' || lowerName.endsWith('.pdf')) {
+        isTextFormat = false;
+        try {
+          let pdfModule: any = pdfParse;
+          if (typeof pdfModule === 'function') {
+            const parsedPdf = await pdfModule(fileBuffer);
+            rawText = parsedPdf.text || '';
+          } else if (pdfModule && typeof pdfModule.default === 'function') {
+            const parsedPdf = await pdfModule.default(fileBuffer);
+            rawText = parsedPdf.text || '';
+          } else if (pdfModule && pdfModule.PDFParse) {
+            const parser = new pdfModule.PDFParse({ data: fileBuffer });
+            const parsedPdf = await parser.getText();
+            rawText = parsedPdf.text || '';
+          } else {
+            const bufferString = fileBuffer.toString('latin1');
+            const matches = bufferString.match(/\(([^()]{3,})\)/g);
+            if (matches && matches.length > 0) {
+              rawText = matches.map((m) => m.slice(1, -1)).join(' ');
+            }
+          }
+        } catch (parseErr) {
+          console.error('File text extraction error:', parseErr);
+          const bufferString = fileBuffer.toString('latin1');
+          const matches = bufferString.match(/\(([^()]{3,})\)/g);
+          if (matches && matches.length > 0) {
+            rawText = matches.map((m) => m.slice(1, -1)).join(' ');
+          }
+        }
+      } else if (
+        mimeType ===
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+        lowerName.endsWith('.docx')
+      ) {
+        isTextFormat = false;
         const parsedDocx = await mammoth.extractRawText({ buffer: fileBuffer });
-        rawText = parsedDocx.value;
+        rawText = parsedDocx.value || '';
       } else {
-        res.status(400).json({ success: false, message: 'Unsupported file format. Please upload PDF or DOCX.' });
+        res.status(400).json({
+          success: false,
+          message: 'Unsupported file format. Please upload PDF, DOCX, TXT, or MD.',
+        });
         return;
       }
-    } catch (parseErr) {
-      console.error('File text extraction error:', parseErr);
-      res.status(422).json({ success: false, message: 'Failed to extract text from the file. Verify the document is not corrupted.' });
+    } else {
+      res.status(400).json({
+        success: false,
+        message: 'Please upload a resume file (PDF, DOCX, TXT, MD) or paste your resume text.',
+      });
       return;
     }
 
     if (!rawText.trim()) {
-      res.status(422).json({ success: false, message: 'Extracted text is empty. Scanned images are not supported.' });
+      res.status(422).json({
+        success: false,
+        message: 'Extracted text is empty. Scanned image PDFs are not supported.',
+      });
       return;
     }
 
-    // 2. Upload Binary copy to Cloudinary for download
+    if (!fileBuffer) {
+      fileBuffer = Buffer.from(rawText, 'utf-8');
+    }
+
+    // 1. Compute SHA-256 Hash for Caching Stage 1 Output
+    const fileHash = calculateFileHash(fileBuffer);
+
+    // 2. Compute Text Extraction Metadata & Heuristics
+    const extractionMetadata = computeExtractionMetadata(rawText);
+
+    // 3. Upload file buffer to Cloudinary for secure download
     let fileUrl = '';
     try {
       fileUrl = await uploadToCloudinary(fileBuffer, 'resumes', fileName);
     } catch (uploadErr) {
       console.error('Cloudinary resume upload error:', uploadErr);
-      // Fallback url for testing
       fileUrl = 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf';
     }
 
-    // Get current version number
+    // Get next version number
     const latest = await Resume.findOne({ userId: user.id }).sort({ version: -1 });
     const version = latest ? latest.version + 1 : 1;
 
-    // 3. Trigger Gemini evaluation
-    let analysisResult: any;
-    if (genAI) {
-      try {
-        const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
-        const prompt = `
-You are an expert recruiter and Resume ATS grader. Analyze the following raw resume text.
-Extract parsed details and evaluate formatting to calculate an ATS Score and a Readiness Score (0-100).
-Produce structured JSON matching this schema:
-{
-  "atsScore": number,
-  "readinessScore": number,
-  "parsedDetails": {
-    "name": "string",
-    "email": "string",
-    "phone": "string",
-    "education": [{"institution": "string", "degree": "string", "year": "string", "cgpa": "string"}],
-    "experience": [{"company": "string", "role": "string", "duration": "string", "description": "string"}],
-    "projects": [{"title": "string", "description": "string", "technologies": ["string"]}],
-    "skills": ["string"]
-  },
-  "analysis": {
-    "missingSkills": ["string"],
-    "grammarIssues": [{"original": "string", "suggestion": "string", "reason": "string"}],
-    "keywordSuggestions": ["string"],
-    "projectRecommendations": [{"title": "string", "description": "string", "complexity": "beginner|intermediate|advanced"}],
-    "improvements": ["string"]
-  }
-}
+    let inputTextForStage1 = rawText;
+    let visualWarnings: string[] = [];
 
-Guidelines:
-1. Target missingSkills towards: ${user.preferredCareer || 'Software Engineer'} career goals.
-2. Return ONLY the JSON object.
+    // 4. VISION STAGE (Run ONLY for binary PDF/DOCX files, BYPASS for plain text / MD)
+    if (isTextFormat) {
+      console.log(`[RESUME PIPELINE] Text format (${fileName}) detected. Bypassing Vision Stage, proceeding directly to Stage 1 Extraction...`);
+    } else {
+      console.log(`[RESUME PIPELINE VISION STAGE] Rasterizing ${fileName}...`);
+      const pageImagesB64 = await rasterizeDocumentToPageImages(fileBuffer, fileName);
+      const visionRes = await executeVisionStage(pageImagesB64);
+      inputTextForStage1 = visionRes.visionMarkdown.trim() ? visionRes.visionMarkdown : rawText;
+      visualWarnings = visionRes.visualWarnings;
+    }
 
-Resume text:
-${rawText}
-`;
+    // 5. STAGE 1 — Extraction LLM Call (with SHA-256 caching lookup)
+    let extractionResult: any = null;
 
-        const result = await model.generateContent({
-          contents: [{ role: 'user', parts: [{ text: prompt }] }],
-          generationConfig: { responseMimeType: 'application/json' },
-        });
-
-        const text = result.response.text();
-        if (text) {
-          analysisResult = JSON.parse(text.trim());
-        }
-      } catch (aiErr) {
-        console.error('Gemini Resume analysis error:', aiErr);
+    const cachedResume = await Resume.findOne({ userId: user.id, fileHash });
+    if (cachedResume && cachedResume.extractionResult) {
+      console.log(`[RESUME PIPELINE CACHE HIT] Reusing Stage 1 extraction for fileHash: ${fileHash}`);
+      extractionResult = cachedResume.extractionResult;
+    } else {
+      console.log(`[RESUME PIPELINE STAGE 1] Triggering Stage 1 extraction for ${fileName}...`);
+      extractionResult = await executeStage1Extraction(inputTextForStage1);
+      
+      // Merge visual non-text region warnings into Stage 1 parsing_warnings
+      if (visualWarnings.length > 0) {
+        const mergedWarnings = new Set([...(extractionResult.parsing_warnings || []), ...visualWarnings]);
+        extractionResult.parsing_warnings = Array.from(mergedWarnings);
       }
     }
 
-    // Fallback Mock Template if Gemini failed or is unconfigured
-    if (!analysisResult) {
-      console.log('[RESUME MOCK] Using fallback static analysis report.');
-      analysisResult = getMockAnalysis(user.name, user.preferredCareer);
-    }
+    // 6. STAGE 2 — Scoring LLM Call
+    const targetRole = req.body.role || user.preferredCareer || 'Software Engineer';
+    const jobDescription = req.body.jobDescription || null;
 
-    // 4. Save to Database
+    console.log(`[RESUME PIPELINE STAGE 2] Triggering Stage 2 scoring for role: ${targetRole}`);
+    const scoringResult = await executeStage2Scoring(extractionResult, targetRole, jobDescription);
+
+    // 7. Map pipeline results to legacy schema fields for backwards compatibility
+    const parsedDetails = {
+      name: extractionResult?.contact_info?.name || user.name,
+      email: extractionResult?.contact_info?.email || user.email,
+      phone: extractionResult?.contact_info?.phone || '',
+      education: (extractionResult?.education || []).map((e: any) => ({
+        institution: e.institution || 'University',
+        degree: e.degree || e.field || 'Degree',
+        year: e.duration || '2026',
+        cgpa: e.score || '',
+      })),
+      experience: (extractionResult?.experience || []).map((e: any) => ({
+        company: e.company || 'Company',
+        role: e.role || 'Role',
+        duration: e.duration || '',
+        description: Array.isArray(e.responsibilities)
+          ? e.responsibilities.join(' ')
+          : e.responsibilities || '',
+      })),
+      projects: (extractionResult?.projects || []).map((p: any) => ({
+        title: p.name || 'Project',
+        description: Array.isArray(p.description) ? p.description.join(' ') : p.description || '',
+        technologies: p.technologies || [],
+      })),
+      skills: [
+        ...(extractionResult?.skills?.technical || []),
+        ...(extractionResult?.skills?.tools_and_technologies || []),
+        ...(extractionResult?.skills?.soft || []),
+      ],
+    };
+
+    const analysis = {
+      missingSkills: scoringResult?.missing_keywords || [],
+      grammarIssues: [],
+      keywordSuggestions: scoringResult?.matched_keywords || [],
+      projectRecommendations: [],
+      improvements: (scoringResult?.improvement_suggestions || []).map(
+        (s: any) => `${s.section} [Priority: ${s.priority?.toUpperCase() || 'MED'}]: ${s.suggestion}`
+      ),
+    };
+
+    // 8. Save to Mongo Database
     const newResume = await Resume.create({
       userId: user.id,
       fileName,
       fileUrl,
+      fileHash,
       rawText,
       version,
-      atsScore: analysisResult.atsScore || 70,
-      readinessScore: analysisResult.readinessScore || 75,
-      parsedDetails: analysisResult.parsedDetails || { education: [], experience: [], projects: [], skills: [] },
-      analysis: analysisResult.analysis || { missingSkills: [], grammarIssues: [], keywordSuggestions: [], projectRecommendations: [], improvements: [] },
+      atsScore: scoringResult?.overall_score || scoringResult?.ats_compatibility_score || 75,
+      readinessScore: scoringResult?.content_quality_score || 75,
+      extractionMetadata,
+      extractionResult,
+      scoringResult,
+      parsedDetails,
+      analysis,
     });
 
     res.status(201).json({
       success: true,
-      message: 'Resume analyzed successfully',
+      message: isTextFormat
+        ? 'Text resume parsed directly via Stage 1 Extraction & Stage 2 Scoring'
+        : 'Resume analyzed successfully via Vision Stage & 2-Stage Nemotron Pipeline',
       resume: newResume,
     });
   } catch (error) {
@@ -228,7 +321,7 @@ export const matchJob = async (
       return;
     }
 
-    const { jdText } = parseResult.data;
+    const { jdText, jobTitle } = parseResult.data;
 
     const resume = await Resume.findOne({ _id: id, userId: user.id });
     if (!resume) {
@@ -236,59 +329,41 @@ export const matchJob = async (
       return;
     }
 
-    let matchReport: any;
-
-    if (genAI) {
-      try {
-        const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
-        const prompt = `
-Compare this resume raw text against the following Job Description (JD).
-Evaluate the match percentage, extract keywords present, identify missing keywords, and suggest resume customize updates.
-Return structured JSON:
-{
-  "matchScore": number,
-  "matchingKeywords": ["string"],
-  "missingKeywords": ["string"],
-  "customizationSuggestions": ["string"]
-}
-
-Resume Text:
-${resume.rawText}
-
-Job Description:
-${jdText}
-`;
-
-        const result = await model.generateContent({
-          contents: [{ role: 'user', parts: [{ text: prompt }] }],
-          generationConfig: { responseMimeType: 'application/json' },
-        });
-
-        const text = result.response.text();
-        if (text) {
-          matchReport = JSON.parse(text.trim());
-        }
-      } catch (err) {
-        console.error('Gemini JD matcher error:', err);
-      }
+    let extractionResult = resume.extractionResult;
+    if (!extractionResult) {
+      console.log('[JD MATCHER] Extraction result missing on resume, running Stage 1...');
+      extractionResult = await executeStage1Extraction(resume.rawText);
+      resume.extractionResult = extractionResult;
     }
 
-    if (!matchReport) {
-      // Fallback mock match details
-      matchReport = {
-        matchScore: 65,
-        matchingKeywords: ['JavaScript', 'HTML5', 'React', 'MongoDB'],
-        missingKeywords: ['Redux', 'Unit Testing', 'CI/CD Pipelines'],
-        customizationSuggestions: [
-          'Add a project detailing API design and Redux state flows.',
-          'Quantify work bullets, e.g., optimized loading times by 20%.',
-        ],
-      };
-    }
+    const targetRole = jobTitle || req.body.role || user.preferredCareer || 'Software Engineer';
+    console.log(`[JD MATCHER] Re-running Stage 2 scoring against JD for target role: ${targetRole}...`);
+
+    const scoringResult = await executeStage2Scoring(extractionResult, targetRole, jdText);
+
+    resume.scoringResult = scoringResult;
+    resume.atsScore = scoringResult.overall_score;
+    await resume.save();
 
     res.status(200).json({
       success: true,
-      matchReport,
+      message: 'Job match score calculated via Stage 2 Nemotron pipeline',
+      matchReport: {
+        matchScore: scoringResult.job_match_score ?? scoringResult.overall_score,
+        overallScore: scoringResult.overall_score,
+        contentQualityScore: scoringResult.content_quality_score,
+        atsCompatibilityScore: scoringResult.ats_compatibility_score,
+        matchingKeywords: scoringResult.matched_keywords || [],
+        missingKeywords: scoringResult.missing_keywords || [],
+        strengths: scoringResult.strengths || [],
+        weaknesses: scoringResult.weaknesses || [],
+        improvementSuggestions: scoringResult.improvement_suggestions || [],
+        customizationSuggestions: (scoringResult.improvement_suggestions || []).map(
+          (s: any) => `[${s.section}] ${s.issue} → ${s.suggestion}`
+        ),
+        summary: scoringResult.summary,
+      },
+      resume,
     });
   } catch (error) {
     next(error);
@@ -317,11 +392,13 @@ export const syncSkills = async (
 
     const parsedSkills = resume.parsedDetails.skills || [];
     if (parsedSkills.length === 0) {
-      res.status(400).json({ success: false, message: 'No skills found in this resume report to sync.' });
+      res.status(400).json({
+        success: false,
+        message: 'No skills found in this resume report to sync.',
+      });
       return;
     }
 
-    // Merge skills avoiding duplicates
     const merged = new Set([...(user.skills || []), ...parsedSkills]);
     user.skills = Array.from(merged);
     await user.save();
@@ -334,63 +411,4 @@ export const syncSkills = async (
   } catch (error) {
     next(error);
   }
-};
-
-// Helper Mock generator
-const getMockAnalysis = (name: string, preferredCareer?: string) => {
-  return {
-    atsScore: 72,
-    readinessScore: 68,
-    parsedDetails: {
-      name: name,
-      email: 'student@college.edu',
-      phone: '+91 99999 88888',
-      education: [
-        {
-          institution: 'State Engineering College',
-          degree: 'Bachelor of Technology in Computer Science',
-          year: '2027',
-          cgpa: '8.4',
-        },
-      ],
-      experience: [
-        {
-          company: 'Tech Solutions Corp',
-          role: 'Summer Intern',
-          duration: '2 Months',
-          description: 'Assisted in building frontend layouts using HTML, CSS, and basic JavaScript. Fixed minor styling bugs.',
-        },
-      ],
-      projects: [
-        {
-          title: 'Personal Portfolio Page',
-          description: 'Built a responsive layout highlighting academic details and projects.',
-          technologies: ['HTML', 'CSS', 'JavaScript'],
-        },
-      ],
-      skills: ['JavaScript', 'HTML5', 'CSS3', 'Git', 'Java', 'SQL'],
-    },
-    analysis: {
-      missingSkills: ['React.js', 'Node.js', 'Express.js', 'REST APIs', 'Unit Testing'],
-      grammarIssues: [
-        {
-          original: 'Assisted in building frontend layouts',
-          suggestion: 'Engineered responsive frontend layouts',
-          reason: 'Use action-driven verbs instead of passive phrases to demonstrate ownership.',
-        },
-      ],
-      keywordSuggestions: ['RESTful Web Services', 'Agile Methodology', 'NoSQL Datastores', 'Continuous Integration'],
-      projectRecommendations: [
-        {
-          title: 'Fullstack E-Commerce Portal',
-          description: 'Build a Node/Express backend syncing state to a MongoDB datastore. Secure endpoints with JWT authentication.',
-          complexity: 'intermediate',
-        },
-      ],
-      improvements: [
-        'Add quantitative metrics showing your contributions, e.g. "speeded up APIs by 15%".',
-        'Incorporate links to live project websites or active GitHub codes.',
-      ],
-    },
-  };
 };
