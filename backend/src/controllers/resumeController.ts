@@ -34,34 +34,56 @@ export const uploadResume = async (
       return;
     }
 
-    if (!req.file) {
-      res.status(400).json({ success: false, message: 'Please upload a file' });
-      return;
-    }
-
-    const fileBuffer = req.file.buffer;
-    const fileName = req.file.originalname;
-    const mimeType = req.file.mimetype;
-
-    // 1. Compute SHA-256 Hash for Caching Stage 1 Output
-    const fileHash = calculateFileHash(fileBuffer);
-
-    // 2. Raw Text Extraction (library based: pdf-parse / mammoth, NOT LLM)
+    let fileBuffer: Buffer | null = null;
+    let fileName = 'resume.txt';
+    let mimeType = 'text/plain';
     let rawText = '';
-    try {
-      if (mimeType === 'application/pdf' || fileName.toLowerCase().endsWith('.pdf')) {
-        let pdfModule: any = pdfParse;
-        if (typeof pdfModule === 'function') {
-          const parsedPdf = await pdfModule(fileBuffer);
-          rawText = parsedPdf.text || '';
-        } else if (pdfModule && typeof pdfModule.default === 'function') {
-          const parsedPdf = await pdfModule.default(fileBuffer);
-          rawText = parsedPdf.text || '';
-        } else if (pdfModule && pdfModule.PDFParse) {
-          const parser = new pdfModule.PDFParse({ data: fileBuffer });
-          const parsedPdf = await parser.getText();
-          rawText = parsedPdf.text || '';
-        } else {
+    let isTextFormat = false;
+
+    // Check if raw resume text was pasted directly in body
+    const bodyText = req.body.resumeText || req.body.rawText;
+    if (bodyText && typeof bodyText === 'string' && bodyText.trim().length > 0) {
+      rawText = bodyText.trim();
+      fileName = req.body.fileName || 'Pasted_Resume.txt';
+      fileBuffer = Buffer.from(rawText, 'utf-8');
+      isTextFormat = true;
+    } else if (req.file) {
+      fileBuffer = req.file.buffer;
+      fileName = req.file.originalname;
+      mimeType = req.file.mimetype;
+
+      const lowerName = fileName.toLowerCase();
+      if (
+        lowerName.endsWith('.txt') ||
+        lowerName.endsWith('.md') ||
+        lowerName.endsWith('.markdown') ||
+        mimeType.startsWith('text/')
+      ) {
+        isTextFormat = true;
+        rawText = fileBuffer.toString('utf-8');
+      } else if (mimeType === 'application/pdf' || lowerName.endsWith('.pdf')) {
+        isTextFormat = false;
+        try {
+          let pdfModule: any = pdfParse;
+          if (typeof pdfModule === 'function') {
+            const parsedPdf = await pdfModule(fileBuffer);
+            rawText = parsedPdf.text || '';
+          } else if (pdfModule && typeof pdfModule.default === 'function') {
+            const parsedPdf = await pdfModule.default(fileBuffer);
+            rawText = parsedPdf.text || '';
+          } else if (pdfModule && pdfModule.PDFParse) {
+            const parser = new pdfModule.PDFParse({ data: fileBuffer });
+            const parsedPdf = await parser.getText();
+            rawText = parsedPdf.text || '';
+          } else {
+            const bufferString = fileBuffer.toString('latin1');
+            const matches = bufferString.match(/\(([^()]{3,})\)/g);
+            if (matches && matches.length > 0) {
+              rawText = matches.map((m) => m.slice(1, -1)).join(' ');
+            }
+          }
+        } catch (parseErr) {
+          console.error('File text extraction error:', parseErr);
           const bufferString = fileBuffer.toString('latin1');
           const matches = bufferString.match(/\(([^()]{3,})\)/g);
           if (matches && matches.length > 0) {
@@ -71,29 +93,24 @@ export const uploadResume = async (
       } else if (
         mimeType ===
           'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
-        fileName.toLowerCase().endsWith('.docx')
+        lowerName.endsWith('.docx')
       ) {
+        isTextFormat = false;
         const parsedDocx = await mammoth.extractRawText({ buffer: fileBuffer });
-        rawText = parsedDocx.value;
+        rawText = parsedDocx.value || '';
       } else {
         res.status(400).json({
           success: false,
-          message: 'Unsupported file format. Please upload PDF or DOCX.',
+          message: 'Unsupported file format. Please upload PDF, DOCX, TXT, or MD.',
         });
         return;
       }
-    } catch (parseErr) {
-      console.error('File text extraction error:', parseErr);
-      // Fallback regex text extractor from binary stream if PDFParse throws
-      try {
-        const bufferString = fileBuffer.toString('latin1');
-        const matches = bufferString.match(/\(([^()]{3,})\)/g);
-        if (matches && matches.length > 0) {
-          rawText = matches.map((m) => m.slice(1, -1)).join(' ');
-        }
-      } catch (e) {
-        console.error('Regex PDF fallback failed:', e);
-      }
+    } else {
+      res.status(400).json({
+        success: false,
+        message: 'Please upload a resume file (PDF, DOCX, TXT, MD) or paste your resume text.',
+      });
+      return;
     }
 
     if (!rawText.trim()) {
@@ -104,10 +121,17 @@ export const uploadResume = async (
       return;
     }
 
-    // 3. Compute Text Extraction Metadata & Heuristics
+    if (!fileBuffer) {
+      fileBuffer = Buffer.from(rawText, 'utf-8');
+    }
+
+    // 1. Compute SHA-256 Hash for Caching Stage 1 Output
+    const fileHash = calculateFileHash(fileBuffer);
+
+    // 2. Compute Text Extraction Metadata & Heuristics
     const extractionMetadata = computeExtractionMetadata(rawText);
 
-    // 4. Upload Binary file to Cloudinary for secure storage
+    // 3. Upload file buffer to Cloudinary for secure download
     let fileUrl = '';
     try {
       fileUrl = await uploadToCloudinary(fileBuffer, 'resumes', fileName);
@@ -120,14 +144,21 @@ export const uploadResume = async (
     const latest = await Resume.findOne({ userId: user.id }).sort({ version: -1 });
     const version = latest ? latest.version + 1 : 1;
 
-    // 5. VISION STAGE — Page Rasterization & VLM Markdown Extraction (nemotron-parse)
-    console.log(`[RESUME PIPELINE VISION STAGE] Rasterizing ${fileName}...`);
-    const pageImagesB64 = await rasterizeDocumentToPageImages(fileBuffer, fileName);
-    const { visionMarkdown, visualWarnings } = await executeVisionStage(pageImagesB64);
+    let inputTextForStage1 = rawText;
+    let visualWarnings: string[] = [];
 
-    const inputTextForStage1 = visionMarkdown.trim() ? visionMarkdown : rawText;
+    // 4. VISION STAGE (Run ONLY for binary PDF/DOCX files, BYPASS for plain text / MD)
+    if (isTextFormat) {
+      console.log(`[RESUME PIPELINE] Text format (${fileName}) detected. Bypassing Vision Stage, proceeding directly to Stage 1 Extraction...`);
+    } else {
+      console.log(`[RESUME PIPELINE VISION STAGE] Rasterizing ${fileName}...`);
+      const pageImagesB64 = await rasterizeDocumentToPageImages(fileBuffer, fileName);
+      const visionRes = await executeVisionStage(pageImagesB64);
+      inputTextForStage1 = visionRes.visionMarkdown.trim() ? visionRes.visionMarkdown : rawText;
+      visualWarnings = visionRes.visualWarnings;
+    }
 
-    // 6. STAGE 1 — Extraction LLM Call (with SHA-256 caching lookup)
+    // 5. STAGE 1 — Extraction LLM Call (with SHA-256 caching lookup)
     let extractionResult: any = null;
 
     const cachedResume = await Resume.findOne({ userId: user.id, fileHash });
@@ -154,16 +185,16 @@ export const uploadResume = async (
 
     // 7. Map pipeline results to legacy schema fields for backwards compatibility
     const parsedDetails = {
-      name: extractionResult.contact_info?.name || user.name,
-      email: extractionResult.contact_info?.email || user.email,
-      phone: extractionResult.contact_info?.phone || '',
-      education: (extractionResult.education || []).map((e: any) => ({
+      name: extractionResult?.contact_info?.name || user.name,
+      email: extractionResult?.contact_info?.email || user.email,
+      phone: extractionResult?.contact_info?.phone || '',
+      education: (extractionResult?.education || []).map((e: any) => ({
         institution: e.institution || 'University',
         degree: e.degree || e.field || 'Degree',
         year: e.duration || '2026',
         cgpa: e.score || '',
       })),
-      experience: (extractionResult.experience || []).map((e: any) => ({
+      experience: (extractionResult?.experience || []).map((e: any) => ({
         company: e.company || 'Company',
         role: e.role || 'Role',
         duration: e.duration || '',
@@ -171,24 +202,24 @@ export const uploadResume = async (
           ? e.responsibilities.join(' ')
           : e.responsibilities || '',
       })),
-      projects: (extractionResult.projects || []).map((p: any) => ({
+      projects: (extractionResult?.projects || []).map((p: any) => ({
         title: p.name || 'Project',
         description: Array.isArray(p.description) ? p.description.join(' ') : p.description || '',
         technologies: p.technologies || [],
       })),
       skills: [
-        ...(extractionResult.skills?.technical || []),
-        ...(extractionResult.skills?.tools_and_technologies || []),
-        ...(extractionResult.skills?.soft || []),
+        ...(extractionResult?.skills?.technical || []),
+        ...(extractionResult?.skills?.tools_and_technologies || []),
+        ...(extractionResult?.skills?.soft || []),
       ],
     };
 
     const analysis = {
-      missingSkills: scoringResult.missing_keywords || [],
+      missingSkills: scoringResult?.missing_keywords || [],
       grammarIssues: [],
-      keywordSuggestions: scoringResult.matched_keywords || [],
+      keywordSuggestions: scoringResult?.matched_keywords || [],
       projectRecommendations: [],
-      improvements: (scoringResult.improvement_suggestions || []).map(
+      improvements: (scoringResult?.improvement_suggestions || []).map(
         (s: any) => `${s.section} [Priority: ${s.priority?.toUpperCase() || 'MED'}]: ${s.suggestion}`
       ),
     };
@@ -201,8 +232,8 @@ export const uploadResume = async (
       fileHash,
       rawText,
       version,
-      atsScore: scoringResult.overall_score || scoringResult.ats_compatibility_score || 75,
-      readinessScore: scoringResult.content_quality_score || 75,
+      atsScore: scoringResult?.overall_score || scoringResult?.ats_compatibility_score || 75,
+      readinessScore: scoringResult?.content_quality_score || 75,
       extractionMetadata,
       extractionResult,
       scoringResult,
@@ -212,7 +243,9 @@ export const uploadResume = async (
 
     res.status(201).json({
       success: true,
-      message: 'Resume analyzed successfully via 2-Stage Nemotron Pipeline',
+      message: isTextFormat
+        ? 'Text resume parsed directly via Stage 1 Extraction & Stage 2 Scoring'
+        : 'Resume analyzed successfully via Vision Stage & 2-Stage Nemotron Pipeline',
       resume: newResume,
     });
   } catch (error) {
@@ -296,7 +329,6 @@ export const matchJob = async (
       return;
     }
 
-    // Reuse Stage 1 cached extraction output (DO NOT re-trigger Stage 1 extraction!)
     let extractionResult = resume.extractionResult;
     if (!extractionResult) {
       console.log('[JD MATCHER] Extraction result missing on resume, running Stage 1...');
@@ -309,7 +341,6 @@ export const matchJob = async (
 
     const scoringResult = await executeStage2Scoring(extractionResult, targetRole, jdText);
 
-    // Update resume scoringResult and overall atsScore
     resume.scoringResult = scoringResult;
     resume.atsScore = scoringResult.overall_score;
     await resume.save();
@@ -368,7 +399,6 @@ export const syncSkills = async (
       return;
     }
 
-    // Merge skills avoiding duplicates
     const merged = new Set([...(user.skills || []), ...parsedSkills]);
     user.skills = Array.from(merged);
     await user.save();

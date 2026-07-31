@@ -349,11 +349,18 @@ export async function callNemotronModel(
       const rawContent = resJson?.choices?.[0]?.message?.content || '';
 
       let cleaned = rawContent.replace(THINK_BLOCK_REGEX, '').trim();
-      cleaned = cleaned
-        .replace(/^```json\s*/i, '')
-        .replace(/^```\s*/i, '')
-        .replace(/```$/s, '')
-        .trim();
+
+      const firstBrace = cleaned.indexOf('{');
+      const lastBrace = cleaned.lastIndexOf('}');
+      if (firstBrace !== -1 && lastBrace > firstBrace) {
+        cleaned = cleaned.substring(firstBrace, lastBrace + 1);
+      } else {
+        cleaned = cleaned
+          .replace(/^```json\s*/i, '')
+          .replace(/^```\s*/i, '')
+          .replace(/```$/s, '')
+          .trim();
+      }
 
       return JSON.parse(cleaned);
     } catch (err: any) {
@@ -440,7 +447,6 @@ export async function executeVisionStage(
 
     let pageText = '';
 
-    // Primary: Purpose-built document parsing VLM: nvidia/nemotron-parse
     try {
       const payload = {
         model: 'nvidia/nemotron-parse',
@@ -479,7 +485,6 @@ export async function executeVisionStage(
       console.warn(`[VISION STAGE] nemotron-parse error on page ${i + 1}:`, err.message || err);
     }
 
-    // Secondary Fallback: natural-language-instructable vision chat model (llama-3.2-90b-vision-instruct)
     if (!pageText.trim()) {
       try {
         const payload = {
@@ -517,7 +522,6 @@ export async function executeVisionStage(
     if (pageText.trim()) {
       pageMarkdowns.push(`<!-- Page ${i + 1} -->\n` + pageText.trim());
 
-      // Inspect for non-text element flags or ATS-risk layout signals
       if (/NON-TEXT ELEMENT/i.test(pageText) || /<predict_no_text_in_pic>/i.test(pageText)) {
         visualWarnings.push(`Page ${i + 1}: Graphic icons, photo elements, or non-text rating bars detected.`);
       }
@@ -624,20 +628,7 @@ export async function executeStage2Scoring(
       return getFallbackScoring(extractionResult, role, jobDescription);
     } catch (fallbackErr) {
       console.error('[FALLBACK SCORING FAILED]', fallbackErr);
-      return {
-        overall_score: 75,
-        job_match_score: jobDescription ? 75 : null,
-        content_quality_score: 75,
-        ats_compatibility_score: 75,
-        matched_keywords: ['JavaScript', 'HTML', 'Git'],
-        missing_keywords: ['System Design'],
-        strengths: ['Clear resume structure.'],
-        weaknesses: ['Add more metrics.'],
-        improvement_suggestions: [],
-        summary: `Evaluated resume for ${role}.`,
-        targetRole: role,
-        jobDescription: jobDescription || null,
-      };
+      return getFallbackScoring(extractionResult, role, jobDescription);
     }
   }
 }
@@ -655,7 +646,11 @@ function getFallbackExtraction(rawText: string): any {
   const phoneMatch = rawText.match(/(\+\d{1,3}[- ]?)?\d{10}/);
 
   const words = rawText.split(/\s+/);
-  const technicalKeywords = ['React', 'Node.js', 'Python', 'Java', 'TypeScript', 'SQL', 'MongoDB', 'C++', 'HTML', 'CSS', 'Git', 'Docker', 'AWS'];
+  const technicalKeywords = [
+    'React', 'Node.js', 'Python', 'Java', 'Core Java', 'Kafka', 'Kubernetes', 'Docker',
+    'TypeScript', 'SQL', 'MongoDB', 'C++', 'HTML', 'CSS', 'Git', 'AWS', 'Spring Boot', 'Microservices'
+  ];
+
   const foundTech = technicalKeywords.filter((k) => {
     try {
       const escaped = k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -680,8 +675,8 @@ function getFallbackExtraction(rawText: string): any {
     },
     projects: [
       {
-        name: 'Personal Web Application',
-        description: [rawText.slice(0, 150) || 'Engineered responsive web application.'],
+        name: 'Web Application Project',
+        description: [rawText.slice(0, 150) || 'Engineered responsive application.'],
         technologies: foundTech.slice(0, 3),
         duration: '3 Months',
       },
@@ -698,22 +693,22 @@ function getFallbackExtraction(rawText: string): any {
     experience: [
       {
         company: 'Technology Solutions',
-        role: 'Software Engineering Intern',
+        role: 'Software Developer',
         duration: '3 Months',
-        responsibilities: ['Developed REST API endpoints and modular components.'],
+        responsibilities: ['Developed REST API endpoints and backend services.'],
       },
     ],
     certifications: [
       {
-        name: 'Full Stack Development Certification',
-        issuer: 'Online Learning Platform',
+        name: 'Software Engineering Certification',
+        issuer: 'Online Platform',
         date: '2025',
       },
     ],
     achievements: [
       {
-        title: 'Academic Honor Roll',
-        description: 'Achieved top 5% rank in engineering cohort.',
+        title: 'Academic Achievement',
+        description: 'Completed engineering coursework with honors.',
       },
     ],
     parsing_warnings: [],
@@ -726,42 +721,113 @@ function getFallbackScoring(
   jobDescription?: string | null
 ): any {
   const hasJd = Boolean(jobDescription && jobDescription.trim().length > 0);
-  const job_match_score = hasJd ? 78 : null;
-  const content_quality_score = 75;
-  const ats_compatibility_score = 82;
+
+  const technicalSkills: string[] = extractionResult?.skills?.technical || [];
+  const toolsSkills: string[] = extractionResult?.skills?.tools_and_technologies || [];
+  const softSkills: string[] = extractionResult?.skills?.soft || [];
+  const candidateSkillPool = Array.from(new Set([...technicalSkills, ...toolsSkills, ...softSkills]));
+
+  let matched_keywords: string[] = [];
+  let missing_keywords: string[] = [];
+  let job_match_score: number | null = null;
+
+  if (hasJd && jobDescription) {
+    const commonTechTerms = [
+      'Java', 'Core Java', 'Kafka', 'Kubernetes', 'Kubernaties', 'Docker', 'Spring Boot', 'Microservices',
+      'React', 'Node.js', 'Python', 'TypeScript', 'SQL', 'MongoDB', 'AWS', 'GCP', 'Azure',
+      'CI/CD', 'Git', 'Redis', 'GraphQL', 'REST API', 'C++', 'System Design', 'PostgreSQL'
+    ];
+
+    const jdKeywords: string[] = [];
+    commonTechTerms.forEach((term) => {
+      const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      if (new RegExp(`(?:^|\\W)${escaped}(?:$|\\W)`, 'i').test(jobDescription)) {
+        jdKeywords.push(term);
+      }
+    });
+
+    // Also extract raw technical words from JD
+    const rawWords = jobDescription.split(/[\s,.;/()\n]+/).filter(w => w.length >= 3 && !/^(need|expert|with|and|from|that|this|have|your|more|etc|for|the|are|you)$/i.test(w));
+    rawWords.forEach(w => {
+      if (!jdKeywords.some(k => k.toLowerCase() === w.toLowerCase())) {
+        jdKeywords.push(w);
+      }
+    });
+
+    const uniqueJdKeywords = Array.from(new Set(jdKeywords));
+
+    matched_keywords = uniqueJdKeywords.filter((term) =>
+      candidateSkillPool.some((skill) =>
+        skill.toLowerCase().includes(term.toLowerCase()) || term.toLowerCase().includes(skill.toLowerCase())
+      )
+    );
+
+    missing_keywords = uniqueJdKeywords.filter((term) => !matched_keywords.includes(term));
+
+    if (uniqueJdKeywords.length > 0) {
+      const matchRatio = matched_keywords.length / uniqueJdKeywords.length;
+      job_match_score = Math.min(98, Math.max(15, Math.round(matchRatio * 100)));
+    } else {
+      job_match_score = 60;
+    }
+  } else {
+    matched_keywords = technicalSkills.length > 0 ? technicalSkills : ['Java', 'SQL', 'Git'];
+    missing_keywords = ['System Architecture', 'CI/CD Pipelines'];
+    job_match_score = null;
+  }
+
+  let content_quality_score = 65;
+  if (extractionResult?.projects?.length > 0) content_quality_score += 10;
+  if (extractionResult?.experience?.length > 0) content_quality_score += 10;
+  if (candidateSkillPool.length >= 4) content_quality_score += 10;
+  content_quality_score = Math.min(95, content_quality_score);
+
+  let ats_compatibility_score = 90;
+  const warnings = extractionResult?.parsing_warnings || [];
+  ats_compatibility_score -= warnings.length * 5;
+  if (!extractionResult?.contact_info?.email) ats_compatibility_score -= 10;
+  ats_compatibility_score = Math.min(98, Math.max(40, ats_compatibility_score));
+
+  const improvement_suggestions: any[] = [];
+
+  if (missing_keywords.length > 0) {
+    improvement_suggestions.push({
+      section: 'Skills & Experience',
+      reference: `Target Role Requirements: ${role}`,
+      issue: `Missing required keywords for this job: ${missing_keywords.slice(0, 5).join(', ')}.`,
+      suggestion: `Add practical experience or project bullets demonstrating proficiency in ${missing_keywords.slice(0, 4).join(', ')}.`,
+      priority: 'high',
+    });
+  }
+
+  if (candidateSkillPool.length < 5) {
+    improvement_suggestions.push({
+      section: 'Skills',
+      reference: 'Technical Skills Section',
+      issue: 'Skill catalog appears brief for mid/senior ATS filters.',
+      suggestion: 'Incorporate modern frameworks, build tools, and cloud deployment technologies.',
+      priority: 'medium',
+    });
+  }
 
   const scoring = {
     job_match_score,
     content_quality_score,
     ats_compatibility_score,
-    matched_keywords: extractionResult?.skills?.technical || ['JavaScript', 'React', 'Node.js', 'SQL'],
-    missing_keywords: hasJd ? ['TypeScript', 'Docker', 'CI/CD'] : ['System Design', 'Unit Testing'],
+    matched_keywords,
+    missing_keywords,
     strengths: [
-      'Strong technical foundation in core programming languages.',
-      'Clear project listings with technology stack declarations.',
+      `Skills detected in candidate profile: ${candidateSkillPool.slice(0, 5).join(', ') || 'Software Engineering'}.`,
+      'Clean structural layout and standard section titles.',
     ],
     weaknesses: [
-      'Action bullets could feature more quantitative metrics (e.g. % performance increase).',
-      'Contact section missing direct link to GitHub or portfolio website.',
+      missing_keywords.length > 0
+        ? `Skill gaps detected against target job description: ${missing_keywords.slice(0, 4).join(', ')}.`
+        : 'Action bullets could feature more quantitative performance metrics.',
     ],
-    improvement_suggestions: [
-      {
-        section: 'Experience',
-        reference: 'Developed REST API endpoints',
-        issue: 'Lacks quantitative impact and metric measurement.',
-        suggestion: 'Rephrase to: "Engineered 12+ REST API endpoints reducing response latency by 25%."',
-        priority: 'high' as const,
-      },
-      {
-        section: 'Skills',
-        reference: 'Tools & Technologies',
-        issue: 'Missing containerization and testing frameworks.',
-        suggestion: 'Include Docker, Jest, or Playwright to clear mid-level ATS filters.',
-        priority: 'medium' as const,
-      },
-    ],
+    improvement_suggestions,
     summary: hasJd
-      ? `Evaluation indicates a strong 78% alignment with the ${role} job requirements.`
+      ? `Evaluation indicates a ${job_match_score}% matching alignment with the ${role} job description based on real-time keyword analysis.`
       : `Evaluation reflects general best practices for ${role} positions without a specific job description.`,
   };
 
