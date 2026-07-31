@@ -8,7 +8,7 @@ dotenv.config({ path: path.join(__dirname, '../../.env') });
 
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/engineerpath';
 
-// Exact enum options from User Profile schema & CompleteProfile.tsx dropdown:
+// Exact enum options from User Profile schema:
 // 1. "Software Engineer (SDE)"
 // 2. "Frontend Engineer"
 // 3. "Backend Engineer"
@@ -19,54 +19,78 @@ const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/engine
 // 8. "Mobile App Developer"
 
 export const curatedResources = [
-  // ─── 1. SOFTWARE ENGINEER / SDE ─────────────────────────────────────────────
+  // ─── 1. SOFTWARE ENGINEER / SDE & CORE DSA ─────────────────────────────────────
   {
-    topic: 'DSA Foundations & Sorting Algorithms',
-    careerPaths: ['Software Engineer (SDE)', 'Full Stack Developer', 'Backend Engineer'],
-    title: "Striver's A2Z DSA Course & Sheet",
+    topic: 'DSA: Arrays, Sorting & Binary Search',
+    careerPaths: ['Software Engineer (SDE)', 'Backend Engineer', 'Full Stack Developer'],
+    title: "Striver's A2Z DSA Course & Sheet (TakeUForward)",
     url: 'https://takeuforward.org/strivers-a2z-dsa-course/strivers-a2z-dsa-course-sheet-2/',
     type: 'course',
     difficulty: 'Beginner',
   },
   {
-    topic: 'DSA Foundations & Sorting Algorithms',
-    careerPaths: ['Software Engineer (SDE)', 'Full Stack Developer', 'Backend Engineer'],
-    title: 'LeetCode Explore & Problem Study Plans',
-    url: 'https://leetcode.com/explore/',
-    type: 'practice',
+    topic: 'DSA: Arrays, Sorting & Binary Search',
+    careerPaths: ['Software Engineer (SDE)', 'Backend Engineer', 'Full Stack Developer'],
+    title: 'Kunal Kushwaha Complete Java + DSA Bootcamp',
+    url: 'https://www.youtube.com/@kunalkushwaha',
+    type: 'video',
     difficulty: 'Beginner',
   },
   {
-    topic: 'Trees, Graphs & Dynamic Programming',
-    careerPaths: ['Software Engineer (SDE)'],
-    title: 'NeetCode 150 Roadmap & Video Explanations',
-    url: 'https://neetcode.io/roadmap',
+    topic: 'DSA: Strings & Recursion',
+    careerPaths: ['Software Engineer (SDE)', 'Backend Engineer', 'Full Stack Developer'],
+    title: "Striver's Recursion & Backtracking Series",
+    url: 'https://takeuforward.org/strivers-a2z-dsa-course/strivers-a2z-dsa-course-sheet-2/',
+    type: 'course',
+    difficulty: 'Beginner',
+  },
+  {
+    topic: 'DSA: Linked Lists, Stacks & Queues',
+    careerPaths: ['Software Engineer (SDE)', 'Backend Engineer', 'Full Stack Developer'],
+    title: 'LeetCode Problem Study Plans & Explore',
+    url: 'https://leetcode.com/explore/',
     type: 'practice',
     difficulty: 'Intermediate',
   },
   {
-    topic: 'Computer Science Fundamentals & Operating Systems',
+    topic: 'DSA: Trees, Heaps & Tries',
+    careerPaths: ['Software Engineer (SDE)', 'Backend Engineer'],
+    title: 'NeetCode 150 & Algorithms Practice',
+    url: 'https://neetcode.io/',
+    type: 'practice',
+    difficulty: 'Intermediate',
+  },
+  {
+    topic: 'DSA: Graphs & Dynamic Programming',
+    careerPaths: ['Software Engineer (SDE)', 'Backend Engineer'],
+    title: 'MIT OCW 6.006 Introduction to Algorithms (Python)',
+    url: 'https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-fall-2011/',
+    type: 'course',
+    difficulty: 'Advanced',
+  },
+  {
+    topic: 'Theory Fundamentals: OOPs, DBMS, OS & Computer Networks',
+    careerPaths: ['Software Engineer (SDE)', 'Backend Engineer', 'Full Stack Developer'],
+    title: 'GeeksforGeeks Skill-Up CS Core Subjects',
+    url: 'https://www.geeksforgeeks.org/batch/skill-up-cs-core-subject?tab=Resources',
+    type: 'course',
+    difficulty: 'Intermediate',
+  },
+  {
+    topic: 'Theory Fundamentals: OOPs, DBMS, OS & Computer Networks',
     careerPaths: ['Software Engineer (SDE)', 'Backend Engineer', 'DevOps Engineer'],
-    title: 'Gate Smashers Operating System Playlist',
+    title: 'Gate Smashers Operating System & DBMS Series',
     url: 'https://www.youtube.com/playlist?list=PLxCzCOWd7aiGz9donHRrE9I3Mwn6X58XM',
     type: 'video',
     difficulty: 'Beginner',
   },
   {
-    topic: 'Relational Databases, SQL Schemas & Indexing',
-    careerPaths: ['Software Engineer (SDE)', 'Backend Engineer'],
-    title: 'GeeksforGeeks DBMS Complete Tutorial',
-    url: 'https://www.geeksforgeeks.org/dbms/',
-    type: 'article',
+    topic: 'Aptitude & Quantitative Reasoning',
+    careerPaths: ['Software Engineer (SDE)', 'Frontend Engineer', 'Backend Engineer', 'Full Stack Developer'],
+    title: 'IndiaBIX Quantitative Aptitude & Placement Papers',
+    url: 'https://www.indiabix.com/',
+    type: 'practice',
     difficulty: 'Beginner',
-  },
-  {
-    topic: 'Trees, Graphs & Dynamic Programming',
-    careerPaths: ['Software Engineer (SDE)'],
-    title: 'MIT 6.006 Introduction to Algorithms',
-    url: 'https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-fall-2011/',
-    type: 'course',
-    difficulty: 'Advanced',
   },
 
   // ─── 2. FRONTEND ENGINEER ───────────────────────────────────────────────────
@@ -424,12 +448,12 @@ async function seed() {
     const inserted = await LearningResource.insertMany(
       curatedResources.map(r => ({
         ...r,
-        verified: false, // Default false until health check runs in Phase 2
+        verified: false,
         lastCheckedAt: new Date(),
       }))
     );
 
-    console.log(`[SEED] Successfully seeded ${inserted.length} resources (verified: false) into MongoDB!`);
+    console.log(`[SEED] Successfully seeded ${inserted.length} resources into MongoDB!`);
     process.exit(0);
   } catch (error) {
     console.error('[SEED] Error seeding resources:', error);

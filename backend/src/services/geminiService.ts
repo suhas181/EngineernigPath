@@ -1,6 +1,7 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { resolveResources, LibraryResource } from '../config/resourceLibrary';
 import { LearningResource } from '../models/LearningResource';
+import { sdeMasterTopics, groupTopicsIntoTimeline } from './roadmapArchitecture';
 
 export const normalizeDifficulty = (diff?: string): 'Beginner' | 'Intermediate' | 'Advanced' => {
   if (!diff) return 'Beginner';
@@ -269,17 +270,36 @@ async function attachCuratedResourcesFromDB(
         { topic: { $regex: new RegExp(monthTitle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i') } },
         { topic: { $regex: new RegExp((month.curriculumKeys || []).join('|'), 'i') } }
       ]
-    }).limit(4);
+    }).lean();
 
     if (!dbResources || dbResources.length === 0) {
       // Fallback query for career path
       dbResources = await LearningResource.find({
         careerPaths: { $in: [preferredCareer] }
-      }).limit(3);
+      }).lean();
     }
 
     if (dbResources && dbResources.length > 0) {
-      const formatted = dbResources.map(r => ({
+      // Sort resources based on preferred programming / DSA language track
+      const isPythonTrack = preferredDsaLanguage === 'Python';
+      dbResources.sort((a: any, b: any) => {
+        const aTitle = (a.title || '').toLowerCase();
+        const bTitle = (b.title || '').toLowerCase();
+        if (isPythonTrack) {
+          const aPy = aTitle.includes('python') || aTitle.includes('neetcode') || aTitle.includes('mit');
+          const bPy = bTitle.includes('python') || bTitle.includes('neetcode') || bTitle.includes('mit');
+          if (aPy && !bPy) return -1;
+          if (!aPy && bPy) return 1;
+        } else {
+          const aJava = aTitle.includes('striver') || aTitle.includes('kunal') || aTitle.includes('java');
+          const bJava = bTitle.includes('striver') || bTitle.includes('kunal') || bTitle.includes('java');
+          if (aJava && !bJava) return -1;
+          if (!aJava && bJava) return 1;
+        }
+        return 0;
+      });
+
+      const formatted = dbResources.slice(0, 4).map((r: any) => ({
         id: `res-${r._id}`,
         title: r.title,
         url: r.url,
@@ -1493,6 +1513,34 @@ async function generateIntelligentMockRoadmap(profile: EnrichedProfileInput) {
 
   // Pick curriculum list based on specific target career role
   const preferred = (profile.preferredCareer || '').toLowerCase();
+
+  // Dynamic Master Topic Engine for Software Engineer (SDE)
+  if (preferred.includes('software engineer') || preferred.includes('sde') || (!preferred.includes('devops') && !preferred.includes('frontend') && !preferred.includes('backend') && !preferred.includes('fullstack') && !preferred.includes('ai') && !preferred.includes('data') && !preferred.includes('mobile'))) {
+    logStage('MOCK-SELECTION', `Selected Dynamic Master Topic Engine for ${profile.preferredCareer || 'Software Engineer (SDE)'}`);
+    const monthBlocks = groupTopicsIntoTimeline(sdeMasterTopics, totalMonths);
+    const topicsWithResources = await attachCuratedResourcesFromDB(
+      monthBlocks,
+      profile.preferredCareer || 'Software Engineer (SDE)',
+      profile.preferredDsaLanguage || profile.preferredProgrammingLanguage || 'Java'
+    );
+
+    return {
+      title: `Personalized ${profile.preferredCareer || 'Software Engineer (SDE)'} Career Path for ${profile.name}`,
+      description: `A custom-fit ${totalMonths}-month career preparation path targeting ${profile.targetCompanyType || 'Product-Based'} recruitment.`,
+      version: '2.0.0',
+      source: 'fallback',
+      topics: topicsWithResources,
+      summary: {
+        currentPlacementReadiness: Math.min(60, profile.resumeScore || 30),
+        estimatedFinalReadiness: 90,
+        biggestStrengths: profile.skills.length > 0 ? profile.skills : ['Programming Core'],
+        biggestWeaknesses: profile.weakSubjects.length > 0 ? profile.weakSubjects : ['Advanced DSA', 'System Design'],
+        topThreePriorities: ['Data Structures & Algorithms', 'Full-Stack Projects', 'Theory Fundamentals'],
+        estimatedCompletionDate: `${totalMonths} Months`,
+      },
+    };
+  }
+
   let templatePool = sdeProductCurriculum;
 
   if (preferred.includes('devops')) {
