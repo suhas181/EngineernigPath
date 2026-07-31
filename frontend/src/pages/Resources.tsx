@@ -170,6 +170,7 @@ export function Resources() {
             >
               {cat}
             </button>
+          ))}
         </div>
 
         {/* Difficulty & Bookmarks Filter */}
