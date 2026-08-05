@@ -405,6 +405,28 @@ export function ProfileSettings() {
                         <span>{isSyncingLeetCode ? 'Syncing...' : 'Sync Now'}</span>
                       </button>
                     </div>
+
+                    {user?.leetcodeStatsLastFetchedAt && (
+                      <div className="flex flex-wrap items-center gap-2 pt-2 text-[11px] font-semibold text-amber-900 border-t border-amber-200/60">
+                        <span className="bg-amber-100/80 px-2 py-0.5 rounded-md">
+                          Total Solved: <strong>{(user.leetcodeEasyCount || 0) + (user.leetcodeMediumCount || 0) + (user.leetcodeHardCount || 0)}</strong>
+                        </span>
+                        <span className="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-md">
+                          Easy: {user.leetcodeEasyCount || 0}
+                        </span>
+                        <span className="bg-amber-100 text-amber-800 px-2 py-0.5 rounded-md">
+                          Med: {user.leetcodeMediumCount || 0}
+                        </span>
+                        <span className="bg-rose-100 text-rose-800 px-2 py-0.5 rounded-md">
+                          Hard: {user.leetcodeHardCount || 0}
+                        </span>
+                        {user.leetcodeRanking ? (
+                          <span className="bg-purple-100 text-purple-800 px-2 py-0.5 rounded-md">
+                            Rank: #{user.leetcodeRanking.toLocaleString()}
+                          </span>
+                        ) : null}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

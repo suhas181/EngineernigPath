@@ -80,9 +80,15 @@ const ResourceSchema = new Schema<IResource>({
   },
   difficulty: {
     type: String,
-    enum: CANONICAL_DIFFICULTIES,
-    required: true,
+    enum: ['Beginner', 'Intermediate', 'Advanced', 'beginner', 'intermediate', 'advanced'],
     default: 'Beginner',
+    set: (v: string) => {
+      if (!v) return 'Beginner';
+      const lower = v.toLowerCase();
+      if (lower.includes('adv') || lower.includes('hard')) return 'Advanced';
+      if (lower.includes('int') || lower.includes('med')) return 'Intermediate';
+      return 'Beginner';
+    },
   },
   isCompleted: { type: Boolean, default: false },
 });
@@ -91,19 +97,25 @@ const PracticeProblemSchema = new Schema<IPracticeProblem>({
   id: { type: String, required: true },
   title: { type: String, required: true },
   url: { type: String, required: true },
-  difficulty: { type: String, enum: ['easy', 'medium', 'hard'], required: true },
+  difficulty: { type: String, enum: ['easy', 'medium', 'hard', 'Easy', 'Medium', 'Hard'], default: 'easy' },
   isCompleted: { type: Boolean, default: false },
 });
 
 const MonthProjectSchema = new Schema<IMonthProject>({
-  title: { type: String, required: true },
-  description: { type: String, required: true },
+  title: { type: String, default: '' },
+  description: { type: String, default: '' },
   technologies: { type: [String], default: [] },
   difficulty: {
     type: String,
-    enum: CANONICAL_DIFFICULTIES,
-    required: true,
+    enum: ['Beginner', 'Intermediate', 'Advanced', 'beginner', 'intermediate', 'advanced'],
     default: 'Beginner',
+    set: (v: string) => {
+      if (!v) return 'Beginner';
+      const lower = v.toLowerCase();
+      if (lower.includes('adv') || lower.includes('hard')) return 'Advanced';
+      if (lower.includes('int') || lower.includes('med')) return 'Intermediate';
+      return 'Beginner';
+    },
   },
   githubSubmission: { type: String, default: '' },
   liveDemoSubmission: { type: String, default: '' },
@@ -113,7 +125,7 @@ const MonthProjectSchema = new Schema<IMonthProject>({
 const TopicSchema = new Schema<ITopic>({
   id: { type: String, required: true },
   title: { type: String, required: true },
-  description: { type: String, required: true },
+  description: { type: String, default: '' },
   isCompleted: { type: Boolean, default: false },
   resources: [ResourceSchema],
   

@@ -211,6 +211,8 @@ export const getProfile = async (
       return;
     }
 
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+
     if (user.leetcodeUsername) {
       user = await syncUserLeetCodeStats(user, false);
     }
@@ -228,7 +230,7 @@ export const updateProfile = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const user = req.user;
+    let user = req.user;
     if (!user) {
       res.status(404).json({ message: 'User not found' });
       return;
@@ -244,6 +246,7 @@ export const updateProfile = async (
     }
 
     const data = parseResult.data;
+    const previousUsername = user.leetcodeUsername;
 
     // Apply only provided (non-undefined) fields
     UPDATABLE_FIELDS.forEach((field) => {
@@ -252,7 +255,14 @@ export const updateProfile = async (
       }
     });
 
-    await user.save();
+    const usernameChanged = user.leetcodeUsername && user.leetcodeUsername !== previousUsername;
+    const missingStats = user.leetcodeUsername && (!user.leetcodeStatsLastFetchedAt || (user.leetcodeEasyCount === 0 && user.leetcodeMediumCount === 0 && user.leetcodeHardCount === 0));
+
+    if (usernameChanged || missingStats) {
+      user = await syncUserLeetCodeStats(user, true);
+    } else {
+      await user.save();
+    }
 
     res.status(200).json({
       message: 'Profile updated successfully',

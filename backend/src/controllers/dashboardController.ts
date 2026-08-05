@@ -7,6 +7,7 @@ import { PlannerEvent } from '../models/PlannerEvent';
 import { Task } from '../models/Task';
 import { Resume } from '../models/Resume';
 import { getActiveRoadmap } from '../services/roadmapHelper';
+import { syncUserLeetCodeStats } from '../services/leetcodeService';
 
 export const getDashboardData = async (
   req: AuthenticatedRequest,
@@ -14,10 +15,20 @@ export const getDashboardData = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const user = req.user;
+    let user = req.user;
     if (!user) {
       res.status(404).json({ message: 'User not found' });
       return;
+    }
+
+    // Disable caching to ensure live dashboard updates when stats or progress change
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+
+    // Auto-sync LeetCode stats if linked (uses 6-hr cache if fresh)
+    if (user.leetcodeUsername && user.leetcodeUsername.trim() !== '') {
+      user = await syncUserLeetCodeStats(user, false);
     }
 
     // 1. Fetch User Active Roadmap using single source of truth helper

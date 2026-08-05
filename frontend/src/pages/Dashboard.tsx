@@ -213,15 +213,21 @@ export function Dashboard() {
         />
 
         {/* Variant C: White Metric Card with Progress */}
-        <StatCard
-          variant="white"
-          icon={<Target className="h-5 w-5 text-teal-600" />}
-          label="DSA & Projects"
-          value={`${stats?.dsaProblemsSolved || 0} Solved`}
-          subtitle={`${stats?.projectsBuilt || 0} major projects completed`}
-          progressPercent={Math.min(100, ((stats?.dsaProblemsSolved || 0) / 100) * 100)}
-          progressColor="var(--brand)"
-        />
+        {(() => {
+          const userLcTotal = (user?.leetcodeEasyCount || 0) + (user?.leetcodeMediumCount || 0) + (user?.leetcodeHardCount || 0);
+          const totalDsaSolved = (stats?.dsaProblemsSolved && stats.dsaProblemsSolved > 0) ? stats.dsaProblemsSolved : userLcTotal;
+          return (
+            <StatCard
+              variant="white"
+              icon={<Target className="h-5 w-5 text-teal-600" />}
+              label="DSA & Projects"
+              value={`${totalDsaSolved} Solved`}
+              subtitle={`${stats?.projectsBuilt || 0} major projects completed`}
+              progressPercent={Math.min(100, (totalDsaSolved / 100) * 100)}
+              progressColor="var(--brand)"
+            />
+          );
+        })()}
       </div>
 
       {/* ─── MAIN CONTENT SPLIT VIEW ──────────────────────────────────── */}

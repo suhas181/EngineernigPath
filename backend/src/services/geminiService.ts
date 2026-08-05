@@ -247,7 +247,7 @@ Return ONLY a valid JSON object matching this schema. Do not write any markdown 
 
 // ─── Stage 5: Backend Curated Resource Attachment from Database ─────────────
 async function attachCuratedResourcesFromDB(
-  topics: any[],
+  monthBlocks: any[],
   preferredCareer: string,
   preferredDsaLanguage: 'Java' | 'Python' | 'C++'
 ) {
@@ -255,93 +255,81 @@ async function attachCuratedResourcesFromDB(
 
   const updatedTopics = [];
 
-  for (const month of topics) {
-    if (month.resources && month.resources.length > 0 && month.isCompleted) {
-      updatedTopics.push(month);
-      continue;
-    }
+  for (const month of monthBlocks) {
+    const keys = month.curriculumKeys || [];
+    const resolved: LibraryResource[] = [];
+    keys.forEach((key: string) => {
+      const res = resolveResources(key, preferredDsaLanguage);
+      resolved.push(...res);
+    });
 
-    const monthTitle = (month.title || '').replace(/^Month \d+:\s*/, '').trim();
+    const learnResources = resolved.filter((r) => r.stage === 'learn');
+    const notesResources = resolved.filter((r) => r.stage === 'notes');
+    const revisionResources = resolved.filter((r) => r.stage === 'revision');
+    const interviewResources = resolved.filter((r) => r.stage === 'interview');
+    const practiceResources = resolved.filter((r) => r.stage === 'practice');
 
-    // Query LearningResource collection for matches
-    let dbResources = await LearningResource.find({
-      careerPaths: { $in: [preferredCareer] },
-      $or: [
-        { topic: { $regex: new RegExp(monthTitle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i') } },
-        { topic: { $regex: new RegExp((month.curriculumKeys || []).join('|'), 'i') } }
-      ]
-    }).lean();
+    const formattedResources = resolved.map((r) => ({
+      id: r.id,
+      title: r.title,
+      url: r.url,
+      type: normalizeResourceType(r.type),
+      difficulty: normalizeDifficulty(r.difficulty || r.level),
+      level: r.level,
+      provider: r.provider,
+      estimatedHours: r.estimatedHours,
+      tags: r.tags,
+      stage: r.stage,
+      free: r.free,
+      verified: true,
+      isCompleted: false,
+    }));
 
-    if (!dbResources || dbResources.length === 0) {
-      // Fallback query for career path
-      dbResources = await LearningResource.find({
-        careerPaths: { $in: [preferredCareer] }
-      }).lean();
-    }
+    // Enrich individual Learning Sprints within this month
+    const enrichedSprints = (month.learningSprints || []).map((sprint: any) => {
+      const sprintKeys = sprint.curriculumKeys || keys;
+      const sprintResolved: LibraryResource[] = [];
+      sprintKeys.forEach((k: string) => {
+        sprintResolved.push(...resolveResources(k, preferredDsaLanguage));
+      });
 
-    if (dbResources && dbResources.length > 0) {
-      // Sort resources based on preferred programming / DSA language track
-      const isPythonTrack = preferredDsaLanguage === 'Python';
-      dbResources.sort((a: any, b: any) => {
-        const aTitle = (a.title || '').toLowerCase();
-        const bTitle = (b.title || '').toLowerCase();
-        if (isPythonTrack) {
-          const aPy = aTitle.includes('python') || aTitle.includes('neetcode') || aTitle.includes('mit');
-          const bPy = bTitle.includes('python') || bTitle.includes('neetcode') || bTitle.includes('mit');
-          if (aPy && !bPy) return -1;
-          if (!aPy && bPy) return 1;
-        } else {
-          const aJava = aTitle.includes('striver') || aTitle.includes('kunal') || aTitle.includes('java');
-          const bJava = bTitle.includes('striver') || bTitle.includes('kunal') || bTitle.includes('java');
-          if (aJava && !bJava) return -1;
-          if (!aJava && bJava) return 1;
+      const sprintLearn = sprintResolved.filter((r) => r.stage === 'learn');
+      const sprintNotes = sprintResolved.filter((r) => r.stage === 'notes');
+      const sprintRevision = sprintResolved.filter((r) => r.stage === 'revision');
+      const sprintInterview = sprintResolved.filter((r) => r.stage === 'interview');
+
+      return {
+        ...sprint,
+        learnResources: sprintLearn.length > 0 ? sprintLearn : learnResources.slice(0, 2),
+        notesResources: sprintNotes.length > 0 ? sprintNotes : notesResources.slice(0, 2),
+        revision: sprintRevision.length > 0 ? sprintRevision : revisionResources.slice(0, 2),
+        interviewQuestions: sprintInterview.length > 0
+          ? sprintInterview.map((i) => i.title)
+          : sprint.interviewQuestions,
+        resources: sprintResolved,
+      };
+    });
+
+    updatedTopics.push({
+      ...month,
+      resources: formattedResources.length > 0 ? formattedResources : [
+        {
+          id: `res-pending-${Date.now()}`,
+          title: 'Curated resources resolution in progress for this topic',
+          url: '#',
+          type: 'article',
+          difficulty: 'Beginner',
+          verified: true,
+          isCompleted: false,
         }
-        return 0;
-      });
-
-      const formatted = dbResources.slice(0, 4).map((r: any) => ({
-        id: `res-${r._id}`,
-        title: r.title,
-        url: r.url,
-        type: normalizeResourceType(r.type),
-        difficulty: normalizeDifficulty(r.difficulty),
-        verified: r.verified,
-        isCompleted: false
-      }));
-
-      updatedTopics.push({
-        ...month,
-        resources: formatted
-      });
-    } else {
-      console.warn(`[CURATION-GAP] Missing curated resource in MongoDB for topic: "${monthTitle}" (${preferredCareer}).`);
-      
-      const resolved: LibraryResource[] = [];
-      const keys = month.curriculumKeys || [];
-      keys.forEach((key: string) => {
-        const res = resolveResources(key, preferredDsaLanguage);
-        resolved.push(...res);
-      });
-
-      const fallbackResources = resolved.length > 0
-        ? resolved.slice(0, 3).map(r => ({ ...r, type: normalizeResourceType(r.type), difficulty: normalizeDifficulty(r.difficulty), verified: false, isCompleted: false }))
-        : [
-            {
-              id: `res-pending-${Date.now()}`,
-              title: 'Resource curation in progress for this topic',
-              url: '#',
-              type: 'article',
-              difficulty: 'Beginner',
-              verified: false,
-              isCompleted: false
-            }
-          ];
-
-      updatedTopics.push({
-        ...month,
-        resources: fallbackResources
-      });
-    }
+      ],
+      learnResources,
+      notesResources,
+      revisionResources,
+      interviewResources,
+      practiceResources,
+      learningSprints: enrichedSprints,
+    });
   }
 
   return updatedTopics;

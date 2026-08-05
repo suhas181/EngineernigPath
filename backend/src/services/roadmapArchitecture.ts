@@ -1,3 +1,5 @@
+import { LibraryResource } from '../resources/types';
+
 export interface MasterTopic {
   id: string;
   title: string;
@@ -13,6 +15,45 @@ export interface MasterTopic {
   };
   interviewPrep?: string[];
   bonusForLongTimelineOnly?: boolean;
+}
+
+export interface LearningSprint {
+  id: string;
+  sprintNumber: number;
+  sprintGoal: string;
+  todaysFocus: string;
+  estimatedHours: number;
+  topics: string[];
+  curriculumKeys: string[];
+  resources?: LibraryResource[];
+  learnResources?: LibraryResource[];
+  notesResources?: LibraryResource[];
+  practice: Array<{ id: string; title: string; url: string; difficulty: 'easy' | 'medium' | 'hard'; isCompleted: boolean }>;
+  interviewQuestions: string[];
+  miniProject?: {
+    title: string;
+    description: string;
+    technologies: string[];
+    url?: string;
+    isCompleted?: boolean;
+  };
+  revision?: LibraryResource[];
+  sprintProgress: number;
+  expectedOutcomes: string;
+}
+
+export interface MonthlyMilestoneSummary {
+  topicsCompleted: number;
+  totalTopics: number;
+  problemsSolved: number;
+  totalProblems: number;
+  projectStatus: 'not_started' | 'in_progress' | 'completed';
+  readinessImprovement: {
+    currentReadinessPercent: number;
+    expectedReadinessPercent: number;
+    improvementPercent: number;
+  };
+  recommendedNextSteps: string[];
 }
 
 export interface GeneratedMonthBlock {
@@ -36,6 +77,8 @@ export interface GeneratedMonthBlock {
   weeklyMilestones: string[];
   monthlyGoal: string;
   expectedOutcome: string;
+  learningSprints: LearningSprint[];
+  monthlyMilestoneSummary: MonthlyMilestoneSummary;
 }
 
 /**
@@ -201,18 +244,13 @@ export const sdeMasterTopics: MasterTopic[] = [
 
 /**
  * Dynamically group an ordered master topic list into N month blocks based on selected timeline.
- * 
- * Hour Balancing & Capping Algorithm:
- * - Calculates total workload across active topics.
- * - Caps maximum monthly workload at a sane ceiling (default 90h max, ~22.5 hrs/week).
- * - If compressed timeline total raw hours exceeds (maxMonthlyCap * timelineMonths),
- *   proportionally scales workload scope to maintain realistic pacing.
- * - Distributes study hours smoothly across months with modest variance based on difficulty.
+ * Also dynamically generates 3-5 Learning Sprints per month based on timeline & study hours per day.
  */
 export function groupTopicsIntoTimeline(
   masterTopics: MasterTopic[],
   timelineMonths: number,
-  maxMonthlyCap: number = 90
+  maxMonthlyCap: number = 90,
+  dailyStudyHours: number = 3
 ): GeneratedMonthBlock[] {
   const activeTopics = masterTopics.filter(
     (t) => !t.bonusForLongTimelineOnly || timelineMonths >= 8
@@ -221,16 +259,9 @@ export function groupTopicsIntoTimeline(
   const totalTopics = activeTopics.length;
   if (totalTopics === 0) return [];
 
-  // Calculate unscaled total workload
   const rawTotalWorkload = activeTopics.reduce((sum, t) => sum + t.defaultStudyHours, 0);
-
-  // Maximum total workload capacity for this timeline
   const maxTotalAllowed = maxMonthlyCap * timelineMonths;
-
-  // Scale factor if compressed timeline exceeds sane max monthly capacity
   const scaleFactor = rawTotalWorkload > maxTotalAllowed ? maxTotalAllowed / rawTotalWorkload : 1.0;
-
-  // Scaled total workload
   const scaledTotalWorkload = Math.round(rawTotalWorkload * scaleFactor);
   const baseMonthlyHours = Math.round(scaledTotalWorkload / timelineMonths);
 
@@ -241,13 +272,15 @@ export function groupTopicsIntoTimeline(
   let topicIndex = 0;
 
   for (let m = 1; m <= timelineMonths; m++) {
-    const countForThisMonth = baseTopicsPerMonth + (remainder > 0 ? 1 : 0);
+    const countForThisMonth = Math.max(1, baseTopicsPerMonth + (remainder > 0 ? 1 : 0));
     if (remainder > 0) remainder--;
 
-    const currentTopics = activeTopics.slice(topicIndex, topicIndex + countForThisMonth);
+    let currentTopics = activeTopics.slice(topicIndex, topicIndex + countForThisMonth);
+    if (currentTopics.length === 0 && activeTopics.length > 0) {
+      currentTopics = [activeTopics[(m - 1) % activeTopics.length]];
+    }
     topicIndex += countForThisMonth;
 
-    // Sequence position-based difficulty determination
     const midPointIndex = topicIndex - countForThisMonth / 2;
     const progressRatio = midPointIndex / totalTopics;
     let difficulty: 'Beginner' | 'Intermediate' | 'Advanced' = 'Beginner';
@@ -257,7 +290,6 @@ export function groupTopicsIntoTimeline(
       difficulty = 'Intermediate';
     }
 
-    // Modest variance based on timeline position (peak in middle, lighter start/end)
     let monthHourAdjustment = 0;
     if (timelineMonths > 1) {
       if (m === Math.ceil(timelineMonths / 2)) {
@@ -290,18 +322,74 @@ export function groupTopicsIntoTimeline(
 
     const interviewPrep = Array.from(new Set(currentTopics.flatMap((t) => t.interviewPrep || [])));
 
-    const weeklyStudyPlan: string[] = [];
-    currentTopics.forEach((t, i) => {
-      weeklyStudyPlan.push(`Week ${i + 1}: Focus on ${t.title} — ${t.description}`);
-    });
-    for (let w = currentTopics.length + 1; w <= 4; w++) {
-      weeklyStudyPlan.push(`Week ${w}: Problem solving, review, and milestone project integration for ${topicTitles[0] || 'month topics'}.`);
+    // DYNAMIC SPRINT CALCULATION (3, 4, or 5 Sprints per Month)
+    const targetHoursPerSprint = Math.max(10, dailyStudyHours * 7);
+    const calculatedSprintCount = Math.round(estimatedStudyHours / targetHoursPerSprint);
+    const sprintCount = Math.min(5, Math.max(3, calculatedSprintCount));
+
+    const learningSprints: LearningSprint[] = [];
+    const hoursPerSprint = Math.round(estimatedStudyHours / sprintCount);
+
+    for (let s = 1; s <= sprintCount; s++) {
+      const topicForSprint = currentTopics[(s - 1) % currentTopics.length] || currentTopics[0];
+      const sprintKeys = topicForSprint.curriculumKeys || curriculumKeys;
+
+      const sprintPractice = (topicForSprint.practiceProblems || practiceProblems)
+        .slice(0, 3)
+        .map((p, idx) => ({
+          id: `prob-m${m}-s${s}-${idx}`,
+          title: p.title,
+          url: p.url,
+          difficulty: p.difficulty,
+          isCompleted: false,
+        }));
+
+      learningSprints.push({
+        id: `sprint-m${m}-s${s}`,
+        sprintNumber: s,
+        sprintGoal: `Master core concepts and problem patterns for ${topicForSprint.title}`,
+        todaysFocus: `Deep dive into ${topicForSprint.title}: ${topicForSprint.description.slice(0, 80)}...`,
+        estimatedHours: hoursPerSprint,
+        topics: [topicForSprint.title],
+        curriculumKeys: sprintKeys,
+        practice: sprintPractice,
+        interviewQuestions: topicForSprint.interviewPrep || interviewPrep.slice(0, 2),
+        miniProject: s === sprintCount && project ? { ...project, isCompleted: false } : undefined,
+        sprintProgress: 0,
+        expectedOutcomes: `Solid working proficiency in ${topicForSprint.title} with clean problem solving intuition.`,
+      });
     }
+
+    const weeklyStudyPlan: string[] = learningSprints.map(
+      (s) => `Sprint ${s.sprintNumber}: ${s.sprintGoal} (${s.estimatedHours}h)`
+    );
 
     const learningObjectives = currentTopics.map((t) => `Master ${t.title}: ${t.description}`);
     const monthTitleHeader = currentTopics.length > 1 
       ? `${currentTopics[0].title} & ${currentTopics[currentTopics.length - 1].title}`
       : currentTopics[0].title;
+
+    const currentReadiness = Math.min(95, Math.round(15 + (m - 1) * (70 / timelineMonths)));
+    const expectedReadiness = Math.min(95, Math.round(15 + m * (70 / timelineMonths)));
+    const improvementPercent = expectedReadiness - currentReadiness;
+
+    const monthlyMilestoneSummary: MonthlyMilestoneSummary = {
+      topicsCompleted: 0,
+      totalTopics: currentTopics.length,
+      problemsSolved: 0,
+      totalProblems: practiceProblems.length,
+      projectStatus: project ? 'not_started' : 'completed',
+      readinessImprovement: {
+        currentReadinessPercent: currentReadiness,
+        expectedReadinessPercent: expectedReadiness,
+        improvementPercent,
+      },
+      recommendedNextSteps: [
+        `Review weak topics in Month ${m} before proceeding to Month ${m + 1}`,
+        `Complete all attached practice problems and mini project for ${monthTitleHeader}`,
+        `Solve 5 additional medium problems on LeetCode / Striver Sheet`,
+      ],
+    };
 
     monthBlocks.push({
       monthNumber: m,
@@ -319,6 +407,8 @@ export function groupTopicsIntoTimeline(
       weeklyMilestones: currentTopics.map((t) => `Complete exercises & checkpoints for ${t.title}`),
       monthlyGoal: `Build proficiency in ${topicTitles.join(', ')}`,
       expectedOutcome: `Solid mastery of ${topicTitles.join(', ')} with interview-level problem solving ability.`,
+      learningSprints,
+      monthlyMilestoneSummary,
     });
   }
 
