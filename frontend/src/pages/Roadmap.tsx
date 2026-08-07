@@ -1,70 +1,80 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useAuthStore } from '../store/useAuthStore';
 import toast from 'react-hot-toast';
-import { aiEngineerRoadmap } from '../utils/aiEngineerData';
-import { dataScientistRoadmap } from '../utils/dataScientistData';
-import { dataAnalystRoadmap } from '../utils/dataAnalystData';
-import { cyberSecurityRoadmap } from '../utils/cyberSecurityData';
-import { javaDeveloperRoadmap } from '../utils/javaDeveloperData';
-import { softwareEngineerRoadmap } from '../utils/softwareEngineerData';
-import { devOpsRoadmap } from '../utils/devOpsData';
-import { flutterRoadmap } from '../utils/flutterData';
-import { pythonBackendRoadmap } from '../utils/pythonBackendData';
-import { frontendRoadmap } from '../utils/frontendData';
-import { fullstackRoadmap } from '../utils/fullstackData';
-import { backendRoadmap } from '../utils/backendData';
-import { mobileRoadmap } from '../utils/mobileData';
-
-import { AlertOctagon, Sparkles, Map, Target } from 'lucide-react';
+import {
+  Compass,
+  Code2,
+  ChevronDown,
+  Clock,
+  Sparkles,
+  Layers,
+  ArrowRight,
+  AlertOctagon,
+} from 'lucide-react';
 
 import * as roadmapService from '../services/roadmapService';
-import { RoadmapData, Topic } from '../components/roadmap/roadmap.types';
+import {
+  CareerRoleCurriculum,
+  CurriculumCategory,
+  CurriculumModule,
+  CurriculumTopic,
+} from '../services/curriculumServiceTypes';
 
-import RoadmapHeader from '../components/roadmap/RoadmapHeader';
-import RoadmapTabs, { RoadmapTabType } from '../components/roadmap/RoadmapTabs';
-import TodayFocusCard from '../components/roadmap/cards/TodayFocusCard';
-import LearningPathCard, { PathTask } from '../components/roadmap/cards/LearningPathCard';
-import StreakTracker from '../components/roadmap/cards/StreakTracker';
-import ProgressSummary from '../components/roadmap/cards/ProgressSummary';
-import TimelineMonthCard from '../components/roadmap/timeline/TimelineMonthCard';
-import WeeklyReviewModal from '../components/roadmap/modals/WeeklyReviewModal';
-import StaticTrackViewer from '../components/roadmap/tracks/StaticTrackViewer';
 import { MosaicShell } from '../components/mosaic/MosaicShell';
-import { TopHeader } from '../components/mosaic/TopHeader';
+import { CategoryCard } from '../components/learning/CategoryCard';
+import { TopicLearningView } from '../components/learning/TopicLearningView';
 
-interface ProjectSubmissionState {
-  github: string;
-  demo: string;
-  status: 'not-started' | 'in-progress' | 'completed';
+const AVAILABLE_ROLES = [
+  'Software Engineer',
+  'Frontend Engineer',
+  'Backend Engineer',
+  'Full Stack Developer',
+  'AI / ML Engineer',
+  'Data Scientist / Analyst',
+  'DevOps Engineer',
+  'Mobile App Developer',
+];
+
+interface SelectedTopicState {
+  category: CurriculumCategory;
+  module: CurriculumModule;
+  topic: CurriculumTopic;
 }
 
 export function Roadmap() {
   const { user, updateUser } = useAuthStore();
-  const [roadmap, setRoadmap] = useState<RoadmapData | null>(null);
+  const [curriculum, setCurriculum] = useState<CareerRoleCurriculum | null>(null);
+  const [selectedRole, setSelectedRole] = useState<string>(
+    user?.preferredCareer || 'Software Engineer'
+  );
+  const [selectedLanguage, setSelectedLanguage] = useState<'Java' | 'Python' | 'C++'>(
+    (user?.preferredProgrammingLanguage as any) || 'Java'
+  );
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>('programming-languages');
+  const [selectedTopicState, setSelectedTopicState] = useState<SelectedTopicState | null>(null);
+
   const [isLoading, setIsLoading] = useState(true);
-  const [isGenerating, setIsGenerating] = useState(false);
   const [isError, setIsError] = useState(false);
-  const [profileChanged, setProfileChanged] = useState(false);
-  const [expandedTopics, setExpandedTopics] = useState<Record<string, boolean>>({});
-  const [activeTab, setActiveTab] = useState<RoadmapTabType>('personalized');
 
-  const [projectSubmissions, setProjectSubmissions] = useState<Record<string, ProjectSubmissionState>>({});
-  const [showReviewModal, setShowReviewModal] = useState(false);
-  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+  const categorySectionRef = useRef<HTMLDivElement>(null);
 
-  const fetchRoadmap = async () => {
+  const fetchCurriculum = async (role: string, lang: 'Java' | 'Python' | 'C++') => {
     setIsLoading(true);
     setIsError(false);
 
     try {
-      const data = await roadmapService.getRoadmap();
+      const data = await roadmapService.getLearningCurriculum(role, lang);
       if (data) {
-        setRoadmap(data);
-      } else {
-        setRoadmap(null);
+        setCurriculum(data);
+        if (data.categories && data.categories.length > 0) {
+          const exists = data.categories.some((c: CurriculumCategory) => c.id === selectedCategoryId);
+          if (!exists) {
+            setSelectedCategoryId(data.categories[0].id);
+          }
+        }
       }
     } catch (error) {
-      console.error('Error loading roadmap:', error);
+      console.error('Failed to load curriculum:', error);
       setIsError(true);
     } finally {
       setIsLoading(false);
@@ -72,357 +82,281 @@ export function Roadmap() {
   };
 
   useEffect(() => {
-    fetchRoadmap();
-  }, []);
+    fetchCurriculum(selectedRole, selectedLanguage);
+  }, [selectedRole, selectedLanguage]);
 
-  useEffect(() => {
-    if (!roadmap || !user) return;
-    const isDifferentRole = user.preferredCareer && user.preferredCareer !== roadmap.title;
-    setProfileChanged(Boolean(isDifferentRole));
-  }, [user, roadmap]);
-
-  const handleGenerate = async (forceRegenerate = false) => {
-    setIsGenerating(true);
-    try {
-      const newRoadmap = await roadmapService.generateRoadmap(forceRegenerate);
-      setRoadmap(newRoadmap);
-      setProfileChanged(false);
-      toast.success(
-        forceRegenerate
-          ? 'Roadmap adapted to latest progress & profile!'
-          : 'Custom SDE roadmap generated successfully!'
-      );
-    } catch (error) {
-      console.error('Generation failed:', error);
-      toast.error('Failed to generate roadmap. Please check your backend.');
-    } finally {
-      setIsGenerating(false);
+  const handleLanguageChange = (lang: 'Java' | 'Python' | 'C++') => {
+    setSelectedLanguage(lang);
+    if (user) {
+      updateUser({
+        ...user,
+        preferredProgrammingLanguage: lang,
+      });
     }
+    toast.success(`Language updated to ${lang}`);
   };
 
-  const handleToggle = async (
-    topicId: string,
-    resourceId?: string,
-    problemId?: string,
-    projectPayload?: any,
-    isCompletedMonth?: boolean
-  ) => {
-    try {
-      const updated = await roadmapService.updateRoadmapProgress(
-        topicId,
-        resourceId,
-        problemId,
-        projectPayload,
-        isCompletedMonth
-      );
-      if (updated) {
-        setRoadmap(updated);
-      }
-    } catch (error) {
-      console.error('Error toggling progress:', error);
-      toast.error('Failed to update progress.');
+  const handleRoleChange = (role: string) => {
+    setSelectedRole(role);
+    setSelectedTopicState(null);
+    if (user) {
+      updateUser({
+        ...user,
+        preferredCareer: role,
+      });
     }
+    toast.success(`Career track changed to ${role}`);
   };
 
-  const toggleExpand = (topicId: string) => {
-    setExpandedTopics((prev) => ({
-      ...prev,
-      [topicId]: !prev[topicId],
-    }));
+  const handleSelectCategory = (catId: string) => {
+    setSelectedCategoryId(catId);
+    setTimeout(() => {
+      categorySectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 50);
   };
 
-  const handleProjectSubmit = async (topicId: string) => {
-    try {
-      const sub = projectSubmissions[topicId];
-      await handleToggle(topicId, undefined, undefined, sub, true);
-      toast.success('Project submission updated!');
-    } catch (err) {
-      console.error(err);
-      toast.error('Failed to save project submission.');
-    }
+  const handleSelectTopic = (category: CurriculumCategory, module: CurriculumModule, topic: CurriculumTopic) => {
+    setSelectedTopicState({ category, module, topic });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleWeeklyReviewSubmit = async (data: {
-    easySolved: number;
-    mediumSolved: number;
-    hardSolved: number;
-    difficultTopics: string[];
-    projectCompletedCheck: boolean;
-    adaptRoadmap: boolean;
-  }) => {
-    setIsSubmittingReview(true);
-    try {
-      const res = await roadmapService.submitWeeklyReview(data);
-
-      toast.success('Weekly review submitted!');
-      setShowReviewModal(false);
-
-      if (user) {
-        updateUser({
-          ...user,
-          leetcodeEasyCount: (user.leetcodeEasyCount || 0) + data.easySolved,
-          leetcodeMediumCount: (user.leetcodeMediumCount || 0) + data.mediumSolved,
-          leetcodeHardCount: (user.leetcodeHardCount || 0) + data.hardSolved,
-        });
-      }
-
-      if (res && res.adaptRequired) {
-        toast.loading('Adapting SDE roadmap schedule structure...');
-        await handleGenerate(true);
-      } else {
-        await fetchRoadmap();
-      }
-    } catch (error) {
-      console.error('Error submitting review:', error);
-      toast.error('Failed to save review details.');
-    } finally {
-      setIsSubmittingReview(false);
-    }
-  };
-
-  const getActiveSdeState = () => {
-    if (!roadmap || !roadmap.topics || !Array.isArray(roadmap.topics) || !roadmap.topics.length) {
-      return null;
-    }
-
-    const activeMonth =
-      roadmap.topics.find((t) => !t.isCompleted) || roadmap.topics[roadmap.topics.length - 1];
-
-    if (!activeMonth) return null;
-
-    const resources = activeMonth.resources || [];
-    const totalResources = resources.length;
-    const completedResources = resources.filter((r) => r.isCompleted).length;
-
-    const practiceProblems = activeMonth.practiceProblems || [];
-    const totalProblems = practiceProblems.length;
-    const completedProblems = practiceProblems.filter((p) => p.isCompleted).length;
-
-    const totalProj = activeMonth.project ? 1 : 0;
-    const completedProj = activeMonth.project?.isCompleted ? 1 : 0;
-
-    const totalItems = totalResources + totalProblems + totalProj;
-    const completedItems = completedResources + completedProblems + completedProj;
-    const remainingProblems = totalProblems - completedProblems;
-
-    let nextTaskTitle = 'All tasks completed!';
-    let nextTaskType: 'resource' | 'problem' | 'project' | 'none' = 'none';
-
-    const nextUncompletedResource = resources.find((r) => !r.isCompleted);
-    const nextUncompletedProblem = practiceProblems.find((p) => !p.isCompleted);
-    const nextUncompletedProject =
-      activeMonth.project && !activeMonth.project.isCompleted ? activeMonth.project : null;
-
-    if (nextUncompletedResource) {
-      nextTaskTitle = `Resource: ${nextUncompletedResource.title}`;
-      nextTaskType = 'resource';
-    } else if (nextUncompletedProblem) {
-      nextTaskTitle = `Problem: ${nextUncompletedProblem.title}`;
-      nextTaskType = 'problem';
-    } else if (nextUncompletedProject) {
-      nextTaskTitle = `Project: ${nextUncompletedProject.title}`;
-      nextTaskType = 'project';
-    }
-
-    const todayPath: PathTask[] = resources.slice(0, 3).map((r) => ({
-      title: r.title,
-      type: 'Resource',
-      url: r.url,
-    }));
-
-    return {
-      activeMonth,
-      totalItems,
-      completedItems,
-      remainingProblems,
-      nextTaskType,
-      nextTaskTitle,
-      nextTaskAction: () => {},
-      todayPath,
-    };
-  };
-
-  const getStaticTrackData = () => {
-    const career = user?.preferredCareer || 'Frontend Engineering';
-    switch (career) {
-      case 'AI Engineer':
-        return { track: 'ai-engineer', data: aiEngineerRoadmap };
-      case 'Data Scientist':
-        return { track: 'data-scientist', data: dataScientistRoadmap };
-      case 'Data Analyst':
-        return { track: 'data-analyst', data: dataAnalystRoadmap };
-      case 'Cyber Security':
-        return { track: 'cyber-security', data: cyberSecurityRoadmap };
-      case 'Java Developer':
-        return { track: 'java-developer', data: javaDeveloperRoadmap };
-      case 'Software Engineer':
-        return { track: 'software-engineer', data: softwareEngineerRoadmap };
-      case 'DevOps Engineer':
-        return { track: 'devops-engineer', data: devOpsRoadmap };
-      case 'Flutter Developer':
-        return { track: 'flutter-developer', data: flutterRoadmap };
-      case 'Python Backend':
-        return { track: 'python-backend', data: pythonBackendRoadmap };
-      case 'Frontend Engineering':
-      case 'Frontend':
-        return { track: 'frontend', data: frontendRoadmap };
-      case 'Full Stack Developer':
-      case 'Fullstack':
-        return { track: 'fullstack', data: fullstackRoadmap };
-      case 'Backend Engineering':
-      case 'Backend':
-        return { track: 'backend', data: backendRoadmap };
-      case 'Mobile Developer':
-        return { track: 'mobile', data: mobileRoadmap };
-      default:
-        return { track: 'frontend', data: frontendRoadmap };
-    }
-  };
-
-  const sdeState = getActiveSdeState();
-
-  if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-[var(--page-bg)] text-[var(--ink-900)]">
-        <div className="text-center space-y-3">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-teal-600 border-t-transparent mx-auto"></div>
-          <p className="text-[var(--ink-muted)] text-sm font-medium">Loading SDE Roadmap Navigator...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (isError) {
-    return (
-      <MosaicShell>
-        <div className="mosaic-card p-8 text-center space-y-4 max-w-lg mx-auto">
-          <AlertOctagon className="h-12 w-12 text-rose-500 mx-auto" />
-          <h2 className="text-xl font-bold text-[var(--ink-900)]">Failed to Load Roadmap</h2>
-          <button onClick={fetchRoadmap} className="mosaic-btn-primary">
-            Retry Connection
-          </button>
-        </div>
-      </MosaicShell>
-    );
-  }
-
-  const staticTrackObj = getStaticTrackData();
+  const activeCategory = curriculum?.categories.find((c) => c.id === selectedCategoryId);
 
   return (
     <MosaicShell>
-      <TopHeader
-        title="Personalized Career Roadmap"
-        subtitle={`${user?.preferredCareer || 'Engineering Pathway'} • Multi-stage SDE Schedule`}
-        primaryActionLabel="Adapt Roadmap Schedule"
-        onPrimaryAction={() => handleGenerate(true)}
-        primaryActionIcon={<Sparkles className="h-4 w-4" />}
-      />
-
-      {isGenerating ? (
-        <div className="mosaic-card p-12 text-center space-y-6">
-          <div className="h-12 w-12 animate-spin rounded-full border-4 border-teal-600 border-t-transparent mx-auto"></div>
-          <h2 className="text-xl font-bold text-[var(--ink-900)]">Consulting AI Career Mentor</h2>
-          <p className="text-xs text-[var(--ink-muted)]">
-            Assembling step-by-step topics and milestone schedule...
-          </p>
-        </div>
+      {/* If a topic is selected, render dedicated TopicLearningView */}
+      {selectedTopicState ? (
+        <TopicLearningView
+          role={selectedRole}
+          language={selectedLanguage}
+          category={selectedTopicState.category}
+          module={selectedTopicState.module}
+          topic={selectedTopicState.topic}
+          onBack={() => {
+            setSelectedTopicState(null);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+        />
       ) : (
         <div className="space-y-6">
-          <RoadmapHeader activeTab={activeTab} roadmap={roadmap} onGenerate={handleGenerate} />
-          <RoadmapTabs activeTab={activeTab} setActiveTab={setActiveTab} />
+          {/* ─── CAREER ROLE HEADER & LANGUAGE SELECTOR BAR ────────────────── */}
+          <div className="mosaic-card p-6 bg-white border border-[var(--card-border)] space-y-6 text-left">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-6">
+              <div className="flex items-center space-x-3.5">
+                <div className="p-3 rounded-2xl bg-teal-50 border border-teal-200 text-teal-700">
+                  <Compass className="h-7 w-7" />
+                </div>
+                <div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-[10px] font-extrabold uppercase tracking-widest text-teal-700 bg-teal-50 px-2.5 py-0.5 rounded-full border border-teal-200">
+                      Career Learning Platform
+                    </span>
+                    <span className="text-[11px] text-slate-400">• Step-by-Step Pathway</span>
+                  </div>
 
-          {activeTab === 'personalized' ? (
-            !roadmap || !roadmap.topics || !roadmap.topics.length ? (
-              <div className="mosaic-card p-8 text-center space-y-6 max-w-xl mx-auto">
-                <Map className="h-12 w-12 text-teal-600 mx-auto" />
-                <h2 className="text-2xl font-bold text-[var(--ink-900)] font-heading">
-                  Generate Your AI Career Roadmap
-                </h2>
-                <p className="text-xs text-[var(--ink-muted)]">
-                  Create a customized milestone schedule based on your target career profile.
-                </p>
+                  <div className="relative inline-block mt-1 group">
+                    <div className="flex items-center space-x-2 cursor-pointer">
+                      <h1 className="text-2xl font-extrabold text-[var(--ink-900)] font-heading tracking-tight">
+                        {selectedRole}
+                      </h1>
+                      <ChevronDown className="h-5 w-5 text-slate-400 group-hover:text-slate-700 transition" />
+                    </div>
 
-                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-left space-y-2">
-                  <span className="text-xs font-bold text-teal-700 uppercase flex items-center gap-1">
-                    <Target className="h-4 w-4" /> Target Role: {user?.preferredCareer || 'Not set'}
+                    <select
+                      value={selectedRole}
+                      onChange={(e) => handleRoleChange(e.target.value)}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    >
+                      {AVAILABLE_ROLES.map((r) => (
+                        <option key={r} value={r}>
+                          {r} Track
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <p className="text-xs text-[var(--ink-muted)] mt-0.5">
+                    Select a category card below to automatically jump to its modules & topics.
+                  </p>
+                </div>
+              </div>
+
+              {/* Language Awareness Selector Toggle */}
+              <div className="flex items-center space-x-2 bg-slate-100/80 p-1.5 rounded-xl border border-slate-200/80">
+                <span className="text-xs font-bold text-slate-600 px-2 flex items-center space-x-1">
+                  <Code2 className="h-3.5 w-3.5 text-teal-600" />
+                  <span>Language:</span>
+                </span>
+
+                {(['Java', 'Python', 'C++'] as const).map((lang) => (
+                  <button
+                    key={lang}
+                    onClick={() => handleLanguageChange(lang)}
+                    className={`px-3.5 py-1.5 rounded-lg text-xs font-extrabold transition ${
+                      selectedLanguage === lang
+                        ? 'bg-teal-700 text-white shadow-sm'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                    }`}
+                  >
+                    {lang}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Categories Header Badge Bar */}
+            <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-slate-600 font-semibold">
+              <div className="flex items-center space-x-2">
+                <Layers className="h-4 w-4 text-teal-600" />
+                <span>8 Learning Categories</span>
+                <span className="text-slate-300">•</span>
+                <span>
+                  {curriculum?.categories.reduce((sum, c) => sum + c.topicCount, 0) || 0} Core Topics
+                </span>
+              </div>
+
+              <div className="flex items-center space-x-1.5 text-teal-700 bg-teal-50 px-3 py-1 rounded-full border border-teal-200 text-[11px] font-bold">
+                <Sparkles className="h-3.5 w-3.5" />
+                <span>Resources tailored for {selectedLanguage}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Loading & Error States */}
+          {isLoading ? (
+            <div className="mosaic-card p-12 text-center space-y-4">
+              <div className="h-10 w-10 animate-spin rounded-full border-4 border-teal-600 border-t-transparent mx-auto"></div>
+              <p className="text-[var(--ink-muted)] text-sm font-medium">
+                Loading {selectedRole} Learning Categories...
+              </p>
+            </div>
+          ) : isError ? (
+            <div className="mosaic-card p-8 text-center space-y-4 max-w-lg mx-auto">
+              <AlertOctagon className="h-12 w-12 text-rose-500 mx-auto" />
+              <h2 className="text-xl font-bold text-[var(--ink-900)]">Failed to Load Curriculum</h2>
+              <button
+                onClick={() => fetchCurriculum(selectedRole, selectedLanguage)}
+                className="mosaic-btn-primary !py-2 !px-4 !text-xs"
+              >
+                Retry Connection
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-8">
+              {/* ─── 8 CATEGORY CARDS GRID ───────────────────────────────────── */}
+              <div className="space-y-3 text-left">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-sm font-bold uppercase tracking-wider text-slate-500 font-heading">
+                    Learning Categories ({curriculum?.categories.length || 0})
+                  </h2>
+                  <span className="text-xs text-teal-700 font-semibold bg-teal-50 px-2.5 py-0.5 rounded-full border border-teal-200">
+                    💡 Click any category to auto-scroll to its topics
                   </span>
                 </div>
 
-                <button onClick={() => handleGenerate(false)} className="mosaic-btn-brand !py-3 !px-8">
-                  <Sparkles className="h-4 w-4" />
-                  <span>Generate Custom SDE Roadmap</span>
-                </button>
+                <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {curriculum?.categories.map((cat) => (
+                    <CategoryCard
+                      key={cat.id}
+                      category={cat}
+                      isSelected={cat.id === selectedCategoryId}
+                      onClick={() => handleSelectCategory(cat.id)}
+                    />
+                  ))}
+                </div>
               </div>
-            ) : (
-              <div className="space-y-8">
-                {profileChanged && (
-                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-center justify-between text-left">
-                    <p className="text-xs text-amber-900 font-semibold">
-                      Your career profile was updated. Re-generate to adapt your roadmap schedule!
-                    </p>
-                    <button
-                      onClick={() => handleGenerate(true)}
-                      className="mosaic-btn-primary !py-1.5 !px-3 !text-xs !bg-amber-900 hover:!bg-amber-950"
-                    >
-                      Update Roadmap
-                    </button>
-                  </div>
-                )}
 
-                {sdeState && (
-                  <div className="grid lg:grid-cols-12 gap-6 items-start">
-                    <div className="lg:col-span-8 space-y-6">
-                      <TodayFocusCard
-                        activeMonth={sdeState.activeMonth}
-                        totalItems={sdeState.totalItems}
-                        completedItems={sdeState.completedItems}
-                        nextTaskType={sdeState.nextTaskType}
-                        nextTaskTitle={sdeState.nextTaskTitle}
-                        nextTaskAction={sdeState.nextTaskAction}
-                        remainingProblems={sdeState.remainingProblems}
-                      />
-                      <LearningPathCard todayPath={sdeState.todayPath} />
+              {/* ─── SELECTED CATEGORY MODULES & TOPICS TREE (AUTO SCROLL TARGET) ── */}
+              {activeCategory && (
+                <div
+                  ref={categorySectionRef}
+                  className="mosaic-card p-6 space-y-6 text-left border-teal-300 bg-white shadow-md scroll-mt-6"
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 pb-4 gap-2">
+                    <div>
+                      <span className="text-[10px] font-extrabold uppercase tracking-widest text-teal-800 bg-teal-100 px-2.5 py-0.5 rounded-md inline-block mb-1">
+                        Active Category View
+                      </span>
+                      <h2 className="text-xl font-extrabold text-[var(--ink-900)] font-heading">
+                        {activeCategory.title}
+                      </h2>
+                      <p className="text-xs text-[var(--ink-muted)] mt-0.5">
+                        {activeCategory.description}
+                      </p>
                     </div>
-                    <div className="lg:col-span-4 space-y-6">
-                      <StreakTracker />
-                      <ProgressSummary roadmap={roadmap} />
-                    </div>
-                  </div>
-                )}
 
-                <div className="space-y-4">
-                  <h3 className="text-lg font-bold text-[var(--ink-900)] font-heading text-left">
-                    Month-by-Month Schedule Timeline
-                  </h3>
-                  <div className="space-y-4">
-                    {roadmap.topics.map((topic: Topic, idx: number) => (
-                      <TimelineMonthCard
-                        key={topic.id}
-                        topic={topic}
-                        index={idx}
-                        isExpanded={Boolean(expandedTopics[topic.id])}
-                        onToggleExpand={() => toggleExpand(topic.id)}
-                        roadmap={roadmap}
-                        onToggle={handleToggle}
-                        projectSubmissions={projectSubmissions}
-                        setProjectSubmissions={setProjectSubmissions}
-                        onSubmitProjectDetails={handleProjectSubmit}
-                      />
+                    <span className="text-xs font-bold text-teal-700 bg-teal-50 px-3 py-1 rounded-full border border-teal-200 self-start sm:self-auto">
+                      {activeCategory.moduleCount} Modules • {activeCategory.topicCount} Topics
+                    </span>
+                  </div>
+
+                  {/* Modules List */}
+                  <div className="space-y-6">
+                    {activeCategory.modules.map((module) => (
+                      <div
+                        key={module.id}
+                        className="p-5 rounded-2xl border border-slate-200/80 bg-slate-50/50 space-y-4"
+                      >
+                        <div className="border-b border-slate-200/60 pb-3">
+                          <h3 className="text-base font-bold text-slate-900 font-heading">
+                            {module.title}
+                          </h3>
+                          <p className="text-xs text-slate-600 mt-0.5">{module.description}</p>
+                        </div>
+
+                        {/* Topics List under this Module */}
+                        <div className="grid md:grid-cols-2 gap-3">
+                          {module.topics.map((topic) => (
+                            <div
+                              key={topic.id}
+                              onClick={() => handleSelectTopic(activeCategory, module, topic)}
+                              className="p-4 rounded-xl border border-slate-200 bg-white hover:border-teal-500 hover:shadow-md transition cursor-pointer space-y-2 flex flex-col justify-between group"
+                            >
+                              <div className="space-y-1">
+                                <div className="flex items-center justify-between text-[10px] font-bold text-slate-500">
+                                  <span
+                                    className={`px-2 py-0.5 rounded-md font-semibold ${
+                                      topic.difficulty === 'Beginner'
+                                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                        : topic.difficulty === 'Intermediate'
+                                        ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                                        : 'bg-purple-50 text-purple-700 border border-purple-200'
+                                    }`}
+                                  >
+                                    {topic.difficulty}
+                                  </span>
+                                  <span className="flex items-center space-x-1">
+                                    <Clock className="h-3 w-3 text-slate-400" />
+                                    <span>{topic.estimatedTime}</span>
+                                  </span>
+                                </div>
+
+                                <h4 className="text-xs font-bold text-slate-900 group-hover:text-teal-700 transition">
+                                  {topic.title}
+                                </h4>
+                                <p className="text-[11px] text-slate-500 line-clamp-2 leading-relaxed">
+                                  {topic.description}
+                                </p>
+                              </div>
+
+                              <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px]">
+                                <span className="text-slate-500 font-medium">
+                                  {topic.resourceCount} Curated Resources ({selectedLanguage})
+                                </span>
+                                <span className="text-teal-700 font-bold flex items-center space-x-1 group-hover:translate-x-0.5 transition-transform">
+                                  <span>Start Topic</span>
+                                  <ArrowRight className="h-3 w-3" />
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
                     ))}
                   </div>
                 </div>
-              </div>
-            )
-          ) : (
-            <StaticTrackViewer track={staticTrackObj.track} roadmapData={staticTrackObj.data} />
-          )}
-
-          {showReviewModal && (
-            <WeeklyReviewModal
-              isSubmitting={isSubmittingReview}
-              onClose={() => setShowReviewModal(false)}
-              onSubmit={handleWeeklyReviewSubmit}
-            />
+              )}
+            </div>
           )}
         </div>
       )}

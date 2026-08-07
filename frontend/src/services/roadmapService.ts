@@ -98,3 +98,15 @@ export const selectActiveRoadmap = async (trackSlug: string, roadmapId?: string,
   const response = await api.post('/roadmaps/select-active', { trackSlug, roadmapId, title });
   return response.data && response.data.roadmap !== undefined ? response.data.roadmap : response.data;
 };
+
+/**
+ * Fetch structured learning curriculum hierarchy (Role -> Category -> Module -> Topic)
+ */
+export const getLearningCurriculum = async (role?: string, language?: string) => {
+  const params: Record<string, string> = {};
+  if (role) params.role = role;
+  if (language) params.language = language;
+  const response = await api.get('/roadmaps/curriculum', { params });
+  return response.data?.curriculum;
+};
+

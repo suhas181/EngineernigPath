@@ -19,13 +19,11 @@ export const ALLOWED_DUPLICATE_URLS: Record<string, string> = {
     'Kunal Kushwaha Java & DSA Master Playlist covers Java syntax, sorting algorithms, and binary search.',
   'https://www.youtube.com/playlist?list=PLlasXeu85E9c4idTXF4y24l22i08502gq':
     'Akshay Saini Namaste JavaScript Playlist covers core JS execution context, closures, and React foundations.',
-  'https://youtu.be/n6yDgOyHQQc':
-    'Kunal Kushwaha Arrays & Two Pointer video covers both Array representations and Two Pointer techniques.',
   'https://youtu.be/rIQgssEAHwA':
     'Kunal Kushwaha Stacks & Queues video covers both Stack and Queue data structures in Java.',
   'https://neetcode.io/courses/dsa-for-beginners/8':
     'NeetCode Stacks & Queues course module covers both Stacks and Queues in Python.',
-  'https://www.youtube.com/playlist?list=PLgUwDviBIf0q7ve7bK+/8sVyB1DX86Pry':
+  'https://www.youtube.com/playlist?list=PLgUwDviBIf0q7ve7bK688sVyB1DX86Pry':
     'Striver Sliding Window & Two Pointer playlist covers both Sliding Window and Two Pointer techniques.',
   'https://www.youtube.com/playlist?list=PLgUwDviBIf0oE3g1t1gT0GsDYmF0gMC9g':
     'Striver Graph Series playlist covers Java and C++ graph topics.',

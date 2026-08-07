@@ -164,7 +164,7 @@ export const curatedResources = [
     topic: 'Server Systems, Node.js Runtimes & REST Architecture',
     careerPaths: ['Backend Engineer'],
     title: 'Node.js Official Event Loop Architecture Guide',
-    url: 'https://nodejs.org/en/docs/guides/event-loop-timers-and-nexttick',
+    url: 'https://nodejs.org/en/learnevent-loop-timers-and-nexttick',
     type: 'documentation',
     difficulty: 'Intermediate',
   },

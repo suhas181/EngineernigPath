@@ -86,8 +86,8 @@ const STAGE_ORDER: Record<ResourceStage, number> = {
 };
 
 /**
- * Resolves curriculum keys into resources strictly matching user's preferred language.
- * STRICT ISOLATION: Never returns resources from conflicting languages (e.g. Java resources for Python learner).
+ * Resolves curriculum keys into resources with smart fallback.
+ * Guarantees domain-specific topics (e.g. Python for AI, React for Frontend, Docker for DevOps) return curated resources even if user header is set to Java.
  */
 export const resolveResources = (
   curriculumKey: string,
@@ -97,17 +97,18 @@ export const resolveResources = (
 
   const key = curriculumKey.trim().toUpperCase();
 
-  // Strict language match filter
-  const matches = ALL_RESOURCES.filter((res) => {
+  // Try 1: Exact key + preferred language or 'All'
+  let matches = ALL_RESOURCES.filter((res) => {
     const keyMatches = res.curriculumKey.toUpperCase() === key;
     if (!keyMatches) return false;
 
-    // Strict boundary: Only 'All' or exact language matches allowed
-    if (res.language === 'All') return true;
-    if (res.language === dsaLanguage) return true;
-
-    return false;
+    return res.language === 'All' || res.language === dsaLanguage;
   });
+
+  // Try 2: Fallback to all resources matching curriculum key regardless of language tag
+  if (matches.length === 0) {
+    matches = ALL_RESOURCES.filter((res) => res.curriculumKey.toUpperCase() === key);
+  }
 
   // Sort by stage learning flow order then by resource order field
   return matches.sort((a, b) => {
@@ -129,7 +130,7 @@ export interface MentorStructuredResources {
 
 /**
  * Mentor-Guided Structured Resource Resolver.
- * Selects ONE primary video playlist, ONE primary note, 5-10 curated practice problems,
+ * Selects ONE primary video playlist, ONE primary note, curated practice problems,
  * and 1 recommended DSA sheet based on preferredDsaLanguage.
  */
 export const resolveMentorResources = (
@@ -151,28 +152,27 @@ export const resolveMentorResources = (
   const notes = unique.filter((r) => r.stage === 'notes' || r.type === 'article' || r.type === 'book');
   const practice = unique.filter((r) => r.stage === 'practice' || r.type === 'practice');
 
-  // Select Primary Video based on Language Preference
+  // Select Primary Video
   let primaryVideo = videos[0];
   let alternativeVideos = videos.slice(1);
 
   if (dsaLanguage === 'Python') {
-    const neetcodePy = videos.find((v) => v.title.toLowerCase().includes('neetcode') || v.provider.toLowerCase().includes('neetcode'));
-    if (neetcodePy) {
-      primaryVideo = neetcodePy;
-      alternativeVideos = videos.filter((v) => v.id !== neetcodePy.id);
+    const pyVid = videos.find((v) => v.title.toLowerCase().includes('neetcode') || v.provider.toLowerCase().includes('neetcode') || v.language === 'Python');
+    if (pyVid) {
+      primaryVideo = pyVid;
+      alternativeVideos = videos.filter((v) => v.id !== pyVid.id);
     }
   } else if (dsaLanguage === 'C++') {
-    const striverCpp = videos.find((v) => v.title.toLowerCase().includes('striver') || v.provider.toLowerCase().includes('takeuforward'));
-    if (striverCpp) {
-      primaryVideo = striverCpp;
-      alternativeVideos = videos.filter((v) => v.id !== striverCpp.id);
+    const cppVid = videos.find((v) => v.title.toLowerCase().includes('striver') || v.provider.toLowerCase().includes('takeuforward') || v.language === 'C++');
+    if (cppVid) {
+      primaryVideo = cppVid;
+      alternativeVideos = videos.filter((v) => v.id !== cppVid.id);
     }
   } else {
-    // Default Java Track
-    const kunalJava = videos.find((v) => v.title.toLowerCase().includes('kunal') || v.title.toLowerCase().includes('java'));
-    if (kunalJava) {
-      primaryVideo = kunalJava;
-      alternativeVideos = videos.filter((v) => v.id !== kunalJava.id);
+    const javaVid = videos.find((v) => v.title.toLowerCase().includes('kunal') || v.title.toLowerCase().includes('java') || v.language === 'Java');
+    if (javaVid) {
+      primaryVideo = javaVid;
+      alternativeVideos = videos.filter((v) => v.id !== javaVid.id);
     }
   }
 
@@ -180,10 +180,10 @@ export const resolveMentorResources = (
   const primaryNote = notes[0];
   const alternativeNotes = notes.slice(1);
 
-  // Cap Practice Problems at 5–10 max (quality over quantity)
+  // Cap Practice Problems
   const practiceProblems = practice.slice(0, 8);
 
-  // Select Recommended DSA Sheet based on language
+  // Select Recommended Practice Sheet
   const primaryDsaSheet = dsaLanguage === 'Python'
     ? { name: '⭐ NeetCode 150', url: 'https://neetcode.io/practice', badge: 'Recommended for Python' }
     : { name: '⭐ Striver A2Z Sheet', url: 'https://takeuforward.org/strivers-a2z-dsa-course/strivers-a2z-dsa-course-sheet-2/', badge: `Recommended for ${dsaLanguage}` };

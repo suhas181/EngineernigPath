@@ -1,20 +1,66 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Sidebar } from './Sidebar';
+import { Menu, GraduationCap } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 interface MosaicShellProps {
   children: React.ReactNode;
   pendingTaskCount?: number;
 }
 
-export function MosaicShell({ children, pendingTaskCount = 0 }: MosaicShellProps) {
-  return (
-    <div className="flex min-h-screen bg-[var(--page-bg)] text-[var(--ink-700)] font-sans antialiased">
-      {/* Left Persistent Navy Sidebar */}
-      <Sidebar pendingTaskCount={pendingTaskCount} />
+export function MosaicShell({ children }: MosaicShellProps) {
+  // Desktop Collapsed State (Default: true for icons-only collapsed mode)
+  const [isCollapsed, setIsCollapsed] = useState<boolean>(() => {
+    const saved = localStorage.getItem('engineerpath_sidebar_collapsed');
+    return saved !== null ? saved === 'true' : true;
+  });
 
-      {/* Right Content Canvas */}
-      <div className="flex-1 flex flex-col min-w-0">
-        <main className="flex-1 p-6 md:p-8 space-y-8 max-w-7xl w-full mx-auto text-left">
+  // Mobile Drawer Open State
+  const [isMobileOpen, setIsMobileOpen] = useState<boolean>(false);
+
+  useEffect(() => {
+    localStorage.setItem('engineerpath_sidebar_collapsed', isCollapsed ? 'true' : 'false');
+  }, [isCollapsed]);
+
+  const handleToggleCollapse = () => {
+    setIsCollapsed((prev) => !prev);
+  };
+
+  return (
+    <div className="flex min-h-screen bg-[#F8FAFC] text-slate-900 font-sans antialiased selection:bg-blue-600 selection:text-white">
+      {/* Sidebar Component (Desktop Persistent + Mobile Drawer) */}
+      <Sidebar
+        isCollapsed={isCollapsed}
+        onToggleCollapse={handleToggleCollapse}
+        isMobileOpen={isMobileOpen}
+        onCloseMobile={() => setIsMobileOpen(false)}
+      />
+
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col min-w-0 transition-all duration-300">
+        {/* Mobile Header Bar (Only Visible on Mobile <768px) */}
+        <header className="md:hidden h-14 px-4 bg-slate-900 border-b border-slate-800 flex items-center justify-between sticky top-0 z-40 backdrop-blur-md">
+          <button
+            onClick={() => setIsMobileOpen(true)}
+            className="p-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+
+          <Link to="/dashboard" className="flex items-center space-x-2">
+            <div className="p-1.5 rounded-lg bg-blue-600/20 text-blue-400 border border-blue-500/30">
+              <GraduationCap className="h-4 w-4" />
+            </div>
+            <span className="font-bold text-sm text-white tracking-tight">
+              Engineer<span className="text-blue-400">Path</span>
+            </span>
+          </Link>
+
+          <div className="w-8" />
+        </header>
+
+        {/* Expanded Main Canvas */}
+        <main className="flex-1 p-4 sm:p-6 md:p-10 space-y-10 max-w-[1600px] w-full mx-auto text-left transition-all duration-300">
           {children}
         </main>
       </div>

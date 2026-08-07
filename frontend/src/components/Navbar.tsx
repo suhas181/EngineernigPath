@@ -86,7 +86,7 @@ export function Navbar() {
               </NavLink>
               <NavLink to="/roadmaps" className={navLinkClass}>
                 <Map className="h-4 w-4 text-purple-600" />
-                <span className="hidden md:inline">Roadmap</span>
+                <span className="hidden md:inline">Learning Platform</span>
               </NavLink>
               <NavLink to="/resources" className={navLinkClass}>
                 <BookOpen className="h-4 w-4 text-pink-600" />

@@ -1,4 +1,4 @@
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuthStore } from '../../store/useAuthStore';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
@@ -7,23 +7,34 @@ import {
   LayoutDashboard,
   Map,
   BookOpen,
-  Calendar,
+  FolderGit2,
   FileText,
   Settings,
   ShieldCheck,
   LogOut,
   ChevronDown,
-  Compass,
+  PanelLeftClose,
+  PanelLeftOpen,
+  X,
+  Sparkles,
 } from 'lucide-react';
 
 interface SidebarProps {
-  pendingTaskCount?: number;
-  className?: string;
+  isCollapsed: boolean;
+  onToggleCollapse: () => void;
+  isMobileOpen?: boolean;
+  onCloseMobile?: () => void;
 }
 
-export function Sidebar({ pendingTaskCount = 0, className = '' }: SidebarProps) {
+export function Sidebar({
+  isCollapsed,
+  onToggleCollapse,
+  isMobileOpen = false,
+  onCloseMobile,
+}: SidebarProps) {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleLogout = async () => {
     try {
@@ -38,14 +49,7 @@ export function Sidebar({ pendingTaskCount = 0, className = '' }: SidebarProps) 
     }
   };
 
-  const navLinkClass = ({ isActive }: { isActive: boolean }) =>
-    `flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${
-      isActive
-        ? 'bg-white/10 text-white font-semibold'
-        : 'text-[var(--sidebar-text)] hover:text-white hover:bg-white/5'
-    }`;
-
-  const userTrack = user?.preferredCareer || 'Engineering Pathway';
+  const userTrack = user?.preferredCareer || 'Software Engineer';
   const userInitials = user?.name
     ? user.name
         .split(' ')
@@ -55,148 +59,244 @@ export function Sidebar({ pendingTaskCount = 0, className = '' }: SidebarProps) 
         .slice(0, 2)
     : 'EP';
 
-  return (
-    <aside
-      className={`w-64 bg-[#101826] text-white flex flex-col justify-between h-screen sticky top-0 border-r border-white/10 flex-shrink-0 select-none ${className}`}
+  const navItems = [
+    {
+      to: '/dashboard',
+      label: 'Dashboard',
+      icon: LayoutDashboard,
+      color: 'text-blue-400',
+    },
+    {
+      to: '/roadmaps',
+      label: 'Learning Paths',
+      icon: Map,
+      color: 'text-purple-400',
+    },
+    {
+      to: '/resources',
+      label: 'Learning Hub',
+      icon: BookOpen,
+      color: 'text-teal-400',
+    },
+    {
+      to: '/projects',
+      label: 'Projects',
+      icon: FolderGit2,
+      color: 'text-amber-400',
+    },
+    {
+      to: '/resume',
+      label: 'Resume Analyzer',
+      icon: FileText,
+      color: 'text-pink-400',
+    },
+    {
+      to: '/settings',
+      label: 'Settings',
+      icon: Settings,
+      color: 'text-slate-400',
+    },
+  ];
+
+  if (user?.role === 'admin') {
+    navItems.unshift({
+      to: '/admin',
+      label: 'Admin Control',
+      icon: ShieldCheck,
+      color: 'text-amber-400',
+    });
+  }
+
+  const sidebarContent = (
+    <div
+      className={`h-full flex flex-col justify-between bg-slate-950 text-slate-300 border-r border-slate-800/80 transition-all duration-300 select-none ${
+        isCollapsed ? 'w-[76px]' : 'w-64'
+      }`}
     >
-      {/* Top Region: Brand + Workspace Switcher + Nav Groups */}
-      <div className="p-4 space-y-6 overflow-y-auto">
-        {/* Brand Header */}
-        <div className="flex items-center space-x-3 px-2 pt-2">
-          <div className="p-2 rounded-xl bg-teal-500/20 border border-teal-500/30 text-teal-400">
-            <GraduationCap className="h-6 w-6" />
-          </div>
-          <div>
-            <h1 className="font-heading font-extrabold text-lg text-white tracking-tight leading-none">
-              Engineer<span className="text-teal-400">Path</span>
-            </h1>
-            <span className="text-[10px] uppercase font-bold tracking-widest text-slate-400 block mt-1">
-              MosaicMove OS
-            </span>
-          </div>
-        </div>
-
-        {/* Workspace Switcher Card */}
-        <div className="bg-white/5 border border-white/10 rounded-2xl p-3.5 flex items-center justify-between hover:bg-white/10 transition cursor-pointer">
-          <div className="flex items-center space-x-2.5 min-w-0">
-            <div className="p-2 rounded-xl bg-indigo-500/20 text-indigo-300 flex-shrink-0">
-              <Compass className="h-4 w-4" />
+      {/* Top Header Region: Logo & Expand/Collapse Toggle */}
+      <div className="flex flex-col">
+        {/* Compact Logo Header */}
+        <div className="h-16 px-4 flex items-center justify-between border-b border-slate-800/60">
+          <Link
+            to="/dashboard"
+            className="flex items-center space-x-3 overflow-hidden text-left"
+            onClick={onCloseMobile}
+          >
+            <div className="p-2 rounded-xl bg-blue-600/20 border border-blue-500/30 text-blue-400 flex-shrink-0">
+              <GraduationCap className="h-5 w-5" />
             </div>
-            <div className="min-w-0 text-left">
-              <p className="text-xs font-bold text-white truncate">{userTrack}</p>
-              <p className="text-[10px] text-slate-400 font-medium truncate">
-                {user?.college || 'Engineering Student'}
-              </p>
-            </div>
-          </div>
-          <ChevronDown className="h-4 w-4 text-slate-400 flex-shrink-0" />
-        </div>
 
-        {/* WORKSPACE Nav Group */}
-        <div className="space-y-1 text-left">
-          <span className="text-[10px] uppercase font-bold tracking-widest text-slate-400 px-3 block mb-2">
-            WORKSPACE
-          </span>
-
-          {user?.role === 'admin' ? (
-            <NavLink to="/admin" className={navLinkClass}>
-              <div className="flex items-center space-x-3">
-                <ShieldCheck className="h-4.5 w-4.5 text-amber-400" />
-                <span>Admin Control</span>
+            {!isCollapsed && (
+              <div className="min-w-0">
+                <h1 className="font-bold text-base text-white tracking-tight leading-none">
+                  Engineer<span className="text-blue-400">Path</span>
+                </h1>
+                <span className="text-[10px] font-mono font-medium text-slate-400 block mt-1">
+                  AI Career OS
+                </span>
               </div>
-            </NavLink>
-          ) : (
-            <>
-              <NavLink to="/dashboard" className={navLinkClass}>
-                <div className="flex items-center space-x-3">
-                  <LayoutDashboard className="h-4.5 w-4.5 text-teal-400" />
-                  <span>Dashboard</span>
-                </div>
-              </NavLink>
+            )}
+          </Link>
 
-              <NavLink to="/roadmaps" className={navLinkClass}>
-                <div className="flex items-center space-x-3">
-                  <Map className="h-4.5 w-4.5 text-purple-400" />
-                  <span>Roadmap</span>
-                </div>
-              </NavLink>
+          {/* Desktop Toggle Button */}
+          <button
+            onClick={onToggleCollapse}
+            className="hidden md:flex p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 transition-colors"
+            title={isCollapsed ? 'Expand Sidebar (250px)' : 'Collapse Sidebar (Icons Only)'}
+          >
+            {isCollapsed ? (
+              <PanelLeftOpen className="h-4.5 w-4.5" />
+            ) : (
+              <PanelLeftClose className="h-4.5 w-4.5" />
+            )}
+          </button>
 
-              <NavLink to="/resources" className={navLinkClass}>
-                <div className="flex items-center space-x-3">
-                  <BookOpen className="h-4.5 w-4.5 text-blue-400" />
-                  <span>Learning Hub</span>
-                </div>
-              </NavLink>
-
-              <NavLink to="/planner" className={navLinkClass}>
-                <div className="flex items-center space-x-3">
-                  <Calendar className="h-4.5 w-4.5 text-amber-400" />
-                  <span>Planner & Calendar</span>
-                </div>
-                {pendingTaskCount > 0 && (
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-600 text-white">
-                    {pendingTaskCount}
-                  </span>
-                )}
-              </NavLink>
-
-              <NavLink to="/resume" className={navLinkClass}>
-                <div className="flex items-center space-x-3">
-                  <FileText className="h-4.5 w-4.5 text-pink-400" />
-                  <span>Resume Analyzer</span>
-                </div>
-              </NavLink>
-            </>
-          )}
+          {/* Mobile Close Button */}
+          <button
+            onClick={onCloseMobile}
+            className="md:hidden p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+          >
+            <X className="h-5 w-5" />
+          </button>
         </div>
 
-        {/* SYSTEM Nav Group */}
-        <div className="space-y-1 text-left pt-2 border-t border-white/10">
-          <span className="text-[10px] uppercase font-bold tracking-widest text-slate-400 px-3 block mb-2">
-            SYSTEM
-          </span>
-
-          <NavLink to="/settings" className={navLinkClass}>
-            <div className="flex items-center space-x-3">
-              <Settings className="h-4.5 w-4.5 text-slate-400" />
-              <span>Settings & Profile</span>
+        {/* Selected Career Role Card (Only in Expanded Mode) */}
+        {!isCollapsed && (
+          <div className="p-3.5 mx-3 mt-4 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center justify-between">
+            <div className="flex items-center space-x-2.5 min-w-0 text-left">
+              <div className="p-1.5 rounded-lg bg-blue-500/10 text-blue-400 flex-shrink-0">
+                <Sparkles className="h-3.5 w-3.5" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[11px] font-bold text-slate-200 truncate">{userTrack}</p>
+                <p className="text-[10px] text-slate-400 font-medium truncate">Target Role</p>
+              </div>
             </div>
-          </NavLink>
-        </div>
+            <ChevronDown className="h-3.5 w-3.5 text-slate-400 flex-shrink-0" />
+          </div>
+        )}
+
+        {/* Navigation Items List */}
+        <nav className="p-3 space-y-1.5 mt-2">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = location.pathname === item.to;
+
+            return (
+              <div key={item.to} className="relative group">
+                <NavLink
+                  to={item.to}
+                  onClick={onCloseMobile}
+                  className={`flex items-center ${
+                    isCollapsed ? 'justify-center px-0' : 'px-3.5'
+                  } py-3 rounded-xl text-sm font-medium transition-all ${
+                    isActive
+                      ? 'bg-blue-600 text-white font-semibold shadow-lg shadow-blue-600/20'
+                      : 'text-slate-400 hover:text-white hover:bg-slate-900/80'
+                  }`}
+                >
+                  <Icon
+                    className={`h-5 w-5 flex-shrink-0 ${
+                      isActive ? 'text-white' : item.color
+                    }`}
+                  />
+
+                  {!isCollapsed && (
+                    <span className="ml-3 font-medium text-left truncate">{item.label}</span>
+                  )}
+                </NavLink>
+
+                {/* Collapsed Mode Tooltip */}
+                {isCollapsed && (
+                  <div className="pointer-events-none absolute left-full ml-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-slate-800 shadow-xl border border-slate-700 whitespace-nowrap z-50">
+                    {item.label}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </nav>
       </div>
 
-      {/* Bottom Region: User Profile Footer */}
-      <div className="p-4 border-t border-white/10 bg-white/[0.02]">
-        <div className="flex items-center justify-between">
+      {/* Bottom User Profile Footer */}
+      <div className="p-3 border-t border-slate-800/80 bg-slate-950/80">
+        <div
+          className={`flex items-center ${
+            isCollapsed ? 'justify-center' : 'justify-between'
+          }`}
+        >
           <div className="flex items-center space-x-3 min-w-0">
-            {/* Avatar Circle with Online Dot */}
-            <div className="relative flex-shrink-0">
-              <div className="h-9 w-9 rounded-full bg-teal-600 text-white font-bold flex items-center justify-center text-xs overflow-hidden border border-white/20">
+            {/* User Avatar with Status Indicator */}
+            <div className="relative flex-shrink-0 group">
+              <div className="h-9 w-9 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-xs overflow-hidden border border-slate-700">
                 {user?.profileImage ? (
-                  <img src={user.profileImage} alt={user.name} className="h-full w-full object-cover" />
+                  <img
+                    src={user.profileImage}
+                    alt={user.name}
+                    className="h-full w-full object-cover"
+                  />
                 ) : (
                   userInitials
                 )}
               </div>
-              <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-500 border-2 border-[#101826]" />
+              <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-500 border-2 border-slate-950" />
+
+              {/* Tooltip on Collapsed Mode Avatar */}
+              {isCollapsed && (
+                <div className="pointer-events-none absolute left-full ml-3 bottom-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-slate-800 shadow-xl border border-slate-700 whitespace-nowrap z-50">
+                  {user?.name || 'Student Profile'}
+                </div>
+              )}
             </div>
 
-            <div className="min-w-0 text-left">
-              <p className="text-xs font-bold text-white truncate max-w-[110px]">{user?.name}</p>
-              <p className="text-[10px] text-slate-400 capitalize truncate">{user?.role || 'Student'}</p>
-            </div>
+            {!isCollapsed && (
+              <div className="min-w-0 text-left">
+                <p className="text-xs font-bold text-white truncate max-w-[120px]">
+                  {user?.name || 'Student'}
+                </p>
+                <p className="text-[10px] text-slate-400 capitalize truncate">
+                  {user?.role || 'Student'}
+                </p>
+              </div>
+            )}
           </div>
 
-          <button
-            onClick={handleLogout}
-            className="p-2 rounded-xl text-slate-400 hover:text-rose-400 hover:bg-white/10 transition"
-            title="Logout"
-          >
-            <LogOut className="h-4 w-4" />
-          </button>
+          {!isCollapsed && (
+            <button
+              onClick={handleLogout}
+              className="p-2 rounded-xl text-slate-400 hover:text-rose-400 hover:bg-slate-900 transition-colors"
+              title="Logout"
+            >
+              <LogOut className="h-4 w-4" />
+            </button>
+          )}
         </div>
       </div>
-    </aside>
+    </div>
+  );
+
+  return (
+    <>
+      {/* Desktop Persistent Sidebar */}
+      <aside className="hidden md:block h-screen sticky top-0 flex-shrink-0 z-30">
+        {sidebarContent}
+      </aside>
+
+      {/* Mobile Slide-Over Backdrop Drawer */}
+      {isMobileOpen && (
+        <div className="fixed inset-0 z-50 md:hidden flex">
+          {/* Backdrop Blur */}
+          <div
+            className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm transition-opacity"
+            onClick={onCloseMobile}
+          />
+          {/* Drawer Panel */}
+          <div className="relative z-10 w-72 h-full shadow-2xl">
+            {sidebarContent}
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
