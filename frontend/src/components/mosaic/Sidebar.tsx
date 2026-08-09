@@ -109,7 +109,7 @@ export function Sidebar({
 
   const sidebarContent = (
     <div
-      className={`h-full flex flex-col justify-between bg-slate-950 text-slate-300 border-r border-slate-800/80 transition-all duration-300 select-none ${
+      className={`h-full flex flex-col justify-between bg-[#0B1220]/95 backdrop-blur-xl text-slate-300 border-r border-slate-800/80 transition-all duration-300 select-none ${
         isCollapsed ? 'w-[76px]' : 'w-64'
       }`}
     >
@@ -122,17 +122,17 @@ export function Sidebar({
             className="flex items-center space-x-3 overflow-hidden text-left"
             onClick={onCloseMobile}
           >
-            <div className="p-2 rounded-xl bg-blue-600/20 border border-blue-500/30 text-blue-400 flex-shrink-0">
+            <div className="p-2 rounded-xl bg-gradient-to-tr from-purple-600 to-indigo-600 border border-purple-500/30 text-white flex-shrink-0 shadow-md shadow-purple-500/20">
               <GraduationCap className="h-5 w-5" />
             </div>
 
             {!isCollapsed && (
               <div className="min-w-0">
-                <h1 className="font-bold text-base text-white tracking-tight leading-none">
-                  Engineer<span className="text-blue-400">Path</span>
+                <h1 className="font-black text-base text-white tracking-tight leading-none">
+                  Engineer<span className="text-purple-400">Path</span>
                 </h1>
-                <span className="text-[10px] font-mono font-medium text-slate-400 block mt-1">
-                  AI Career OS
+                <span className="text-[10px] font-mono font-bold tracking-wider text-purple-400/80 uppercase block mt-1">
+                  AI CAREER OS
                 </span>
               </div>
             )}
@@ -141,8 +141,8 @@ export function Sidebar({
           {/* Desktop Toggle Button */}
           <button
             onClick={onToggleCollapse}
-            className="hidden md:flex p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 transition-colors"
-            title={isCollapsed ? 'Expand Sidebar (250px)' : 'Collapse Sidebar (Icons Only)'}
+            className="hidden md:flex p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 transition-colors cursor-pointer"
+            title={isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
           >
             {isCollapsed ? (
               <PanelLeftOpen className="h-4.5 w-4.5" />
@@ -154,7 +154,7 @@ export function Sidebar({
           {/* Mobile Close Button */}
           <button
             onClick={onCloseMobile}
-            className="md:hidden p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            className="md:hidden p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
           >
             <X className="h-5 w-5" />
           </button>
@@ -162,9 +162,9 @@ export function Sidebar({
 
         {/* Selected Career Role Card (Only in Expanded Mode) */}
         {!isCollapsed && (
-          <div className="p-3.5 mx-3 mt-4 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center justify-between">
+          <div className="p-3 mx-3 mt-4 rounded-xl bg-slate-900/90 border border-slate-800 flex items-center justify-between shadow-inner">
             <div className="flex items-center space-x-2.5 min-w-0 text-left">
-              <div className="p-1.5 rounded-lg bg-blue-500/10 text-blue-400 flex-shrink-0">
+              <div className="p-1.5 rounded-lg bg-purple-500/10 text-purple-400 flex-shrink-0 border border-purple-500/20">
                 <Sparkles className="h-3.5 w-3.5" />
               </div>
               <div className="min-w-0">
@@ -189,26 +189,26 @@ export function Sidebar({
                   onClick={onCloseMobile}
                   className={`flex items-center ${
                     isCollapsed ? 'justify-center px-0' : 'px-3.5'
-                  } py-3 rounded-xl text-sm font-medium transition-all ${
+                  } py-2.5 rounded-xl text-sm transition-all duration-200 ${
                     isActive
-                      ? 'bg-blue-600 text-white font-semibold shadow-lg shadow-blue-600/20'
-                      : 'text-slate-400 hover:text-white hover:bg-slate-900/80'
+                      ? 'bg-gradient-to-r from-purple-600/30 via-indigo-600/30 to-blue-600/30 border border-purple-500/40 text-white font-semibold shadow-md shadow-purple-500/10'
+                      : 'text-slate-400 hover:text-white hover:bg-slate-900/60 font-medium'
                   }`}
                 >
                   <Icon
-                    className={`h-5 w-5 flex-shrink-0 ${
-                      isActive ? 'text-white' : item.color
+                    className={`h-4.5 w-4.5 flex-shrink-0 ${
+                      isActive ? 'text-purple-400' : item.color
                     }`}
                   />
 
                   {!isCollapsed && (
-                    <span className="ml-3 font-medium text-left truncate">{item.label}</span>
+                    <span className="ml-3 text-xs font-semibold text-left truncate">{item.label}</span>
                   )}
                 </NavLink>
 
                 {/* Collapsed Mode Tooltip */}
                 {isCollapsed && (
-                  <div className="pointer-events-none absolute left-full ml-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-slate-800 shadow-xl border border-slate-700 whitespace-nowrap z-50">
+                  <div className="pointer-events-none absolute left-full ml-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-slate-900 shadow-xl border border-slate-700 whitespace-nowrap z-50">
                     {item.label}
                   </div>
                 )}
@@ -219,7 +219,7 @@ export function Sidebar({
       </div>
 
       {/* Bottom User Profile Footer */}
-      <div className="p-3 border-t border-slate-800/80 bg-slate-950/80">
+      <div className="p-3 border-t border-slate-800/80 bg-slate-950/90">
         <div
           className={`flex items-center ${
             isCollapsed ? 'justify-center' : 'justify-between'
@@ -228,7 +228,7 @@ export function Sidebar({
           <div className="flex items-center space-x-3 min-w-0">
             {/* User Avatar with Status Indicator */}
             <div className="relative flex-shrink-0 group">
-              <div className="h-9 w-9 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-xs overflow-hidden border border-slate-700">
+              <div className="h-9 w-9 rounded-full bg-gradient-to-tr from-purple-600 to-indigo-600 text-white font-bold flex items-center justify-center text-xs overflow-hidden border border-purple-500/30 shadow-md">
                 {user?.profileImage ? (
                   <img
                     src={user.profileImage}
@@ -243,7 +243,7 @@ export function Sidebar({
 
               {/* Tooltip on Collapsed Mode Avatar */}
               {isCollapsed && (
-                <div className="pointer-events-none absolute left-full ml-3 bottom-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-slate-800 shadow-xl border border-slate-700 whitespace-nowrap z-50">
+                <div className="pointer-events-none absolute left-full ml-3 bottom-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-slate-900 shadow-xl border border-slate-700 whitespace-nowrap z-50">
                   {user?.name || 'Student Profile'}
                 </div>
               )}
@@ -252,7 +252,7 @@ export function Sidebar({
             {!isCollapsed && (
               <div className="min-w-0 text-left">
                 <p className="text-xs font-bold text-white truncate max-w-[120px]">
-                  {user?.name || 'Student'}
+                  {user?.name || 'Bharath CD'}
                 </p>
                 <p className="text-[10px] text-slate-400 capitalize truncate">
                   {user?.role || 'Student'}
@@ -264,7 +264,7 @@ export function Sidebar({
           {!isCollapsed && (
             <button
               onClick={handleLogout}
-              className="p-2 rounded-xl text-slate-400 hover:text-rose-400 hover:bg-slate-900 transition-colors"
+              className="p-2 rounded-xl text-slate-400 hover:text-rose-400 hover:bg-slate-900 transition-colors cursor-pointer"
               title="Logout"
             >
               <LogOut className="h-4 w-4" />

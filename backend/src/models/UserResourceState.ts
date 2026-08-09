@@ -2,7 +2,7 @@ import { Schema, model, Document } from 'mongoose';
 
 export interface IUserResourceState extends Document {
   userId: Schema.Types.ObjectId;
-  resourceId: Schema.Types.ObjectId;
+  resourceId: string;
   isCompleted: boolean;
   isBookmarked: boolean;
   completedAt?: Date;
@@ -19,8 +19,7 @@ const UserResourceStateSchema = new Schema<IUserResourceState>(
       required: true,
     },
     resourceId: {
-      type: Schema.Types.ObjectId,
-      ref: 'Resource',
+      type: Schema.Types.Mixed,
       required: true,
     },
     isCompleted: {

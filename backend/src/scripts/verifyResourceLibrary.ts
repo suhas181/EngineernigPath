@@ -83,11 +83,12 @@ export const runResourceLibraryVerification = (): VerificationReport => {
 
   ALL_RESOURCES.forEach((res, index) => {
     // Category Breakdown
-    const cat = res.curriculumKey.split('_')[0] || 'OTHER';
+    const cat = (res.curriculumKey || 'OTHER').split('_')[0] || 'OTHER';
     report.resourcesPerCategory[cat] = (report.resourcesPerCategory[cat] || 0) + 1;
 
     // Language Breakdown
-    report.resourcesPerLanguage[res.language] = (report.resourcesPerLanguage[res.language] || 0) + 1;
+    const lang = res.language || 'All';
+    report.resourcesPerLanguage[lang] = (report.resourcesPerLanguage[lang] || 0) + 1;
 
     // Duplicate ID check
     if (idSet.has(res.id)) {
@@ -103,7 +104,7 @@ export const runResourceLibraryVerification = (): VerificationReport => {
     urlMap.get(res.url)!.push(res.id);
 
     // Required metadata fields
-    if (!res.id || !res.title || !res.url || !res.stage || !res.level) {
+    if (!res.id || !res.title || !res.url || !res.level) {
       report.missingMetadata.push(`Resource #${index} [${res.id || 'NO-ID'}] missing core metadata`);
     }
 

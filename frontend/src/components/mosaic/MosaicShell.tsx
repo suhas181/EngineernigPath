@@ -19,15 +19,23 @@ export function MosaicShell({ children }: MosaicShellProps) {
   const [isMobileOpen, setIsMobileOpen] = useState<boolean>(false);
 
   useEffect(() => {
-    localStorage.setItem('engineerpath_sidebar_collapsed', isCollapsed ? 'true' : 'false');
-  }, [isCollapsed]);
+    const handleToggle = () => {
+      if (window.innerWidth < 768) {
+        setIsMobileOpen((prev) => !prev);
+      } else {
+        setIsCollapsed((prev) => !prev);
+      }
+    };
+    window.addEventListener('toggle_sidebar', handleToggle);
+    return () => window.removeEventListener('toggle_sidebar', handleToggle);
+  }, []);
 
   const handleToggleCollapse = () => {
     setIsCollapsed((prev) => !prev);
   };
 
   return (
-    <div className="flex min-h-screen bg-[#F8FAFC] text-slate-900 font-sans antialiased selection:bg-blue-600 selection:text-white">
+    <div className="flex min-h-screen bg-[#F5F6F8] bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.06),rgba(255,255,255,0))] text-slate-900 font-sans antialiased selection:bg-blue-600 selection:text-white">
       {/* Sidebar Component (Desktop Persistent + Mobile Drawer) */}
       <Sidebar
         isCollapsed={isCollapsed}

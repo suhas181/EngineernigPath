@@ -35,6 +35,10 @@ import { toolsResources } from './tools/tools';
 // Import Project Resources
 import { projectResources } from './projects/projects';
 
+import { CURATED_RESOURCES } from './curatedResources';
+
+export { CURATED_RESOURCES };
+
 /**
  * Master Collection of all curated FREE resources across the application.
  */
@@ -76,7 +80,7 @@ export const ALL_RESOURCES: LibraryResource[] = [
  * Maps stage to numeric rank for strict learning flow ordering:
  * Learn (1) -> Notes/Revision (2) -> Practice (3) -> Interview (4) -> Project (5) -> Revision (6)
  */
-const STAGE_ORDER: Record<ResourceStage, number> = {
+const STAGE_ORDER: Record<string, number> = {
   learn: 1,
   notes: 2,
   practice: 3,
@@ -99,7 +103,8 @@ export const resolveResources = (
 
   // Try 1: Exact key + preferred language or 'All'
   let matches = ALL_RESOURCES.filter((res) => {
-    const keyMatches = res.curriculumKey.toUpperCase() === key;
+    const resKey = (res.curriculumKey || '').toUpperCase();
+    const keyMatches = resKey === key;
     if (!keyMatches) return false;
 
     return res.language === 'All' || res.language === dsaLanguage;
@@ -107,14 +112,16 @@ export const resolveResources = (
 
   // Try 2: Fallback to all resources matching curriculum key regardless of language tag
   if (matches.length === 0) {
-    matches = ALL_RESOURCES.filter((res) => res.curriculumKey.toUpperCase() === key);
+    matches = ALL_RESOURCES.filter((res) => (res.curriculumKey || '').toUpperCase() === key);
   }
 
   // Sort by stage learning flow order then by resource order field
   return matches.sort((a, b) => {
-    const stageDiff = (STAGE_ORDER[a.stage] || 99) - (STAGE_ORDER[b.stage] || 99);
+    const stageA = a.stage ? STAGE_ORDER[a.stage] || 99 : 99;
+    const stageB = b.stage ? STAGE_ORDER[b.stage] || 99 : 99;
+    const stageDiff = stageA - stageB;
     if (stageDiff !== 0) return stageDiff;
-    return a.order - b.order;
+    return (a.order || 0) - (b.order || 0);
   });
 };
 

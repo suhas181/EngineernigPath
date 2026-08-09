@@ -3,20 +3,18 @@ import { z } from 'zod';
 import { AuthenticatedRequest } from '../types';
 import { Resource } from '../models/Resource';
 import { UserResourceState } from '../models/UserResourceState';
-import { Roadmap } from '../models/Roadmap';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { CURATED_RESOURCES } from '../resources';
+import { LibraryResource } from '../resources/types';
 
-// Initialize Gemini API
-const apiKey = process.env.GEMINI_API_KEY;
-const isApiKeyConfigured = apiKey && apiKey !== 'your-gemini-api-key' && apiKey.trim() !== '';
-const genAI = isApiKeyConfigured ? new GoogleGenerativeAI(apiKey) : null;
-
-// Schemas for input validation
+// Query validation schema
 const getResourcesQuerySchema = z.object({
-  category: z.enum(['video', 'article', 'documentation', 'practice', 'course']).optional(),
-  difficulty: z.enum(['beginner', 'intermediate', 'advanced']).optional(),
+  category: z.string().optional(),
+  type: z.string().optional(),
+  difficulty: z.string().optional(),
+  level: z.string().optional(),
+  language: z.string().optional(),
   search: z.string().optional(),
-  bookmarkedOnly: z.string().optional(), // 'true' or 'false'
+  bookmarkedOnly: z.string().optional(),
 });
 
 const toggleBookmarkSchema = z.object({
@@ -26,6 +24,19 @@ const toggleBookmarkSchema = z.object({
 const toggleCompleteSchema = z.object({
   isCompleted: z.boolean({ required_error: 'isCompleted is required' }),
 });
+
+// Helper to derive YouTube thumbnail if not explicitly given
+function getResourceThumbnail(url: string, explicitThumbnail?: string): string {
+  if (explicitThumbnail && explicitThumbnail.trim() !== '') {
+    return explicitThumbnail;
+  }
+  // Try extracting YouTube ID
+  const ytMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+  if (ytMatch && ytMatch[1]) {
+    return `https://img.youtube.com/vi/${ytMatch[1]}/hqdefault.jpg`;
+  }
+  return '';
+}
 
 export const getResources = async (
   req: AuthenticatedRequest,
@@ -39,63 +50,151 @@ export const getResources = async (
       return;
     }
 
-    // Validate query inputs
-    const parseResult = getResourcesQuerySchema.safeParse(req.query);
-    if (!parseResult.success) {
-      res.status(400).json({
-        success: false,
-        message: 'Invalid query parameters',
-        errors: parseResult.error.flatten().fieldErrors,
-      });
-      return;
-    }
+    const { category, type, level, difficulty, language, search, bookmarkedOnly } = req.query;
 
-    const { category, difficulty, search, bookmarkedOnly } = parseResult.data;
-
-    // Build static filter
-    const filter: any = {};
-    if (category) filter.category = category;
-    if (difficulty) filter.difficulty = difficulty;
+    // Fetch DB resources if any
+    const dbResources = await Resource.find({}).lean();
     
-    // Keyword Text search
-    if (search && search.trim() !== '') {
-      filter.$text = { $search: search };
-    }
+    // Map DB resources to unified schema
+    const mappedDbResources: LibraryResource[] = dbResources.map((r: any) => ({
+      id: r._id.toString(),
+      title: r.title,
+      description: r.description,
+      provider: r.provider || 'EngineerPath',
+      category: r.category || 'Recommended',
+      topic: r.topic || r.tags?.[0] || 'General',
+      type: r.type || 'article',
+      url: r.url,
+      thumbnail: getResourceThumbnail(r.url, r.thumbnail),
+      duration: r.estimatedTime ? `${r.estimatedTime} Mins` : 'Self-Paced',
+      level: (r.difficulty || 'Beginner') as any,
+      tags: r.tags || [],
+      featured: r.featured || false,
+      language: r.language || 'All',
+      verified: true,
+    }));
 
-    // Query resources
-    const resources = await Resource.find(filter);
+    // Merge DB resources + CURATED_RESOURCES (deduplicating by URL)
+    const urlMap = new Map<string, LibraryResource>();
+    CURATED_RESOURCES.forEach((res) => {
+      urlMap.set(res.url, {
+        ...res,
+        thumbnail: getResourceThumbnail(res.url, res.thumbnail),
+      });
+    });
+    mappedDbResources.forEach((res) => {
+      if (!urlMap.has(res.url)) {
+        urlMap.set(res.url, res);
+      }
+    });
 
-    // Get the user's specific states (completions / bookmarks)
-    const states = await UserResourceState.find({ userId: user.id });
-    const stateMap = new Map(states.map((s) => [s.resourceId.toString(), s]));
+    const allCombined = Array.from(urlMap.values());
 
-    // Join database records with user activity logs
-    let augmentedResources = resources.map((r) => {
-      const state = stateMap.get(r._id.toString());
+    // Fetch user bookmarks & completions
+    const states = await UserResourceState.find({ userId: user.id }).lean();
+    const stateMap = new Map(states.map((s: any) => [s.resourceId.toString(), s]));
+
+    // Augment with isCompleted & isBookmarked
+    let augmented = allCombined.map((r) => {
+      const s: any = stateMap.get(r.id);
       return {
-        id: r._id,
-        title: r.title,
-        description: r.description,
-        url: r.url,
-        category: r.category,
-        difficulty: r.difficulty,
-        estimatedTime: r.estimatedTime,
-        tags: r.tags,
-        clicks: r.clicks,
-        isCompleted: state ? state.isCompleted : false,
-        isBookmarked: state ? state.isBookmarked : false,
+        ...r,
+        isCompleted: s ? Boolean(s.isCompleted) : false,
+        isBookmarked: s ? Boolean(s.isBookmarked) : false,
       };
     });
 
-    // Apply client filter for bookmarks if toggled
+    // Filtering logic
+    const searchStr = typeof search === 'string' ? search.trim().toLowerCase() : '';
+    const catFilter = typeof category === 'string' ? category.trim() : 'all';
+    const typeFilter = typeof type === 'string' ? type.trim() : 'all';
+    const langFilter = typeof language === 'string' ? language.trim() : 'all';
+    const levelFilter = typeof level === 'string' ? level.trim() : (typeof difficulty === 'string' ? difficulty.trim() : 'all');
+
+    if (searchStr) {
+      augmented = augmented.filter((r) =>
+        (r.title || '').toLowerCase().includes(searchStr) ||
+        (r.description || '').toLowerCase().includes(searchStr) ||
+        (r.provider || '').toLowerCase().includes(searchStr) ||
+        (r.category || '').toLowerCase().includes(searchStr) ||
+        (r.topic || '').toLowerCase().includes(searchStr) ||
+        (r.tags || []).some((t) => t.toLowerCase().includes(searchStr))
+      );
+    }
+
+    if (catFilter !== 'all') {
+      augmented = augmented.filter((r) => (r.category || '').toLowerCase() === catFilter.toLowerCase());
+    }
+
+    if (typeFilter !== 'all') {
+      augmented = augmented.filter((r) => r.type.toLowerCase() === typeFilter.toLowerCase());
+    }
+
+    if (langFilter !== 'all') {
+      augmented = augmented.filter((r) => !r.language || r.language === 'All' || r.language.toLowerCase() === langFilter.toLowerCase());
+    }
+
+    if (levelFilter !== 'all') {
+      augmented = augmented.filter((r) => r.level.toLowerCase() === levelFilter.toLowerCase());
+    }
+
     if (bookmarkedOnly === 'true') {
-      augmentedResources = augmentedResources.filter((r) => r.isBookmarked);
+      augmented = augmented.filter((r) => r.isBookmarked);
     }
 
     res.status(200).json({
       success: true,
-      count: augmentedResources.length,
-      resources: augmentedResources,
+      count: augmented.length,
+      resources: augmented,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getAIRecommendations = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const user = req.user;
+    if (!user) {
+      res.status(401).json({ success: false, message: 'Not authorized' });
+      return;
+    }
+
+    const career = user.preferredCareer || 'Software Engineer';
+    const preferredLang = user.preferredProgrammingLanguage || 'Java';
+
+    const states = await UserResourceState.find({ userId: user.id }).lean();
+    const stateMap = new Map(states.map((s: any) => [s.resourceId.toString(), s]));
+
+    // Personalize recommended resources
+    let recommendations = CURATED_RESOURCES.map((r) => {
+      const s: any = stateMap.get(r.id);
+      return {
+        ...r,
+        thumbnail: getResourceThumbnail(r.url, r.thumbnail),
+        isCompleted: s ? Boolean(s.isCompleted) : false,
+        isBookmarked: s ? Boolean(s.isBookmarked) : false,
+      };
+    });
+
+    // Filter featured or language-matched
+    let filtered = recommendations.filter(
+      (r) => r.featured || (r.language && r.language.toLowerCase() === preferredLang.toLowerCase())
+    );
+
+    if (filtered.length < 4) {
+      filtered = recommendations.slice(0, 6);
+    }
+
+    res.status(200).json({
+      success: true,
+      career,
+      preferredLanguage: preferredLang,
+      recommendations: filtered.slice(0, 6),
     });
   } catch (error) {
     next(error);
@@ -115,8 +214,6 @@ export const toggleBookmark = async (
     }
 
     const { id } = req.params;
-
-    // Validate request body
     const parseResult = toggleBookmarkSchema.safeParse(req.body);
     if (!parseResult.success) {
       res.status(400).json({
@@ -129,14 +226,6 @@ export const toggleBookmark = async (
 
     const { isBookmarked } = parseResult.data;
 
-    // Ensure resource exists
-    const resource = await Resource.findById(id);
-    if (!resource) {
-      res.status(404).json({ success: false, message: 'Resource not found' });
-      return;
-    }
-
-    // Update or create user state for this resource
     let state = await UserResourceState.findOne({ userId: user.id, resourceId: id });
     if (!state) {
       state = new UserResourceState({
@@ -172,8 +261,6 @@ export const toggleComplete = async (
     }
 
     const { id } = req.params;
-
-    // Validate request body
     const parseResult = toggleCompleteSchema.safeParse(req.body);
     if (!parseResult.success) {
       res.status(400).json({
@@ -186,14 +273,6 @@ export const toggleComplete = async (
 
     const { isCompleted } = parseResult.data;
 
-    // Ensure resource exists
-    const resource = await Resource.findById(id);
-    if (!resource) {
-      res.status(404).json({ success: false, message: 'Resource not found' });
-      return;
-    }
-
-    // 1. Update User State
     let state = await UserResourceState.findOne({ userId: user.id, resourceId: id });
     if (!state) {
       state = new UserResourceState({
@@ -206,206 +285,12 @@ export const toggleComplete = async (
     state.completedAt = isCompleted ? new Date() : undefined;
     await state.save();
 
-    // Increment click/popularity metric
-    if (isCompleted) {
-      resource.clicks += 1;
-      await resource.save();
-    }
-
-    // 2. Synchronize with AI Roadmap: if any inline topic resource matches this URL, sync its completion
-    const roadmap = await Roadmap.findOne({ userId: user.id });
-    let roadmapUpdated = false;
-
-    if (roadmap) {
-      roadmap.topics.forEach((topic) => {
-        let topicUpdated = false;
-        topic.resources.forEach((r) => {
-          if (r.url === resource.url) {
-            r.isCompleted = isCompleted;
-            topicUpdated = true;
-            roadmapUpdated = true;
-          }
-        });
-
-        // Recalculate topic completion based on resources
-        if (topicUpdated && topic.resources.length > 0) {
-          topic.isCompleted = topic.resources.every((r) => r.isCompleted);
-        }
-      });
-
-      if (roadmapUpdated) {
-        // Recalculate overall progress percentage
-        const totalTopics = roadmap.topics.length;
-        const completedTopics = roadmap.topics.filter((t) => t.isCompleted).length;
-        roadmap.progress = totalTopics > 0 ? Math.round((completedTopics / totalTopics) * 100) : 0;
-        await roadmap.save();
-      }
-    }
-
     res.status(200).json({
       success: true,
-      message: isCompleted ? 'Resource marked complete' : 'Resource marked incomplete',
+      message: isCompleted ? 'Marked as completed' : 'Marked as uncompleted',
       isCompleted: state.isCompleted,
-      roadmapUpdated,
     });
   } catch (error) {
     next(error);
-  }
-};
-
-export const getAIRecommendations = async (
-  req: AuthenticatedRequest,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
-  try {
-    const user = req.user;
-    if (!user) {
-      res.status(401).json({ success: false, message: 'Not authorized' });
-      return;
-    }
-
-    const userCareer = user.preferredCareer || 'Software Engineer (SDE)';
-    const userSkills = user.skills || [];
-    const userInterests = user.interests || [];
-
-    // Ensure some baseline resources exist in the database (Seed if completely empty)
-    const baseCount = await Resource.countDocuments();
-    if (baseCount === 0) {
-      await seedDefaultResources();
-    }
-
-    let recommendations: any[] = [];
-
-    if (genAI) {
-      try {
-        const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
-        const prompt = `
-You are an expert AI Career Mentor. Give me a list of exactly 3 tags or query terms that an engineering student interested in "${userCareer}" should search for.
-The student has current skills: [${userSkills.join(', ')}] and interests: [${userInterests.join(', ')}].
-Provide terms that help bridge their skill gap.
-Output format must be strictly a JSON array of strings, e.g. ["React Hooks", "Docker Containers", "REST APIs"].
-`;
-        const result = await model.generateContent({
-          contents: [{ role: 'user', parts: [{ text: prompt }] }],
-          generationConfig: { responseMimeType: 'application/json' },
-        });
-
-        const text = result.response.text();
-        if (text) {
-          const searchTags = JSON.parse(text.trim());
-          if (Array.isArray(searchTags) && searchTags.length > 0) {
-            // Find resources matching AI tags
-            const matched = await Resource.find({
-              $or: [
-                { tags: { $in: searchTags.map((t) => new RegExp(t, 'i')) } },
-                { title: { $in: searchTags.map((t) => new RegExp(t, 'i')) } },
-              ],
-            }).limit(3);
-            
-            recommendations = matched;
-          }
-        }
-      } catch (err) {
-        console.error('Gemini AI resource recommendation failed, falling back to static database suggestions:', err);
-      }
-    }
-
-    // Fallback: If AI recommendations failed or returned no matches from DB, get top clicked ones
-    if (recommendations.length < 3) {
-      const neededCount = 3 - recommendations.length;
-      const additional = await Resource.find({
-        _id: { $not: { $in: recommendations.map((r) => r._id) } },
-      })
-        .sort({ clicks: -1 })
-        .limit(neededCount);
-
-      recommendations = [...recommendations, ...additional];
-    }
-
-    // Augment completion and bookmark flags
-    const states = await UserResourceState.find({ userId: user.id });
-    const stateMap = new Map(states.map((s) => [s.resourceId.toString(), s]));
-
-    const augmented = recommendations.map((r) => {
-      const state = stateMap.get(r._id.toString());
-      return {
-        id: r._id,
-        title: r.title,
-        description: r.description,
-        url: r.url,
-        category: r.category,
-        difficulty: r.difficulty,
-        estimatedTime: r.estimatedTime,
-        tags: r.tags,
-        isCompleted: state ? state.isCompleted : false,
-        isBookmarked: state ? state.isBookmarked : false,
-      };
-    });
-
-    res.status(200).json({
-      success: true,
-      recommendations: augmented,
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-// Helper: Dynamically Seed Default Mock database resources to satisfy cold-start
-const seedDefaultResources = async () => {
-  const defaults = [
-    {
-      title: 'freeCodeCamp - React Course for Beginners',
-      description: 'Learn React JS from scratch. Master hooks, components, rendering, and API fetches in this comprehensive tutorial.',
-      url: 'https://www.youtube.com/watch?v=Ke90Tje7VS0',
-      category: 'video',
-      difficulty: 'beginner',
-      estimatedTime: 240, // 4 hours
-      tags: ['React', 'JavaScript', 'Frontend', 'Web Development'],
-    },
-    {
-      title: 'MDN Web Docs - JavaScript Guide',
-      description: 'The standard and comprehensive guide to modern JavaScript syntax, paradigms, structures, and tools.',
-      url: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide',
-      category: 'documentation',
-      difficulty: 'beginner',
-      estimatedTime: 120,
-      tags: ['JavaScript', 'Web Development', 'Documentation'],
-    },
-    {
-      title: 'LeetCode - Array and String Card',
-      description: 'Solve coding puzzles, understand memory complexities, and master standard algorithms for technical interviews.',
-      url: 'https://leetcode.com/explore/learn/card/array-and-string/',
-      category: 'practice',
-      difficulty: 'intermediate',
-      estimatedTime: 90,
-      tags: ['DSA', 'LeetCode', 'Algorithms', 'Java', 'Python'],
-    },
-    {
-      title: 'A Complete Guide to CSS Grid Layout',
-      description: 'Deep dive into grid layouts, alignment, template areas, and build responsive responsive pages.',
-      url: 'https://css-tricks.com/snippets/css/complete-guide-grid/',
-      category: 'article',
-      difficulty: 'beginner',
-      estimatedTime: 30,
-      tags: ['CSS', 'HTML', 'Frontend'],
-    },
-    {
-      title: 'Namaste JavaScript Season 1',
-      description: 'Master JS fundamentals: closures, scope chain, event loops, hoisting, prototype chains, and callback queues.',
-      url: 'https://youtube.com/playlist?list=PLlasXeu85E9cQ32gLCgSeGtxmFVCglaCx',
-      category: 'video',
-      difficulty: 'advanced',
-      estimatedTime: 300,
-      tags: ['JavaScript', 'Web Development'],
-    },
-  ];
-
-  try {
-    await Resource.insertMany(defaults, { ordered: false });
-    console.log('[RESOURCE SEED] Dynamic default resources seeded successfully.');
-  } catch (err) {
-    console.log('[RESOURCE SEED] Resource entries already exist or duplicate keys were skipped.');
   }
 };
