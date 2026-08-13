@@ -13,6 +13,7 @@ import {
   BookOpen,
   Calendar,
   FileText,
+  Briefcase,
   Settings,
   ShieldCheck,
 } from 'lucide-react';
@@ -91,6 +92,10 @@ export function Navbar() {
               <NavLink to="/resources" className={navLinkClass}>
                 <BookOpen className="h-4 w-4 text-pink-600" />
                 <span className="hidden md:inline">Learning Hub</span>
+              </NavLink>
+              <NavLink to="/internships" className={navLinkClass}>
+                <Briefcase className="h-4 w-4 text-cyan-600" />
+                <span className="hidden md:inline">Internships</span>
               </NavLink>
               <NavLink to="/planner" className={navLinkClass}>
                 <Calendar className="h-4 w-4 text-amber-600" />

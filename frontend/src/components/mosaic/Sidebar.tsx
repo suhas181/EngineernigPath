@@ -9,6 +9,7 @@ import {
   BookOpen,
   FolderGit2,
   FileText,
+  Briefcase,
   Settings,
   ShieldCheck,
   LogOut,
@@ -77,6 +78,12 @@ export function Sidebar({
       label: 'Learning Hub',
       icon: BookOpen,
       color: 'text-teal-400',
+    },
+    {
+      to: '/internships',
+      label: 'Internships',
+      icon: Briefcase,
+      color: 'text-cyan-400',
     },
     {
       to: '/projects',

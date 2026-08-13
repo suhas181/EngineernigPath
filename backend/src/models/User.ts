@@ -64,6 +64,7 @@ export interface IUser extends Document {
   }>;
   
   activeRoadmapId?: Schema.Types.ObjectId;
+  savedInternships?: Schema.Types.ObjectId[];
 
   createdAt: Date;
   updatedAt: Date;
@@ -285,6 +286,12 @@ const UserSchema = new Schema<IUser>(
       ref: 'Roadmap',
       index: true,
     },
+    savedInternships: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: 'Internship',
+      },
+    ],
   },
   {
     timestamps: true,

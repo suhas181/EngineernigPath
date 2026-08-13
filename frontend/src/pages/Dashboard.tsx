@@ -10,7 +10,6 @@ import {
   FileCheck,
   CheckCircle2,
   Compass,
-  Building2,
   BookMarked,
   Target,
   Layers,
@@ -32,55 +31,6 @@ interface SavedResourceItem {
   type: string;
   url: string;
 }
-
-interface CareerOpportunity {
-  id: string;
-  company: string;
-  title: string;
-  stipend: string;
-  deadline: string;
-  tag: string;
-  url: string;
-}
-
-const CAREER_OPPORTUNITIES: CareerOpportunity[] = [
-  {
-    id: 'gsoc-2026',
-    company: 'Google Open Source',
-    title: 'Google Summer of Code (GSoC) 2026',
-    stipend: '$1,500 – $3,300 Stipend',
-    deadline: 'March 2026',
-    tag: 'Global Open Source',
-    url: 'https://summerofcode.withgoogle.com/',
-  },
-  {
-    id: 'google-swe-intern',
-    company: 'Google Careers',
-    title: 'Software Engineering Summer Intern 2026',
-    stipend: 'Industry Top Tier + Relocation',
-    deadline: 'Applications Open',
-    tag: 'Summer Internship',
-    url: 'https://careers.google.com/students/',
-  },
-  {
-    id: 'microsoft-step',
-    company: 'Microsoft',
-    title: 'Microsoft STEP Internship 2026',
-    stipend: 'Exploratory Tech Stipend',
-    deadline: 'Open Now',
-    tag: 'Early Career',
-    url: 'https://careers.microsoft.com/students/us/en',
-  },
-  {
-    id: 'amazon-ml-school',
-    company: 'Amazon AI',
-    title: 'Amazon ML Summer School 2026',
-    stipend: 'Free Certificate & Mentorship',
-    deadline: 'Open Now',
-    tag: 'AI BootCamp',
-    url: 'https://www.amazon.science/academic-relations/amazon-ml-summer-school',
-  },
-];
 
 export function Dashboard() {
   const navigate = useNavigate();
@@ -371,62 +321,6 @@ export function Dashboard() {
                 </div>
               );
             })}
-          </div>
-        </section>
-
-        {/* ==================== SECTION 5: LATEST CAREER OPPORTUNITIES (LIGHT CANVAS) ==================== */}
-        <section className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">Latest Career Opportunities</h2>
-              <p className="text-xs text-slate-500 mt-0.5 font-normal">
-                Top internships, open-source programs, and hiring challenges.
-              </p>
-            </div>
-            <span className="text-xs font-bold text-emerald-600 flex items-center">
-              <Building2 className="w-3.5 h-3.5 mr-1" />
-              Verified Open Opportunities
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {CAREER_OPPORTUNITIES.map((opp) => (
-              <div
-                key={opp.id}
-                className="rounded-2xl border border-slate-200/90 bg-white/85 backdrop-blur-xl p-6 flex flex-col justify-between shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-250 text-left group"
-              >
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-bold text-slate-700 px-2.5 py-1 rounded-md bg-slate-100/90 border border-slate-200">
-                      {opp.company}
-                    </span>
-                    <span className="text-[10px] font-bold text-amber-700 px-2 py-0.5 rounded bg-amber-50 border border-amber-200">
-                      {opp.tag}
-                    </span>
-                  </div>
-
-                  <div>
-                    <h4 className="text-sm font-bold text-slate-900 group-hover:text-blue-600 transition-colors leading-snug">
-                      {opp.title}
-                    </h4>
-                    <p className="text-xs text-slate-500 mt-1 font-medium">{opp.stipend}</p>
-                  </div>
-                </div>
-
-                <div className="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between text-xs">
-                  <span className="text-slate-500 font-semibold">Deadline: {opp.deadline}</span>
-                  <a
-                    href={opp.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-bold text-blue-600 hover:text-blue-700 flex items-center"
-                  >
-                    Apply / Details
-                    <ExternalLink className="w-3.5 h-3.5 ml-1" />
-                  </a>
-                </div>
-              </div>
-            ))}
           </div>
         </section>
       </div>

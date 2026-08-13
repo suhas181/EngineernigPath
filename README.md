@@ -1,10 +1,10 @@
 # 🚀 EngineerPath — AI Career Learning Platform
 
-**EngineerPath** is a modern, premium **AI Career Learning Platform** built specifically for engineering students and fresh graduates. Moving beyond basic productivity planners or habit trackers, EngineerPath answers one fundamental question for aspiring engineers:
+**EngineerPath** is a modern, premium **AI Career Learning & Opportunity Discovery Platform** built specifically for engineering students and fresh graduates. Moving beyond basic productivity planners or habit trackers, EngineerPath answers two fundamental questions for aspiring engineers:
 
-> *"What should I learn next to become my dream engineer?"*
+> *"What should I learn next to become my dream engineer, and where can I apply for verified, active engineering internships today?"*
 
-By combining 8 structured role-based career curriculums, an 8-step guided topic learning flow, strict programming language isolation (`Java` | `Python` | `C++`), a SaaS collapsible navigation system, an audited library of 291+ curated free resources, and verified direct links to industry-trusted courses, EngineerPath serves as a digital mentor guiding users from beginner to job-ready engineer.
+By combining 8 structured role-based career curriculums, an 8-step guided topic learning flow, strict programming language isolation (`Java` | `Python` | `C++`), a SaaS collapsible navigation system, an audited library of 291+ curated free resources, and a **Live Adzuna-Powered Internship Discovery Platform**, EngineerPath serves as a digital mentor guiding users from beginner to job-ready engineer.
 
 ---
 
@@ -23,8 +23,9 @@ Built on a robust, type-safe **MERN Stack (MongoDB, Express, React, Node.js)** a
 ### Backend
 - **Framework**: Express with TypeScript (running via Node.js)
 - **Database**: MongoDB (mapped via Mongoose ODM)
+- **Job & Internship Engine**: Extensible `JobSource` Architecture with live Adzuna Job Search API integration & compound deduplication (`source + externalId`)
 - **Curriculum & AI Engine**: Dedicated 8-Role Blueprint Service (`curriculumService.ts`) & Google Gemini API (`@google/generative-ai`)
-- **Automation & Scheduling**: `node-cron` automated weekly resource link health verifiers
+- **Automation & Scheduling**: `node-cron` automated 12-hour internship listing sync and weekly resource link health verifiers
 - **Validation**: Zod (for payload and schema integrity verification)
 
 ---
@@ -37,31 +38,25 @@ EngineerPath/
 │   ├── src/
 │   │   ├── config/           # DB connection & configuration
 │   │   ├── constants/        # Single source of truth (careerPaths, resourceTypes)
-│   │   ├── controllers/      # Route controllers (auth, user, roadmaps, dashboard, etc.)
+│   │   ├── controllers/      # Route controllers (auth, user, roadmaps, internships, dashboard, etc.)
 │   │   ├── middlewares/      # JWT guards & error boundaries
-│   │   ├── models/           # Mongoose schemas (User, Roadmap, LearningResource, etc.)
+│   │   ├── models/           # Mongoose schemas (User, Internship, Roadmap, LearningResource, etc.)
 │   │   ├── resources/        # Modular Resource Library (291+ Curated Free Resources)
-│   │   │   ├── languages/    # Java, Python, C++, JS, TS resources
-│   │   │   ├── dsa/          # 20+ DSA topic modules (Arrays, Trees, Graphs, DP, etc.)
-│   │   │   ├── web/          # Frontend & Backend Web Development
-│   │   │   ├── cs/           # CS Fundamentals (OOP, DBMS, OS, CN)
-│   │   │   ├── interview/    # Resume, STAR Behavioral, Mock Interviews
-│   │   │   ├── tools/        # Git, Docker, Linux, AWS
-│   │   │   └── projects/     # Full-Stack Capstone Projects
-│   │   ├── routes/           # Router endpoints
-│   │   ├── scripts/          # Audit scripts (verifyResourceLibrary.ts, testLanguageFiltering.ts)
-│   │   ├── services/         # Dynamic Curriculum Service (curriculumService.ts), Gemini AI & LeetCode GraphQL
+│   │   ├── routes/           # Router endpoints (/api/auth, /api/internships, /api/roadmaps, etc.)
+│   │   ├── scripts/          # Audit & seed scripts (seedAdmin.ts, seedResources.ts, verifyResourceLibrary.ts)
+│   │   ├── services/         # Internship Service (internshipService.ts), Curriculum Service, Gemini AI & LeetCode GraphQL
 │   │   └── server.ts         # Express server entry point & cron setup
 │   ├── package.json
 │   └── tsconfig.json
 ├── frontend/                 # React UI Client
 │   ├── src/
 │   │   ├── components/       
+│   │   │   ├── internships/  # InternshipCard.tsx & InternshipDetailModal.tsx
 │   │   │   ├── learning/     # TopicLearningView.tsx (8-step guided flow) & CategoryCard.tsx
 │   │   │   └── mosaic/       # SaaS Sidebar.tsx & MosaicShell.tsx (Light Canvas #F8FAFC)
-│   │   ├── pages/            # Views (Dashboard, Roadmap, LearningHub, Projects, Resume, Settings)
+│   │   ├── pages/            # Views (Dashboard, Internships, Roadmap, LearningHub, Resume, Settings)
 │   │   ├── store/            # Zustand authentication store
-│   │   ├── services/         # Axios API connection endpoints
+│   │   ├── services/         # Axios API connection endpoints (internshipService.ts, api.ts)
 │   │   └── main.tsx          # Client entry point
 │   ├── package.json
 │   ├── tailwind.config.js
@@ -73,16 +68,24 @@ EngineerPath/
 
 ## 🌟 Key Features & Highlights
 
-### 1. 🎨 Modern SaaS Visual Hierarchy & Collapsible Navigation
+### 1. 💼 Live Internship Discovery Platform (`/internships`)
+- **Real Job Data**: Fetches verified engineering internships directly via the **Adzuna Job Search API**.
+- **Search & Multi-Filter Engine**: Filter opportunities by Role (`Software Engineer`, `Frontend`, `Backend`, `AI/ML`, `Data Analyst`, `DevOps`, `Mobile`, `Cybersecurity`), Location (`Bangalore`, `Hyderabad`, `Pune`, `Mumbai`, `Delhi`, `Remote`), Work Mode (`Remote` vs `On-site/Hybrid`), Skills, and Keywords.
+- **Rule-Based Profile Match (`🎯 Recommended Internships`)**: Dynamically prioritizes listings matched to the student's saved target role, preferred programming language, and core skill set with explanation tags (`✓ Matches your target role (Software Engineer)`).
+- **Verified Status Tracking**: Displays verified listing timestamps (`lastCheckedAt`) and enforces status rules (`OPEN`, `CLOSED`, `UNKNOWN`).
+- **Direct Application CTA**: **View & Apply →** links directly to official recruiter/company application pages (`target="_blank" rel="noopener noreferrer"`).
+- **Bookmarking System**: Save interesting internships to user bookmarks for easy tracking across sessions.
+
+### 2. 🎨 Modern SaaS Visual Hierarchy & Collapsible Navigation
 - **Light SaaS Canvas (`#F8FAFC`)**: Crisp white cards (`#FFFFFF`), subtle borders (`border-slate-200`), and dark text typography (`text-slate-900`).
 - **Collapsible Desktop Sidebar**: Icons-only default state (~76px) expanding smoothly to 256px on toggle. Remembers state via `localStorage` with hover tooltips.
 - **Responsive Mobile Drawer**: Topbar with hamburger menu opening a slide-over backdrop-blurred navigation drawer.
 
-### 2. 🎡 5-Second Auto-Rotating Hero Carousel
+### 3. 🎡 5-Second Auto-Rotating Hero Carousel
 - Highlights 8 core engineering roles: **Software Engineer**, **Frontend Engineer**, **Backend Engineer**, **AI/ML Engineer**, **Flutter Developer**, **DevOps Engineer**, **Cybersecurity Engineer**, and **Data Analyst**.
-- Features rich dark gradient card (`from-slate-950 via-slate-900 to-slate-950`), soft radial glows, 3D visual icons, skills tags, preparation durations, and average compensation benchmarks. Pause on hover enabled.
+- Features rich dark gradient card (`from-slate-950 via-slate-900 to-slate-950`), soft radial glows, 3D visual icons, skills tags, preparation durations, and average compensation benchmarks.
 
-### 3. 🎯 8-Step Guided Topic Learning Flow (`TopicLearningView.tsx`)
+### 4. 🎯 8-Step Guided Topic Learning Flow (`TopicLearningView.tsx`)
 Clicking any topic opens a dedicated, step-by-step guided view:
 - **Step 1 — Primary Playlist**: ONE language-specific, 100% verified playlist (*Kunal Kushwaha Java*, *Corey Schafer Python*, *Striver C++*, *TechWorld with Nana DevOps*, *3Blue1Brown AI/ML*).
 - **Step 2 — Official Documentation**: Direct official docs (*React.dev*, *Python.org*, *PyTorch.org*, *Docker Docs*, *Nodejs.org*).
@@ -93,15 +96,8 @@ Clicking any topic opens a dedicated, step-by-step guided view:
 - **Step 7 — Revision Notes & Cheat Sheets**: Quick reference sheets.
 - **Step 8 — Complete Topic**: Marks progress and unlocks next topic.
 
-### 4. 🔒 Strict Language-Aware Resource Isolation
+### 5. 🔒 Strict Language-Aware Resource Isolation
 The backend curriculum service enforces strict language boundaries matching the user's preferred language (`Java` | `Python` | `C++`). Python learners receive Python playlists, Python practice sheets, and Python interview questions without cross-language leaks.
-
-### 5. 🛠️ Gap-Filler Tech Additions
-- **Mobile Track**: Added Native Android (Google Android Developers + Philipp Lackner) & Native iOS (Sean Allen + CodeWithChris SwiftUI) alongside Flutter with platform choice guidance.
-- **SDE Track**: Added NeetCode 150 & NeetCode Roadmap as video-walkthrough complement for DSA.
-- **AI/ML Track**: Added Andrew Ng Machine Learning Specialization (Coursera / DeepLearning.AI Free Audit) as foundational entry point.
-- **Data Analyst Track**: Added Kaggle Learn Interactive Micro-Courses.
-- **DevOps Track**: Added KodeKloud Free Interactive Terminal Labs.
 
 ---
 
@@ -110,6 +106,7 @@ The backend curriculum service enforces strict language boundaries matching the 
 ### Prerequisites
 - Node.js (v18+)
 - MongoDB (running locally or a remote MongoDB Atlas URI)
+- Adzuna Developer API Credentials (`ADZUNA_APP_ID`, `ADZUNA_APP_KEY`)
 - Google Gemini API Key (optional; backend includes dynamic curriculum fallbacks)
 
 ---
@@ -131,7 +128,11 @@ The backend curriculum service enforces strict language boundaries matching the 
    PORT=5001
    MONGODB_URI=mongodb://127.0.0.1:27017/engineerpath
    JWT_SECRET=your_jwt_signing_key
-   GEMINI_API_KEY=your_gemini_api_key
+
+   # Adzuna Job Search API Config
+   ADZUNA_APP_ID=your_adzuna_app_id
+   ADZUNA_APP_KEY=your_adzuna_app_key
+   ADZUNA_COUNTRY=in
    ```
 
 4. Audit the resource library and verify 0 broken links:
@@ -170,6 +171,7 @@ The backend curriculum service enforces strict language boundaries matching the 
 
 ## 📈 Platform Audit & Verification
 
+- **Internship Discovery Engine**: Verified live Adzuna API integration, full search and pagination, compound deduplication (`source + externalId`), and direct external application URL links.
 - **Resource Library Health**: `verifyResourceLibrary.ts` verifies 291 audited resources, 0 unwhitelisted duplicate URLs, and 100% active 200 OK links across all 8 career tracks.
 - **Language Isolation Audit**: Verifies 100% language boundary isolation with zero cross-language leaks.
 - **Build Integrity**: Both frontend and backend compile cleanly with zero TypeScript errors.

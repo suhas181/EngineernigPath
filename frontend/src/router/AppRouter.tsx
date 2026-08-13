@@ -14,6 +14,7 @@ import CompleteProfile from '../pages/CompleteProfile';
 import Dashboard from '../pages/Dashboard';
 import Roadmap from '../pages/Roadmap';
 import Resources from '../pages/Resources';
+import Internships from '../pages/Internships';
 import ResumeAnalyzer from '../pages/ResumeAnalyzer';
 import Planner from '../pages/Planner';
 import ProfileSettings from '../pages/ProfileSettings';
@@ -159,6 +160,14 @@ export function AppRouter() {
         element={
           <ProtectedRoute>
             <Resources />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/internships"
+        element={
+          <ProtectedRoute>
+            <Internships />
           </ProtectedRoute>
         }
       />

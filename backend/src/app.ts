@@ -12,6 +12,7 @@ import resourceRoutes from './routes/resourceRoutes';
 import productivityRoutes from './routes/productivityRoutes';
 import resumeRoutes from './routes/resumeRoutes';
 import adminRoutes from './routes/adminRoutes';
+import internshipRoutes from './routes/internshipRoutes';
 
 const app = express();
 
@@ -73,6 +74,7 @@ app.use('/api/resources', resourceRoutes);
 app.use('/api/productivity', productivityRoutes);
 app.use('/api/resume', resumeRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/internships', internshipRoutes);
 
 // Global Error Handler
 app.use(errorHandler);
