@@ -6,13 +6,13 @@ import {
   matchJob,
   syncSkills,
 } from '../controllers/resumeController';
-import { protect } from '../middlewares/auth';
+import { optionalAuth } from '../middlewares/auth';
 import { upload } from '../middlewares/upload';
 
 const router = Router();
 
-// Secure all endpoints under JWT verification
-router.use(protect);
+// Allow optional authentication (supports both authenticated & guest exploration)
+router.use(optionalAuth);
 
 router.post('/upload', upload.single('resume'), uploadResume);
 router.get('/', getResumes);

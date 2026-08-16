@@ -7,7 +7,6 @@ import {
   LayoutDashboard,
   Map,
   BookOpen,
-  FolderGit2,
   FileText,
   Briefcase,
   Settings,
@@ -18,6 +17,8 @@ import {
   PanelLeftOpen,
   X,
   Sparkles,
+  User,
+  LogIn,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -33,7 +34,7 @@ export function Sidebar({
   isMobileOpen = false,
   onCloseMobile,
 }: SidebarProps) {
-  const { user, logout } = useAuthStore();
+  const { user, isAuthenticated, logout } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -84,12 +85,6 @@ export function Sidebar({
       label: 'Internships',
       icon: Briefcase,
       color: 'text-cyan-400',
-    },
-    {
-      to: '/projects',
-      label: 'Projects',
-      icon: FolderGit2,
-      color: 'text-amber-400',
     },
     {
       to: '/resume',
@@ -167,7 +162,7 @@ export function Sidebar({
           </button>
         </div>
 
-        {/* Selected Career Role Card (Only in Expanded Mode) */}
+        {/* Selected Career Role Card / Guest Mode Banner (Only in Expanded Mode) */}
         {!isCollapsed && (
           <div className="p-3 mx-3 mt-4 rounded-xl bg-slate-900/90 border border-slate-800 flex items-center justify-between shadow-inner">
             <div className="flex items-center space-x-2.5 min-w-0 text-left">
@@ -175,11 +170,15 @@ export function Sidebar({
                 <Sparkles className="h-3.5 w-3.5" />
               </div>
               <div className="min-w-0">
-                <p className="text-[11px] font-bold text-slate-200 truncate">{userTrack}</p>
-                <p className="text-[10px] text-slate-400 font-medium truncate">Target Role</p>
+                <p className="text-[11px] font-bold text-slate-200 truncate">
+                  {isAuthenticated ? userTrack : 'Explore EngineerPath'}
+                </p>
+                <p className="text-[10px] text-slate-400 font-medium truncate">
+                  {isAuthenticated ? 'Target Role' : 'Guest Mode'}
+                </p>
               </div>
             </div>
-            <ChevronDown className="h-3.5 w-3.5 text-slate-400 flex-shrink-0" />
+            {isAuthenticated && <ChevronDown className="h-3.5 w-3.5 text-slate-400 flex-shrink-0" />}
           </div>
         )}
 
@@ -236,22 +235,26 @@ export function Sidebar({
             {/* User Avatar with Status Indicator */}
             <div className="relative flex-shrink-0 group">
               <div className="h-9 w-9 rounded-full bg-gradient-to-tr from-purple-600 to-indigo-600 text-white font-bold flex items-center justify-center text-xs overflow-hidden border border-purple-500/30 shadow-md">
-                {user?.profileImage ? (
-                  <img
-                    src={user.profileImage}
-                    alt={user.name}
-                    className="h-full w-full object-cover"
-                  />
+                {isAuthenticated ? (
+                  user?.profileImage ? (
+                    <img
+                      src={user.profileImage}
+                      alt={user.name}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    userInitials
+                  )
                 ) : (
-                  userInitials
+                  <User className="h-4 w-4 text-white" />
                 )}
               </div>
-              <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-500 border-2 border-slate-950" />
+              <span className={`absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-slate-950 ${isAuthenticated ? 'bg-emerald-500' : 'bg-slate-500'}`} />
 
               {/* Tooltip on Collapsed Mode Avatar */}
               {isCollapsed && (
                 <div className="pointer-events-none absolute left-full ml-3 bottom-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-slate-900 shadow-xl border border-slate-700 whitespace-nowrap z-50">
-                  {user?.name || 'Student Profile'}
+                  {isAuthenticated ? (user?.name || 'Student Profile') : 'Guest Explorer'}
                 </div>
               )}
             </div>
@@ -259,23 +262,33 @@ export function Sidebar({
             {!isCollapsed && (
               <div className="min-w-0 text-left">
                 <p className="text-xs font-bold text-white truncate max-w-[120px]">
-                  {user?.name || 'Bharath CD'}
+                  {isAuthenticated ? (user?.name || 'Student User') : 'Guest Explorer'}
                 </p>
                 <p className="text-[10px] text-slate-400 capitalize truncate">
-                  {user?.role || 'Student'}
+                  {isAuthenticated ? (user?.role || 'Student') : 'Unauthenticated'}
                 </p>
               </div>
             )}
           </div>
 
           {!isCollapsed && (
-            <button
-              onClick={handleLogout}
-              className="p-2 rounded-xl text-slate-400 hover:text-rose-400 hover:bg-slate-900 transition-colors cursor-pointer"
-              title="Logout"
-            >
-              <LogOut className="h-4 w-4" />
-            </button>
+            isAuthenticated ? (
+              <button
+                onClick={handleLogout}
+                className="p-2 rounded-xl text-slate-400 hover:text-rose-400 hover:bg-slate-900 transition-colors cursor-pointer"
+                title="Logout"
+              >
+                <LogOut className="h-4 w-4" />
+              </button>
+            ) : (
+              <Link
+                to="/login"
+                className="p-2 rounded-xl text-purple-400 hover:text-white hover:bg-slate-900 transition-colors cursor-pointer flex items-center space-x-1"
+                title="Sign In"
+              >
+                <LogIn className="h-4 w-4" />
+              </Link>
+            )
           )}
         </div>
       </div>

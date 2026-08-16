@@ -20,12 +20,8 @@ function App() {
             setUser(response.data.user);
           }
         } catch (error) {
-          console.error('Session initialization failed:', error);
-          // If the token is invalid or expired and token refresh also failed, log out
-          const stillAuthenticated = useAuthStore.getState().isAuthenticated;
-          if (!stillAuthenticated) {
-            logout();
-          }
+          console.warn('Session verification failed, resetting session:', error);
+          logout();
         }
       }
       setIsInitializing(false);

@@ -1,12 +1,12 @@
 import { Router } from 'express';
 import { getProfile, updateProfile, uploadAvatar, refreshLeetCodeStatsController } from '../controllers/userController';
-import { protect } from '../middlewares/auth';
+import { optionalAuth } from '../middlewares/auth';
 import { upload } from '../middlewares/upload';
 
 const router = Router();
 
-// All user routes require authentication
-router.use(protect);
+// Allow optional authentication for guest exploration & profile settings
+router.use(optionalAuth);
 
 router.get('/profile', getProfile);
 router.patch('/profile', updateProfile);

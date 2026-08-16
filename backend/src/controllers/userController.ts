@@ -207,7 +207,52 @@ export const getProfile = async (
   try {
     let user = req.user;
     if (!user) {
-      res.status(404).json({ message: 'User profile not found' });
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      const defaultGuestUser = {
+        _id: 'guest',
+        name: 'Guest Explorer',
+        email: 'guest@engineerpath.com',
+        role: 'student',
+        isVerified: true,
+        college: 'Engineering University',
+        branch: 'Computer Science & Engineering',
+        cgpa: 8.5,
+        graduationYear: 2026,
+        currentSemester: 5,
+        preferredCareer: 'Software Engineer',
+        skills: ['React', 'TypeScript', 'Node.js', 'Python'],
+        interests: ['Software Architecture', 'AI & Machine Learning'],
+        linkedinUrl: '',
+        githubUrl: '',
+        profileImage: '',
+        dreamCompany: 'Tier-1 Product Companies',
+        dailyStudyHours: 4,
+        programmingLanguages: ['Java', 'Python', 'JavaScript'],
+        frameworks: ['React', 'Express.js', 'Node.js'],
+        leetcodeUsername: '',
+        leetcodeRanking: 0,
+        leetcodeStatsLastFetchedAt: null,
+        leetcodeEasyCount: 0,
+        leetcodeMediumCount: 0,
+        leetcodeHardCount: 0,
+        dsaLevel: 'Intermediate',
+        frontendLevel: 'Intermediate',
+        backendLevel: 'Intermediate',
+        databaseLevel: 'Intermediate',
+        csFundamentalsLevel: 'Intermediate',
+        aptitudeLevel: 'Intermediate',
+        communicationLevel: 'Intermediate',
+        careerGoal: 'Placement',
+        placementTimeline: '6 Months',
+        preferredProgrammingLanguage: 'Java',
+        preferredDsaLanguage: 'Java',
+        targetCompanyType: 'Product-Based',
+        strongSubjects: ['Data Structures & Algorithms', 'Database Systems'],
+        weakSubjects: ['Computer Networks'],
+        projects: [],
+        createdAt: new Date(),
+      };
+      res.status(200).json({ user: serializeUser(defaultGuestUser) });
       return;
     }
 
@@ -231,11 +276,6 @@ export const updateProfile = async (
 ): Promise<void> => {
   try {
     let user = req.user;
-    if (!user) {
-      res.status(404).json({ message: 'User not found' });
-      return;
-    }
-
     const parseResult = updateProfileSchema.safeParse(req.body);
     if (!parseResult.success) {
       res.status(400).json({
@@ -246,6 +286,60 @@ export const updateProfile = async (
     }
 
     const data = parseResult.data;
+
+    if (!user) {
+      const guestResponse = {
+        _id: 'guest',
+        name: data.name || 'Guest Explorer',
+        email: 'guest@engineerpath.com',
+        role: 'student',
+        isVerified: true,
+        college: data.college || 'Engineering University',
+        branch: data.branch || 'Computer Science & Engineering',
+        cgpa: data.cgpa || 8.5,
+        graduationYear: data.graduationYear || 2026,
+        currentSemester: data.currentSemester || 5,
+        preferredCareer: data.preferredCareer || 'Software Engineer',
+        skills: data.skills || ['React', 'TypeScript', 'Node.js'],
+        interests: data.interests || ['Software Architecture'],
+        linkedinUrl: data.linkedinUrl || '',
+        githubUrl: data.githubUrl || '',
+        profileImage: data.profileImage || '',
+        dreamCompany: data.dreamCompany || '',
+        dailyStudyHours: data.dailyStudyHours || 4,
+        programmingLanguages: data.programmingLanguages || ['Java', 'Python'],
+        frameworks: data.frameworks || ['React'],
+        leetcodeUsername: data.leetcodeUsername || '',
+        leetcodeRanking: 0,
+        leetcodeStatsLastFetchedAt: null,
+        leetcodeEasyCount: data.leetcodeEasyCount || 0,
+        leetcodeMediumCount: data.leetcodeMediumCount || 0,
+        leetcodeHardCount: data.leetcodeHardCount || 0,
+        dsaLevel: data.dsaLevel || 'Intermediate',
+        frontendLevel: data.frontendLevel || 'Intermediate',
+        backendLevel: data.backendLevel || 'Intermediate',
+        databaseLevel: data.databaseLevel || 'Intermediate',
+        csFundamentalsLevel: data.csFundamentalsLevel || 'Intermediate',
+        aptitudeLevel: data.aptitudeLevel || 'Intermediate',
+        communicationLevel: data.communicationLevel || 'Intermediate',
+        careerGoal: data.careerGoal || 'Placement',
+        placementTimeline: data.placementTimeline || '6 Months',
+        preferredProgrammingLanguage: data.preferredProgrammingLanguage || 'Java',
+        preferredDsaLanguage: data.preferredDsaLanguage || 'Java',
+        targetCompanyType: data.targetCompanyType || 'Product-Based',
+        strongSubjects: data.strongSubjects || [],
+        weakSubjects: data.weakSubjects || [],
+        projects: data.projects || [],
+        createdAt: new Date(),
+      };
+
+      res.status(200).json({
+        message: 'Profile updated successfully',
+        user: serializeUser(guestResponse),
+      });
+      return;
+    }
+
     const previousUsername = user.leetcodeUsername;
 
     // Apply only provided (non-undefined) fields

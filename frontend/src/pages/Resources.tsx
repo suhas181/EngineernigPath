@@ -1,6 +1,8 @@
 import { useEffect, useState, useMemo } from 'react';
 import api from '../services/api';
 import toast from 'react-hot-toast';
+import { useAuthStore } from '../store/useAuthStore';
+import { useAuthModalStore } from '../store/useAuthModalStore';
 import {
   Sparkles,
   Star,
@@ -70,6 +72,8 @@ const TYPES = [
 ];
 
 export function Resources() {
+  const { isAuthenticated } = useAuthStore();
+  const { openModal } = useAuthModalStore();
   const [resources, setResources] = useState<LearningHubResource[]>([]);
   const [recommendations, setRecommendations] = useState<LearningHubResource[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -130,6 +134,14 @@ export function Resources() {
     resourceId: string,
     action: 'toggle-complete' | 'toggle-bookmark'
   ) => {
+    if (!isAuthenticated) {
+      openModal({
+        title: 'Save Learning Resources',
+        description: 'Create a free account to bookmark tutorials, GitHub repos, and track completion progress.',
+      });
+      return;
+    }
+
     // Optimistic UI update
     setResources((prev) =>
       prev.map((r) => {
@@ -264,7 +276,16 @@ export function Resources() {
             })}
 
             <button
-              onClick={() => setBookmarkedOnly(!bookmarkedOnly)}
+              onClick={() => {
+                if (!isAuthenticated) {
+                  openModal({
+                    title: 'Save Learning Resources',
+                    description: 'Create a free account to view your bookmarked resources.',
+                  });
+                  return;
+                }
+                setBookmarkedOnly(!bookmarkedOnly);
+              }}
               className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 flex items-center space-x-2 shrink-0 border ${
                 bookmarkedOnly
                   ? 'bg-amber-500 text-white border-amber-400 shadow-md'
@@ -367,11 +388,15 @@ export function Resources() {
                   DEFAULT CURATED SECTIONS VIEW
                  ========================================== */
               <div className="space-y-12">
-                {/* SECTION 1: RECOMMENDED FOR YOU */}
+                {/* SECTION 1: RECOMMENDED / FEATURED RESOURCES */}
                 {recommendations.length > 0 && (
                   <SectionBlock
-                    title="✨ Recommended for You"
-                    subtitle="Hand-picked resources personalized for your career path and preferred programming language."
+                    title={isAuthenticated ? '✨ Recommended for You' : '✨ Featured Resources'}
+                    subtitle={
+                      isAuthenticated
+                        ? 'Hand-picked resources personalized for your career path and preferred programming language.'
+                        : 'Popular courses, GitHub repositories, and documentation across all engineering tracks.'
+                    }
                     badge="FEATURED"
                     badgeColor="bg-purple-100 text-purple-700 border-purple-200"
                   >

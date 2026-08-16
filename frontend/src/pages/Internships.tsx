@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo, useCallback } from 'react';
 import { Navbar } from '../components/Navbar';
 import Sidebar from '../components/mosaic/Sidebar';
 import { useAuthStore } from '../store/useAuthStore';
+import { useAuthModalStore } from '../store/useAuthModalStore';
 import internshipService, {
   InternshipItem,
   InternshipStats,
@@ -61,7 +62,8 @@ const POPULAR_SKILLS = [
 ];
 
 export function Internships() {
-  const { user } = useAuthStore();
+  const { user, isAuthenticated } = useAuthStore();
+  const { openModal } = useAuthModalStore();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
@@ -145,6 +147,15 @@ export function Internships() {
   // Toggle bookmark handler
   const handleToggleBookmark = async (id: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
+
+    if (!isAuthenticated) {
+      openModal({
+        title: 'Save Internships to Your Profile',
+        description: 'Create a free account to bookmark opportunities and access them anytime.',
+      });
+      return;
+    }
+
     try {
       const res = await internshipService.toggleBookmark(id);
       if (res && res.success) {
@@ -173,7 +184,7 @@ export function Internships() {
 
   // Recommended opportunities (matched against student's profile)
   const recommendedListings = useMemo(() => {
-    if (!user || internships.length === 0) return [];
+    if (!user || !isAuthenticated || internships.length === 0) return [];
 
     const preferredCareer = (user.preferredCareer || '').toLowerCase();
     const preferredLang = (user.preferredProgrammingLanguage || '').toLowerCase();
@@ -204,7 +215,7 @@ export function Internships() {
       .filter((rec) => rec.score > 0)
       .sort((a, b) => b.score - a.score)
       .slice(0, 3);
-  }, [user, internships]);
+  }, [user, isAuthenticated, internships]);
 
   return (
     <div className="flex h-screen bg-[#F8FAFC] overflow-hidden text-slate-900 font-sans">
@@ -366,7 +377,16 @@ export function Internships() {
 
                   {/* Saved Bookmarks Only Toggle */}
                   <button
-                    onClick={() => setBookmarkedOnly(!bookmarkedOnly)}
+                    onClick={() => {
+                      if (!isAuthenticated) {
+                        openModal({
+                          title: 'Save Internships to Your Profile',
+                          description: 'Create a free account to view your saved internships.',
+                        });
+                        return;
+                      }
+                      setBookmarkedOnly(!bookmarkedOnly);
+                    }}
                     className={`inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition cursor-pointer ${
                       bookmarkedOnly
                         ? 'bg-rose-500 border-rose-400 text-white shadow-sm'
@@ -447,13 +467,13 @@ export function Internships() {
             </div>
           </div>
 
-          {/* Recommended Section (Matched to Student Profile) */}
-          {!isLoading && recommendedListings.length > 0 && !bookmarkedOnly && (
+          {/* Recommended Section (Only for Authenticated Student Profile) */}
+          {!isLoading && isAuthenticated && recommendedListings.length > 0 && !bookmarkedOnly && (
             <div className="space-y-4 text-left">
               <div className="flex items-center space-x-2">
                 <Sparkles className="h-5 w-5 text-amber-500" />
                 <h2 className="text-xl font-bold font-heading text-slate-900 tracking-tight">
-                  🎯 Recommended Internships
+                  Recommended Internships
                 </h2>
                 <span className="text-xs text-slate-500 font-medium">
                   Matched to your role ({user?.preferredCareer || 'Software Engineer'})
@@ -480,7 +500,7 @@ export function Internships() {
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-xl font-bold font-heading text-slate-900 tracking-tight">
-                  {bookmarkedOnly ? 'Saved Internships' : 'Latest Opportunities'}
+                  {bookmarkedOnly ? 'Saved Internships' : isAuthenticated ? 'Recommended Internships' : 'Latest Internships'}
                 </h2>
                 <p className="text-xs text-slate-500 mt-0.5 font-medium">
                   Showing {totalCount} verified engineering listings

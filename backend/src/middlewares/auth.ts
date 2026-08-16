@@ -43,6 +43,38 @@ export const protect = async (
   }
 };
 
+export const optionalAuth = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    let token: string | undefined;
+
+    if (
+      req.headers.authorization &&
+      req.headers.authorization.startsWith('Bearer')
+    ) {
+      token = req.headers.authorization.split(' ')[1];
+    }
+
+    if (token) {
+      try {
+        const decoded = verifyAccessToken(token);
+        const user = await User.findById(decoded.id);
+        if (user) {
+          req.user = user;
+        }
+      } catch (error) {
+        // Silently continue for optional auth
+      }
+    }
+    next();
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const restrictTo = (...roles: Array<'student' | 'admin'>) => {
   return (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
     if (!req.user || !roles.includes(req.user.role)) {

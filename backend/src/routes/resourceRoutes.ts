@@ -5,16 +5,13 @@ import {
   toggleComplete,
   getAIRecommendations,
 } from '../controllers/resourceController';
-import { protect } from '../middlewares/auth';
+import { protect, optionalAuth } from '../middlewares/auth';
 
 const router = Router();
 
-// Apply auth middleware to protect all resource endpoints
-router.use(protect);
-
-router.get('/', getResources);
-router.get('/recommendations', getAIRecommendations);
-router.patch('/:id/bookmark', toggleBookmark);
-router.patch('/:id/toggle-complete', toggleComplete);
+router.get('/', optionalAuth, getResources);
+router.get('/recommendations', optionalAuth, getAIRecommendations);
+router.patch('/:id/bookmark', protect, toggleBookmark);
+router.patch('/:id/toggle-complete', protect, toggleComplete);
 
 export default router;

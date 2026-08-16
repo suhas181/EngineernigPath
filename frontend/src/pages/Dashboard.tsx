@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { useAuthStore } from '../store/useAuthStore';
+import { useAuthModalStore } from '../store/useAuthModalStore';
 import { MosaicShell } from '../components/mosaic/MosaicShell';
 import { DashboardHero, CAREER_ROLES } from '../components/dashboard/DashboardHero';
 import {
@@ -14,6 +16,7 @@ import {
   Target,
   Layers,
   Award,
+  Sparkles,
 } from 'lucide-react';
 
 interface SavedTopicInfo {
@@ -34,6 +37,8 @@ interface SavedResourceItem {
 
 export function Dashboard() {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuthStore();
+  const { openModal } = useAuthModalStore();
 
   const [activeTopicInfo] = useState<SavedTopicInfo | null>(() => {
     const saved = localStorage.getItem('engineerpath_active_topic');
@@ -140,11 +145,13 @@ export function Dashboard() {
           </div>
         </section>
 
-        {/* ==================== SECTION 2: CHOOSE YOUR CAREER PATH (LIGHT CANVAS) ==================== */}
+        {/* ==================== SECTION 2: CHOOSE YOUR CAREER PATH ==================== */}
         <section className="space-y-6">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">Choose Your Career Path</h2>
+              <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">
+                {isAuthenticated ? 'Based on Your Career Goal' : 'Popular Career Paths'}
+              </h2>
               <p className="text-sm text-slate-500 mt-1 font-normal">
                 Select a role to unlock its structured category curriculum, practice sheets, and projects.
               </p>
@@ -216,11 +223,13 @@ export function Dashboard() {
           </div>
         </section>
 
-        {/* ==================== SECTION 3: CONTINUE LEARNING (LIGHT CANVAS) ==================== */}
+        {/* ==================== SECTION 3: CONTINUE LEARNING / PERSONALIZE CTA ==================== */}
         <section className="space-y-4">
-          <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">Continue Learning</h2>
+          <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">
+            {isAuthenticated ? 'Continue Learning' : 'Explore Learning Pathways'}
+          </h2>
 
-          {activeTopicInfo ? (
+          {isAuthenticated && activeTopicInfo ? (
             <div className="relative rounded-2xl border border-blue-200/90 bg-white/90 backdrop-blur-xl p-6 md:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-sm hover:shadow-md transition-all duration-250">
               <div className="space-y-3">
                 <div className="flex items-center space-x-2">
@@ -252,6 +261,29 @@ export function Dashboard() {
                 className="w-full md:w-auto px-7 py-4 rounded-2xl font-extrabold text-sm text-white bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-600/25 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center cursor-pointer"
               >
                 Continue Learning
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </button>
+            </div>
+          ) : !isAuthenticated ? (
+            <div className="relative rounded-2xl border border-purple-200/90 bg-gradient-to-r from-slate-900 via-indigo-950 to-purple-950 p-6 md:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-xl text-white">
+              <div className="space-y-2">
+                <div className="inline-flex items-center space-x-2 rounded-full bg-purple-500/20 border border-purple-400/30 px-3 py-1 text-xs font-bold text-purple-300">
+                  <Sparkles className="h-3.5 w-3.5 text-purple-400" />
+                  <span>Interactive Exploration Mode</span>
+                </div>
+                <h3 className="text-2xl font-extrabold font-heading text-white">
+                  Personalize your EngineerPath &rarr;
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-300 max-w-xl leading-relaxed">
+                  Track your roadmap progress, bookmark internships, save learning resources, and upload your resume for instant ATS analysis.
+                </p>
+              </div>
+
+              <button
+                onClick={() => openModal({ title: 'Make EngineerPath yours', description: 'Create a free account to save your progress, internships and roadmap.' })}
+                className="w-full md:w-auto px-7 py-3.5 rounded-2xl font-extrabold text-sm text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 shadow-lg shadow-purple-600/30 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center cursor-pointer shrink-0"
+              >
+                Personalize EngineerPath
                 <ArrowRight className="w-4 h-4 ml-2" />
               </button>
             </div>

@@ -112,7 +112,7 @@ export function LandingPage() {
                   <span>Start Free Trial</span>
                   <ArrowRight className="h-5 w-5" />
                 </Link>
-                <Link to="/login" className="mosaic-btn-outline !py-3 !px-7 !text-base">
+                <Link to="/dashboard" className="mosaic-btn-outline !py-3 !px-7 !text-base">
                   <span>Explore Platform</span>
                 </Link>
               </>
