@@ -26,13 +26,16 @@ app.use(
         process.env.FRONTEND_URL || 'http://localhost:5173',
         'http://localhost:5173',
         'http://127.0.0.1:5173',
+        'http://localhost:5174',
+        'http://127.0.0.1:5174',
         'http://localhost:3000',
         'http://127.0.0.1:3000',
       ];
-      if (allowedOrigins.includes(origin) || process.env.NODE_ENV !== 'production') {
-        return callback(null, true);
+      const isLocalhost = /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
+      if (allowedOrigins.includes(origin) || isLocalhost || process.env.NODE_ENV !== 'production') {
+        return callback(null, origin);
       }
-      return callback(null, true);
+      return callback(new Error('Not allowed by CORS'));
     },
     credentials: true,
   })

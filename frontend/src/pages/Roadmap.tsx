@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '../store/useAuthStore';
 import toast from 'react-hot-toast';
 import {
@@ -33,7 +34,70 @@ const AVAILABLE_ROLES = [
   'Data Scientist / Analyst',
   'DevOps Engineer',
   'Mobile App Developer',
+  'Cybersecurity Engineer',
 ];
+
+const resolveRole = (roleParam: string | null, fallbackRole: string | undefined): string => {
+  if (roleParam) {
+    const trimmed = roleParam.trim();
+    // 1. Exact match (case-insensitive)
+    const exact = AVAILABLE_ROLES.find((r) => r.toLowerCase() === trimmed.toLowerCase());
+    if (exact) return exact;
+
+    // 2. Keyword/alias match
+    const lower = trimmed.toLowerCase();
+    if (lower.includes('cyber') || lower.includes('security') || lower.includes('infosec') || lower.includes('pentest')) {
+      return 'Cybersecurity Engineer';
+    }
+    if (lower.includes('mobile') || lower.includes('flutter') || lower.includes('react native') || lower.includes('android') || lower.includes('ios')) {
+      return 'Mobile App Developer';
+    }
+    if (lower.includes('devops') || lower.includes('cloud') || lower.includes('infra')) {
+      return 'DevOps Engineer';
+    }
+    if (lower.includes('data') || lower.includes('analyst') || lower.includes('scientist')) {
+      return 'Data Scientist / Analyst';
+    }
+    if (lower.includes('ai') || lower.includes('ml') || lower.includes('machine learning')) {
+      return 'AI / ML Engineer';
+    }
+    if (lower.includes('full') || lower.includes('fullstack')) {
+      return 'Full Stack Developer';
+    }
+    if (lower.includes('frontend') || lower.includes('front-end') || lower.includes('ui')) {
+      return 'Frontend Engineer';
+    }
+    if (lower.includes('backend') || lower.includes('back-end') || lower.includes('api')) {
+      return 'Backend Engineer';
+    }
+    if (lower.includes('software') || lower.includes('sde') || lower.includes('engineer')) {
+      return 'Software Engineer';
+    }
+  }
+
+  if (fallbackRole) {
+    const exactFallback = AVAILABLE_ROLES.find((r) => r.toLowerCase() === fallbackRole.trim().toLowerCase());
+    if (exactFallback) return exactFallback;
+  }
+
+  return 'Software Engineer';
+};
+
+const getInitialLanguageForRole = (role: string, userLang: string | undefined): 'Java' | 'Python' | 'C++' => {
+  const roleLower = role.toLowerCase();
+  if (
+    roleLower.includes('data') ||
+    roleLower.includes('analyst') ||
+    roleLower.includes('scientist') ||
+    roleLower.includes('ai') ||
+    roleLower.includes('ml') ||
+    roleLower.includes('cyber') ||
+    roleLower.includes('security')
+  ) {
+    return 'Python';
+  }
+  return (userLang as any) || 'Java';
+};
 
 interface SelectedTopicState {
   category: CurriculumCategory;
@@ -43,20 +107,43 @@ interface SelectedTopicState {
 
 export function Roadmap() {
   const { user, updateUser } = useAuthStore();
-  const [curriculum, setCurriculum] = useState<CareerRoleCurriculum | null>(null);
-  const [selectedRole, setSelectedRole] = useState<string>(
-    user?.preferredCareer || 'Software Engineer'
-  );
+  const [searchParams, setSearchParams] = useSearchParams();
+  const urlRoleParam = searchParams.get('role');
+
+  // Priority 1: URL ?role=... | Priority 2: user?.preferredCareer | Priority 3: 'Software Engineer'
+  const initialResolvedRole = resolveRole(urlRoleParam, user?.preferredCareer);
+  const [selectedRole, setSelectedRole] = useState<string>(initialResolvedRole);
   const [selectedLanguage, setSelectedLanguage] = useState<'Java' | 'Python' | 'C++'>(
-    (user?.preferredProgrammingLanguage as any) || 'Java'
+    getInitialLanguageForRole(initialResolvedRole, user?.preferredProgrammingLanguage)
   );
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string>('programming-languages');
+
+  const [curriculum, setCurriculum] = useState<CareerRoleCurriculum | null>(null);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
   const [selectedTopicState, setSelectedTopicState] = useState<SelectedTopicState | null>(null);
 
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
 
   const categorySectionRef = useRef<HTMLDivElement>(null);
+
+  // Synchronize role whenever URL search parameter changes
+  useEffect(() => {
+    const currentParam = searchParams.get('role');
+    if (currentParam) {
+      const targetRole = resolveRole(currentParam, user?.preferredCareer);
+      if (targetRole !== selectedRole) {
+        setSelectedRole(targetRole);
+        setSelectedTopicState(null);
+        if (
+          targetRole === 'Data Scientist / Analyst' ||
+          targetRole.includes('AI / ML') ||
+          targetRole === 'Cybersecurity Engineer'
+        ) {
+          setSelectedLanguage('Python');
+        }
+      }
+    }
+  }, [searchParams]);
 
   const fetchCurriculum = async (role: string, lang: 'Java' | 'Python' | 'C++') => {
     setIsLoading(true);
@@ -99,10 +186,17 @@ export function Roadmap() {
   const handleRoleChange = (role: string) => {
     setSelectedRole(role);
     setSelectedTopicState(null);
+    setSearchParams({ role });
+    let targetLang = selectedLanguage;
+    if (role === 'Data Scientist / Analyst' || role.includes('AI / ML') || role === 'Cybersecurity Engineer') {
+      targetLang = 'Python';
+      setSelectedLanguage('Python');
+    }
     if (user) {
       updateUser({
         ...user,
         preferredCareer: role,
+        preferredProgrammingLanguage: targetLang,
       });
     }
     toast.success(`Career track changed to ${role}`);
@@ -217,7 +311,9 @@ export function Roadmap() {
 
               <div className="flex items-center space-x-1.5 text-teal-700 bg-teal-50 px-3 py-1 rounded-full border border-teal-200 text-[11px] font-bold">
                 <Sparkles className="h-3.5 w-3.5" />
-                <span>Resources tailored for {selectedLanguage}</span>
+                <span>
+                  Resources tailored for {selectedRole === 'Data Scientist / Analyst' || selectedRole.toLowerCase().includes('data') ? 'Python' : selectedRole.toLowerCase().includes('frontend') ? 'Frontend Engineering' : selectedRole.toLowerCase().includes('backend') ? 'Backend Engineering' : (selectedRole.toLowerCase().includes('ai') || selectedRole.toLowerCase().includes('machine learning')) ? 'AI / ML Engineering' : selectedLanguage}
+                </span>
               </div>
             </div>
           </div>
@@ -341,7 +437,7 @@ export function Roadmap() {
 
                               <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px]">
                                 <span className="text-slate-500 font-medium">
-                                  {topic.resourceCount} Curated Resources ({selectedLanguage})
+                                  {topic.resourceCount} Curated Resources{selectedRole.toLowerCase().includes('frontend') || selectedRole.toLowerCase().includes('backend') || selectedRole.toLowerCase().includes('ai') || selectedRole.toLowerCase().includes('machine learning') ? '' : ` (${selectedLanguage})`}
                                 </span>
                                 <span className="text-teal-700 font-bold flex items-center space-x-1 group-hover:translate-x-0.5 transition-transform">
                                   <span>Start Topic</span>

@@ -18,170 +18,170 @@ export interface MobileMonth {
 export const mobileRoadmap: MobileMonth[] = [
   {
     number: 1,
-    title: 'Mobile UI Fundamentals, Component Layouts & Frameworks',
-    focus: 'React Native / Flutter Layouts, Flexbox, Navigation & Material Design',
+    title: 'Mobile Programming Foundations & Modern TypeScript Core',
+    focus: 'TypeScript, ES6+, Async/Await, REST APIs, Git & Practical Problem Solving',
     topics: [
-      'Mobile UI design principles: iOS Human Interface & Android Material Design',
-      'Cross-platform mobile frameworks: React Native (JS/TS) & Flutter (Dart)',
-      'Mobile layout viewports, Flexbox, touch controls, and styling patterns',
-      'Mobile navigation architecture: Stack, Tab, and Drawer navigators'
+      'Modern JavaScript ES6+ (destructuring, arrow functions, modules, promises)',
+      'TypeScript static typing: types, interfaces, generics, and error handling',
+      'HTTP networking fundamentals, REST APIs, JSON parsing & async/await',
+      'Git version control, GitHub workflows, npm package management, and basic DSA'
     ],
-    tools: ['React Native', 'Flutter', 'TypeScript', 'Dart', 'Expo'],
+    tools: ['TypeScript', 'JavaScript ES6+', 'REST APIs', 'Git', 'Node.js'],
     youtube: [
       {
-        channel: 'The Net Ninja',
-        bestFor: 'React Native & Flutter Beginner Playlists',
-        searchUrl: 'https://www.youtube.com/@thenetninja'
+        channel: 'Jack Herrington',
+        bestFor: 'Modern TypeScript & Frontend Engineering',
+        searchUrl: 'https://www.youtube.com/@jherr'
       },
       {
-        channel: 'Flutter Devs',
-        bestFor: 'Official Flutter Widget of the Week',
-        searchUrl: 'https://www.youtube.com/@flutterdev'
+        channel: 'freeCodeCamp',
+        bestFor: 'TypeScript & JavaScript ES6+ Masterclasses',
+        searchUrl: 'https://www.youtube.com/@freecodecamp'
       }
     ],
     project: {
-      title: 'Cross-Platform Mobile Fitness App UI',
-      description: 'Design and develop a multi-screen mobile application with tab navigation, custom workout cards, and responsive UI.'
+      title: 'Mobile REST API Client & Cache Utility',
+      description: 'Build a typed API client utility that calls REST APIs, handles loading/error states, parses JSON responses, and caches payloads locally.'
     }
   },
   {
     number: 2,
-    title: 'Mobile State Management & Async REST API Integration',
-    focus: 'Axios Networking, Zustand/Redux Mobile State, Offline Caching',
+    title: 'React Native Fundamentals, Core Components & Navigation',
+    focus: 'React Native Components, Flexbox, React Navigation & New Architecture (Fabric)',
     topics: [
-      'Asynchronous HTTP networking in mobile apps (Axios / Fetch API)',
-      'Mobile state management with Zustand / Redux Toolkit / Riverpod',
-      'Handling mobile offline persistence: AsyncStorage / SQLite / Hive',
-      'Optimizing mobile list rendering (FlatList / ListView) performance'
+      'React fundamentals: Functional components, props, state & hooks (useEffect, useMemo, useCallback)',
+      'React Native core components: View, Text, Image, TextInput, ScrollView & FlatList virtualization',
+      'Flexbox styling, responsive layouts, SafeAreaView, keyboard avoiding views & dark mode',
+      'React Navigation (Stack, Tabs, Drawers), deep linking & React Native New Architecture (Fabric/JSI)'
     ],
-    tools: ['React Native', 'Zustand', 'AsyncStorage', 'REST APIs', 'Axios'],
+    tools: ['React Native', 'TypeScript', 'Expo', 'React Navigation', 'Fabric'],
     youtube: [
       {
-        channel: 'Code With Andrea',
-        bestFor: 'Flutter State Management & Architecture Guides',
-        searchUrl: 'https://codewithandrea.com/'
+        channel: 'Programming with Mosh',
+        bestFor: 'React Native Beginner to Pro Course',
+        searchUrl: 'https://www.youtube.com/@programmingwithmosh'
       },
       {
-        channel: 'Jack Herrington',
-        bestFor: 'React Native State Management & Performance',
-        searchUrl: 'https://www.youtube.com/@jherr'
+        channel: 'William Candillon',
+        bestFor: 'React Native UI, Reanimated & Gestures',
+        searchUrl: 'https://www.youtube.com/@wcandillon'
       }
     ],
     project: {
-      title: 'Mobile Weather & News App with Offline Caching',
-      description: 'Build a mobile app that fetches live weather & news APIs, saves favorite locations locally, and renders offline.'
+      title: 'Multi-Screen Production Mobile UI App',
+      description: 'Build a multi-screen mobile app with authentication screens, search/filtering, responsive list layouts, dark mode, gestures, and smooth animations.'
     }
   },
   {
     number: 3,
-    title: 'Native Device Hardware APIs & Firebase Push Notifications',
-    focus: 'Camera API, GPS Geolocation, FCM Push Notifications, Biometrics',
+    title: 'Mobile State Management, TanStack Query & Offline SQLite',
+    focus: 'Redux Toolkit / Zustand, TanStack Query Caching, SQLite & Push Notifications',
     topics: [
-      'Requesting mobile runtime permissions (Camera, Location, Storage)',
-      'Accessing native hardware APIs: Camera capture, GPS mapping & Gyroscope',
-      'Setting up Firebase Cloud Messaging (FCM) for remote push notifications',
-      'Biometric authentication integration (FaceID / TouchID)'
+      'Client state management with Redux Toolkit slices or Zustand stores',
+      'Server state caching, optimistic updates, pagination & infinite scroll with TanStack Query',
+      'Local persistence with SecureStore (Keychain/Keystore) and SQLite / WatermelonDB',
+      'Offline-first architecture, network connectivity detection (NetInfo) & push notifications (FCM)'
     ],
-    tools: ['Firebase FCM', 'GPS Maps', 'Camera API', 'FaceID', 'Expo Modules'],
+    tools: ['Redux Toolkit', 'Zustand', 'TanStack Query', 'SQLite', 'Firebase FCM'],
     youtube: [
       {
-        channel: 'Uncover Everything',
-        bestFor: 'React Native Firebase & Push Notifications',
-        searchUrl: 'https://www.youtube.com/results?search_query=React+Native+Push+Notifications'
+        channel: 'Jack Herrington',
+        bestFor: 'TanStack Query & State Management in Mobile',
+        searchUrl: 'https://www.youtube.com/@jherr'
       },
       {
-        channel: 'Reso Coder',
-        bestFor: 'Advanced Flutter & Hardware Integrations',
-        searchUrl: 'https://www.youtube.com/@ResoCoder'
+        channel: 'freeCodeCamp',
+        bestFor: 'Offline-First Mobile Architecture & SQLite',
+        searchUrl: 'https://www.youtube.com/@freecodecamp'
       }
     ],
     project: {
-      title: 'Location-based Mobile Photo Journal App',
-      description: 'Create a mobile journal app that captures photos via camera, tags GPS location on an interactive map, and receives push notifications.'
+      title: 'Fullstack Mobile Store & Expense Tracker with Offline Sync',
+      description: 'Develop a mobile application with live REST API integration, local SQLite offline caching, background mutation sync, and push notifications.'
     }
   },
   {
     number: 4,
-    title: 'Mobile Offline Storage, SQLite / Realm & Performance Tuning',
-    focus: 'Local SQLite Databases, Image Caching, Memory Leak Profiling',
+    title: 'Native Device APIs, Kotlin/Swift Modules & Mobile Security',
+    focus: 'Camera/GPS APIs, Native Modules (Kotlin/Swift), Biometrics & OWASP Security',
     topics: [
-      'Relational mobile databases using SQLite & WatermelonDB / Realm',
-      'Image caching techniques, fast image rendering & asset bundling',
-      'Profiling mobile memory leaks, thread locks & JS-native bridge bottlenecks',
-      'Dark mode theme switching & accessibility standards on mobile'
+      'Accessing native device capabilities: Camera, Geolocation/GPS, Sensors & File System',
+      'Clean Architecture, MVVM separation & Android/iOS OS lifecycle management',
+      'Writing custom Native Modules in Kotlin (Android) and Swift (iOS)',
+      'Mobile security: Biometrics (FaceID), encrypted token storage, SSL Pinning & OWASP Mobile Top 10'
     ],
-    tools: ['SQLite', 'WatermelonDB', 'Flipper', 'React Native', 'Performance'],
+    tools: ['Camera API', 'GPS Maps', 'Kotlin', 'Swift', 'Keychain', 'OWASP MASVS'],
     youtube: [
       {
-        channel: 'William Candillon',
-        bestFor: 'React Native Animations & Performance Masterclasses',
-        searchUrl: 'https://www.youtube.com/@wcandillon'
+        channel: 'Philipp Lackner',
+        bestFor: 'Android Kotlin Architecture & Native Integration',
+        searchUrl: 'https://www.youtube.com/@PhilippLackner'
       },
       {
-        channel: 'Flutter Community',
-        bestFor: 'SQLite & Local Storage Best Practices',
-        searchUrl: 'https://www.youtube.com/results?search_query=Flutter+SQLite'
+        channel: 'Sean Allen',
+        bestFor: 'Native iOS Swift & SwiftUI Fundamentals',
+        searchUrl: 'https://www.youtube.com/@seanallen'
       }
     ],
     project: {
-      title: 'Offline-First Mobile Expense & Inventory Manager',
-      description: 'Architect a local SQLite-backed mobile expense app featuring chart analytics, instant searches, and zero network latency.'
+      title: 'Device-Integrated Secure Mobile Vault App',
+      description: 'Create an encrypted vault app utilizing Camera image capture, GPS geotagging, biometric FaceID authorization, and native Swift/Kotlin modules.'
     }
   },
   {
     number: 5,
-    title: 'Cross-Platform Native Modules & Mobile Security Hardening',
-    focus: 'Native Swift/Kotlin Modules, Secure Keychain Storage, SSL Pinning',
+    title: 'Mobile Automated Testing, Profiling & Crash Reliability',
+    focus: 'Jest, React Native Testing Library, Detox E2E, Profiling & Sentry Monitoring',
     topics: [
-      'Writing custom Native Modules in Swift (iOS) & Kotlin (Android)',
-      'Secure storage of secrets: iOS Keychain & Android EncryptedSharedPreferences',
-      'Network security: SSL Pinning, biometrics & obfuscating release code',
-      'In-app purchases (IAP) & subscription billing integration'
+      'Unit and component testing with Jest and React Native Testing Library (RNTL)',
+      'End-to-end (E2E) automated user flow testing with Detox',
+      'Performance profiling: Memory leak detection, CPU profiling & FlatList 10K optimization',
+      'Bundle size optimization, Hermes bytecode compilation & real-time error tracking with Sentry'
     ],
-    tools: ['Swift', 'Kotlin', 'Keychain', 'SSL Pinning', 'RevenueCat'],
+    tools: ['Jest', 'RNTL', 'Detox', 'Sentry', 'Flipper', 'Hermes'],
     youtube: [
       {
-        channel: 'Kymberly Lawson / iOS Academy',
-        bestFor: 'Native iOS Swift & Native Modules',
-        searchUrl: 'https://www.youtube.com/results?search_query=iOS+Academy+Swift'
+        channel: 'Callstack Engineers',
+        bestFor: 'React Native Performance, Testing & Profiling',
+        searchUrl: 'https://www.youtube.com/results?search_query=Callstack+React+Native'
       },
       {
-        channel: 'Philipp Lackner',
-        bestFor: 'Android Kotlin Architecture & Security',
-        searchUrl: 'https://www.youtube.com/@PhilippLackner'
+        channel: 'Sentry',
+        bestFor: 'Mobile Crash Monitoring & Symbolication',
+        searchUrl: 'https://docs.sentry.io/platforms/react-native/'
       }
     ],
     project: {
-      title: 'Encrypted Mobile Vault & Subscription Manager',
-      description: 'Build an encrypted mobile password and document vault with biometric authorization, native iOS/Android bridge, and Keychain storage.'
+      title: 'Mobile Performance & Reliability Audit Lab',
+      description: 'Profile an existing mobile application, eliminate unnecessary re-renders, optimize 10,000-item FlatList scrolling, and integrate Sentry crash reporting.'
     }
   },
   {
     number: 6,
-    title: 'Automated Mobile Testing, Fastlane CI/CD & App Store Publishing',
-    focus: 'Jest, Detox E2E Testing, Fastlane Automation, App Store & Play Store',
+    title: 'Mobile CI/CD, Fastlane Automation & App Store Publishing',
+    focus: 'Fastlane, GitHub Actions, Code Signing, Google Play Console & TestFlight',
     topics: [
-      'Mobile unit testing with Jest and end-to-end testing with Detox / Patrol',
-      'Configuring Android signing keystores & Apple Developer provisioning profiles',
-      'Automating mobile app builds, beta distribution (TestFlight) & releases using Fastlane',
-      'Google Play Store & Apple App Store submission guidelines, metadata, and review troubleshooting'
+      'Android Gradle build system, release keystore signing & Android App Bundles (AAB)',
+      'iOS Xcode build configurations, Apple Developer certificates & Provisioning Profiles',
+      'Automating build, test, and release pipelines with Fastlane & GitHub Actions',
+      'Google Play Console & Apple App Store Connect publishing, TestFlight beta tracks & review management'
     ],
-    tools: ['Fastlane', 'Detox', 'TestFlight', 'App Store', 'Play Store'],
+    tools: ['Fastlane', 'GitHub Actions', 'Google Play Console', 'App Store Connect', 'TestFlight'],
     youtube: [
       {
         channel: 'Tech With Tim',
-        bestFor: 'Mobile Build Pipelines & Automation',
+        bestFor: 'Mobile CI/CD Pipelines & Release Workflows',
         searchUrl: 'https://www.youtube.com/@TechWithTim'
       },
       {
         channel: 'Fastlane Tools',
-        bestFor: 'Automated Mobile Deployment Tutorials',
-        searchUrl: 'https://fastlane.tools/'
+        bestFor: 'Official Fastlane Automation Guides',
+        searchUrl: 'https://docs.fastlane.tools/'
       }
     ],
     project: {
-      title: 'Production Mobile App Release & CI/CD Pipeline',
-      description: 'Prepare a production mobile app build signed with release certificates, automated Fastlane deployment, and TestFlight beta distribution.'
+      title: 'Production Mobile Release & CI/CD Pipeline Capstone',
+      description: 'Configure an automated GitHub Actions & Fastlane release pipeline that builds signed release binaries (AAB/IPA) and publishes to Play Console & TestFlight.'
     }
   }
 ];

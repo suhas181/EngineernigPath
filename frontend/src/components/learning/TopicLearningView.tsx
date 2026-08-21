@@ -133,7 +133,7 @@ export const TopicLearningView: React.FC<TopicLearningViewProps> = ({
 
               <span className="text-xs font-bold text-teal-700 bg-teal-50 px-2.5 py-0.5 rounded-full border border-teal-200 flex items-center space-x-1">
                 <Code2 className="h-3 w-3" />
-                <span>Language: {language}</span>
+                <span>{role.toLowerCase().includes('frontend') ? 'Track: Frontend Engineering' : role.toLowerCase().includes('backend') ? 'Track: Backend Engineering' : (role.toLowerCase().includes('ai') || role.toLowerCase().includes('machine learning')) ? 'Track: AI / ML Engineering' : `Language: ${language}`}</span>
               </span>
             </div>
 
@@ -205,7 +205,7 @@ export const TopicLearningView: React.FC<TopicLearningViewProps> = ({
                   Step 1 — Watch the Recommended Primary Playlist
                 </h3>
                 <p className="text-[11px] text-slate-500">
-                  Single primary video tutorial curated for {language} learners.
+                  Single primary video tutorial curated for {role.toLowerCase().includes('frontend') ? 'Frontend' : role.toLowerCase().includes('backend') ? 'Backend' : (role.toLowerCase().includes('ai') || role.toLowerCase().includes('machine learning')) ? 'AI / ML' : language} learners.
                 </p>
               </div>
             </div>
@@ -253,7 +253,7 @@ export const TopicLearningView: React.FC<TopicLearningViewProps> = ({
                   Step 2 — Read Official Documentation & Reference Notes
                 </h3>
                 <p className="text-[11px] text-slate-500">
-                  Authoritative documentation and reference guide for {language}.
+                  Authoritative documentation and reference guide for {role.toLowerCase().includes('frontend') ? 'Frontend Engineering' : role.toLowerCase().includes('backend') ? 'Backend Engineering' : (role.toLowerCase().includes('ai') || role.toLowerCase().includes('machine learning')) ? 'AI / ML Engineering' : language}.
                 </p>
               </div>
             </div>
@@ -301,7 +301,7 @@ export const TopicLearningView: React.FC<TopicLearningViewProps> = ({
                   Step 3 — Solve the Recommended Practice Sheet
                 </h3>
                 <p className="text-[11px] text-slate-500">
-                  Single curated practice sheet tailored for {language}.
+                  Single curated practice sheet tailored for {role.toLowerCase().includes('frontend') ? 'Frontend Engineering' : role.toLowerCase().includes('backend') ? 'Backend Engineering' : (role.toLowerCase().includes('ai') || role.toLowerCase().includes('machine learning')) ? 'AI / ML Engineering' : language}.
                 </p>
               </div>
             </div>
