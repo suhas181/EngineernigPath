@@ -45,11 +45,6 @@ export const getResources = async (
 ): Promise<void> => {
   try {
     const user = req.user;
-    if (!user) {
-      res.status(401).json({ success: false, message: 'Not authorized' });
-      return;
-    }
-
     const { category, type, level, difficulty, language, search, bookmarkedOnly } = req.query;
 
     // Fetch DB resources if any
@@ -90,8 +85,8 @@ export const getResources = async (
 
     const allCombined = Array.from(urlMap.values());
 
-    // Fetch user bookmarks & completions
-    const states = await UserResourceState.find({ userId: user.id }).lean();
+    // Fetch user bookmarks & completions if authenticated
+    const states = user ? await UserResourceState.find({ userId: user.id }).lean() : [];
     const stateMap = new Map(states.map((s: any) => [s.resourceId.toString(), s]));
 
     // Augment with isCompleted & isBookmarked
@@ -159,15 +154,10 @@ export const getAIRecommendations = async (
 ): Promise<void> => {
   try {
     const user = req.user;
-    if (!user) {
-      res.status(401).json({ success: false, message: 'Not authorized' });
-      return;
-    }
+    const career = user?.preferredCareer || 'Software Engineer';
+    const preferredLang = user?.preferredProgrammingLanguage || 'Java';
 
-    const career = user.preferredCareer || 'Software Engineer';
-    const preferredLang = user.preferredProgrammingLanguage || 'Java';
-
-    const states = await UserResourceState.find({ userId: user.id }).lean();
+    const states = user ? await UserResourceState.find({ userId: user.id }).lean() : [];
     const stateMap = new Map(states.map((s: any) => [s.resourceId.toString(), s]));
 
     // Personalize recommended resources

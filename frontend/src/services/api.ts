@@ -15,7 +15,11 @@ api.interceptors.request.use(
   (config) => {
     const token = useAuthStore.getState().accessToken;
     if (token && config.headers) {
-      config.headers.Authorization = `Bearer ${token}`;
+      if (typeof config.headers.set === 'function') {
+        config.headers.set('Authorization', `Bearer ${token}`);
+      } else {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
     }
     return config;
   },
@@ -66,7 +70,13 @@ api.interceptors.response.use(
         return new Promise((resolve, reject) => {
           failedQueue.push({
             resolve: (token: string) => {
-              originalRequest.headers.Authorization = `Bearer ${token}`;
+              if (originalRequest.headers) {
+                if (typeof originalRequest.headers.set === 'function') {
+                  originalRequest.headers.set('Authorization', `Bearer ${token}`);
+                } else {
+                  originalRequest.headers.Authorization = `Bearer ${token}`;
+                }
+              }
               resolve(api(originalRequest));
             },
             reject: (err: any) => {
@@ -97,7 +107,13 @@ api.interceptors.response.use(
           processQueue(null, newAccessToken);
 
           // Retry original request with new token
-          originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+          if (originalRequest.headers) {
+            if (typeof originalRequest.headers.set === 'function') {
+              originalRequest.headers.set('Authorization', `Bearer ${newAccessToken}`);
+            } else {
+              originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+            }
+          }
           return api(originalRequest);
         } catch (refreshError) {
           // If refresh fails, reject queued requests and log out the user

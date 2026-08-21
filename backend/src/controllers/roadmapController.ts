@@ -710,15 +710,10 @@ export const getLearningCurriculum = async (
 ): Promise<void> => {
   try {
     const user = req.user;
-    if (!user) {
-      res.status(401).json({ success: false, message: 'Not authorized' });
-      return;
-    }
-
     const { getCurriculumForRole } = await import('../services/curriculumService');
 
-    const roleParam = (req.query.role as string) || user.preferredCareer || 'Software Engineer';
-    const langParam = (req.query.language as string) || (user as any).preferredProgrammingLanguage || 'Java';
+    const roleParam = (req.query.role as string) || user?.preferredCareer || 'Software Engineer';
+    const langParam = (req.query.language as string) || (user as any)?.preferredProgrammingLanguage || 'Java';
 
     const curriculum = getCurriculumForRole(roleParam, langParam as any);
 

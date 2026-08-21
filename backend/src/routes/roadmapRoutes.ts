@@ -1,18 +1,15 @@
 import { Router } from 'express';
 import { getRoadmap, generateRoadmap, toggleRoadmapItem, submitWeeklyReview, selectActiveRoadmap, getLearningCurriculum } from '../controllers/roadmapController';
-import { protect } from '../middlewares/auth';
+import { protect, optionalAuth } from '../middlewares/auth';
 
 const router = Router();
 
-// Apply auth protection middleware to all roadmap endpoints
-router.use(protect);
-
-router.get('/', getRoadmap);
-router.get('/curriculum', getLearningCurriculum);
-router.post('/generate', generateRoadmap);
-router.patch('/toggle', toggleRoadmapItem);
-router.post('/weekly-review', submitWeeklyReview);
-router.post('/select-active', selectActiveRoadmap);
+router.get('/curriculum', optionalAuth, getLearningCurriculum);
+router.get('/', protect, getRoadmap);
+router.post('/generate', protect, generateRoadmap);
+router.patch('/toggle', protect, toggleRoadmapItem);
+router.post('/weekly-review', protect, submitWeeklyReview);
+router.post('/select-active', protect, selectActiveRoadmap);
 
 export default router;
 

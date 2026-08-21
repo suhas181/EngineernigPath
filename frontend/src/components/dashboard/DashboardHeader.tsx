@@ -33,6 +33,7 @@ export function DashboardHeader({
     'Software Engineer',
     'Frontend Engineer',
     'Backend Engineer',
+    'Full Stack Developer',
     'AI / ML Engineer',
     'Data Scientist / Analyst',
     'DevOps Engineer',

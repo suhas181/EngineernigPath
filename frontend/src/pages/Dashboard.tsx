@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { useAuthStore } from '../store/useAuthStore';
+import { useAuthModalStore } from '../store/useAuthModalStore';
 import { MosaicShell } from '../components/mosaic/MosaicShell';
 import { DashboardHero, CAREER_ROLES } from '../components/dashboard/DashboardHero';
 import {
@@ -10,11 +12,11 @@ import {
   FileCheck,
   CheckCircle2,
   Compass,
-  Building2,
   BookMarked,
   Target,
   Layers,
   Award,
+  Sparkles,
 } from 'lucide-react';
 
 interface SavedTopicInfo {
@@ -33,57 +35,10 @@ interface SavedResourceItem {
   url: string;
 }
 
-interface CareerOpportunity {
-  id: string;
-  company: string;
-  title: string;
-  stipend: string;
-  deadline: string;
-  tag: string;
-  url: string;
-}
-
-const CAREER_OPPORTUNITIES: CareerOpportunity[] = [
-  {
-    id: 'gsoc-2026',
-    company: 'Google Open Source',
-    title: 'Google Summer of Code (GSoC) 2026',
-    stipend: '$1,500 – $3,300 Stipend',
-    deadline: 'March 2026',
-    tag: 'Global Open Source',
-    url: 'https://summerofcode.withgoogle.com/',
-  },
-  {
-    id: 'google-swe-intern',
-    company: 'Google Careers',
-    title: 'Software Engineering Summer Intern 2026',
-    stipend: 'Industry Top Tier + Relocation',
-    deadline: 'Applications Open',
-    tag: 'Summer Internship',
-    url: 'https://careers.google.com/students/',
-  },
-  {
-    id: 'microsoft-step',
-    company: 'Microsoft',
-    title: 'Microsoft STEP Internship 2026',
-    stipend: 'Exploratory Tech Stipend',
-    deadline: 'Open Now',
-    tag: 'Early Career',
-    url: 'https://careers.microsoft.com/students/us/en',
-  },
-  {
-    id: 'amazon-ml-school',
-    company: 'Amazon AI',
-    title: 'Amazon ML Summer School 2026',
-    stipend: 'Free Certificate & Mentorship',
-    deadline: 'Open Now',
-    tag: 'AI BootCamp',
-    url: 'https://www.amazon.science/academic-relations/amazon-ml-summer-school',
-  },
-];
-
 export function Dashboard() {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuthStore();
+  const { openModal } = useAuthModalStore();
 
   const [activeTopicInfo] = useState<SavedTopicInfo | null>(() => {
     const saved = localStorage.getItem('engineerpath_active_topic');
@@ -190,11 +145,13 @@ export function Dashboard() {
           </div>
         </section>
 
-        {/* ==================== SECTION 2: CHOOSE YOUR CAREER PATH (LIGHT CANVAS) ==================== */}
+        {/* ==================== SECTION 2: CHOOSE YOUR CAREER PATH ==================== */}
         <section className="space-y-6">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">Choose Your Career Path</h2>
+              <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">
+                {isAuthenticated ? 'Based on Your Career Goal' : 'Popular Career Paths'}
+              </h2>
               <p className="text-sm text-slate-500 mt-1 font-normal">
                 Select a role to unlock its structured category curriculum, practice sheets, and projects.
               </p>
@@ -266,11 +223,13 @@ export function Dashboard() {
           </div>
         </section>
 
-        {/* ==================== SECTION 3: CONTINUE LEARNING (LIGHT CANVAS) ==================== */}
+        {/* ==================== SECTION 3: CONTINUE LEARNING / PERSONALIZE CTA ==================== */}
         <section className="space-y-4">
-          <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">Continue Learning</h2>
+          <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">
+            {isAuthenticated ? 'Continue Learning' : 'Explore Learning Pathways'}
+          </h2>
 
-          {activeTopicInfo ? (
+          {isAuthenticated && activeTopicInfo ? (
             <div className="relative rounded-2xl border border-blue-200/90 bg-white/90 backdrop-blur-xl p-6 md:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-sm hover:shadow-md transition-all duration-250">
               <div className="space-y-3">
                 <div className="flex items-center space-x-2">
@@ -302,6 +261,29 @@ export function Dashboard() {
                 className="w-full md:w-auto px-7 py-4 rounded-2xl font-extrabold text-sm text-white bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-600/25 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center cursor-pointer"
               >
                 Continue Learning
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </button>
+            </div>
+          ) : !isAuthenticated ? (
+            <div className="relative rounded-2xl border border-purple-200/90 bg-gradient-to-r from-slate-900 via-indigo-950 to-purple-950 p-6 md:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-xl text-white">
+              <div className="space-y-2">
+                <div className="inline-flex items-center space-x-2 rounded-full bg-purple-500/20 border border-purple-400/30 px-3 py-1 text-xs font-bold text-purple-300">
+                  <Sparkles className="h-3.5 w-3.5 text-purple-400" />
+                  <span>Interactive Exploration Mode</span>
+                </div>
+                <h3 className="text-2xl font-extrabold font-heading text-white">
+                  Personalize your EngineerPath &rarr;
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-300 max-w-xl leading-relaxed">
+                  Track your roadmap progress, bookmark internships, save learning resources, and upload your resume for instant ATS analysis.
+                </p>
+              </div>
+
+              <button
+                onClick={() => openModal({ title: 'Make EngineerPath yours', description: 'Create a free account to save your progress, internships and roadmap.' })}
+                className="w-full md:w-auto px-7 py-3.5 rounded-2xl font-extrabold text-sm text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 shadow-lg shadow-purple-600/30 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center cursor-pointer shrink-0"
+              >
+                Personalize EngineerPath
                 <ArrowRight className="w-4 h-4 ml-2" />
               </button>
             </div>
@@ -371,62 +353,6 @@ export function Dashboard() {
                 </div>
               );
             })}
-          </div>
-        </section>
-
-        {/* ==================== SECTION 5: LATEST CAREER OPPORTUNITIES (LIGHT CANVAS) ==================== */}
-        <section className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">Latest Career Opportunities</h2>
-              <p className="text-xs text-slate-500 mt-0.5 font-normal">
-                Top internships, open-source programs, and hiring challenges.
-              </p>
-            </div>
-            <span className="text-xs font-bold text-emerald-600 flex items-center">
-              <Building2 className="w-3.5 h-3.5 mr-1" />
-              Verified Open Opportunities
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {CAREER_OPPORTUNITIES.map((opp) => (
-              <div
-                key={opp.id}
-                className="rounded-2xl border border-slate-200/90 bg-white/85 backdrop-blur-xl p-6 flex flex-col justify-between shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-250 text-left group"
-              >
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-bold text-slate-700 px-2.5 py-1 rounded-md bg-slate-100/90 border border-slate-200">
-                      {opp.company}
-                    </span>
-                    <span className="text-[10px] font-bold text-amber-700 px-2 py-0.5 rounded bg-amber-50 border border-amber-200">
-                      {opp.tag}
-                    </span>
-                  </div>
-
-                  <div>
-                    <h4 className="text-sm font-bold text-slate-900 group-hover:text-blue-600 transition-colors leading-snug">
-                      {opp.title}
-                    </h4>
-                    <p className="text-xs text-slate-500 mt-1 font-medium">{opp.stipend}</p>
-                  </div>
-                </div>
-
-                <div className="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between text-xs">
-                  <span className="text-slate-500 font-semibold">Deadline: {opp.deadline}</span>
-                  <a
-                    href={opp.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-bold text-blue-600 hover:text-blue-700 flex items-center"
-                  >
-                    Apply / Details
-                    <ExternalLink className="w-3.5 h-3.5 ml-1" />
-                  </a>
-                </div>
-              </div>
-            ))}
           </div>
         </section>
       </div>

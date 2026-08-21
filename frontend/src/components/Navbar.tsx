@@ -13,12 +13,14 @@ import {
   BookOpen,
   Calendar,
   FileText,
+  Briefcase,
   Settings,
   ShieldCheck,
+  UserPlus,
 } from 'lucide-react';
 
 export function Navbar() {
-  const { user, logout } = useAuthStore();
+  const { user, isAuthenticated, logout } = useAuthStore();
   const [level, setLevel] = useState<number>(1);
 
   useEffect(() => {
@@ -92,6 +94,10 @@ export function Navbar() {
                 <BookOpen className="h-4 w-4 text-pink-600" />
                 <span className="hidden md:inline">Learning Hub</span>
               </NavLink>
+              <NavLink to="/internships" className={navLinkClass}>
+                <Briefcase className="h-4 w-4 text-cyan-600" />
+                <span className="hidden md:inline">Internships</span>
+              </NavLink>
               <NavLink to="/planner" className={navLinkClass}>
                 <Calendar className="h-4 w-4 text-amber-600" />
                 <span className="hidden md:inline">Planner</span>
@@ -106,54 +112,74 @@ export function Navbar() {
 
         {/* Right Controls */}
         <div className="flex items-center space-x-2 sm:space-x-3">
-          {/* Notifications */}
-          <button className="relative p-2 text-slate-500 hover:text-slate-900 transition rounded-full hover:bg-slate-100">
-            <Bell className="h-4 w-4" />
-            <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-purple-600" />
-          </button>
+          {isAuthenticated ? (
+            <>
+              {/* Notifications */}
+              <button className="relative p-2 text-slate-500 hover:text-slate-900 transition rounded-full hover:bg-slate-100">
+                <Bell className="h-4 w-4" />
+                <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-purple-600" />
+              </button>
 
-          {/* User Card & Settings */}
-          <div className="flex items-center space-x-2 pl-2 border-l border-slate-200">
-            <Link
-              to="/settings"
-              className="flex items-center space-x-2 p-1 rounded-full hover:bg-slate-100 transition"
-              title="Edit Profile & Settings"
-            >
-              <div className="h-8 w-8 rounded-full overflow-hidden border border-slate-300 bg-slate-100 flex items-center justify-center">
-                {user?.profileImage ? (
-                  <img src={user.profileImage} alt={user.name} className="h-full w-full object-cover" />
-                ) : (
-                  <User className="h-4 w-4 text-slate-600" />
-                )}
+              {/* User Card & Settings */}
+              <div className="flex items-center space-x-2 pl-2 border-l border-slate-200">
+                <Link
+                  to="/settings"
+                  className="flex items-center space-x-2 p-1 rounded-full hover:bg-slate-100 transition"
+                  title="Edit Profile & Settings"
+                >
+                  <div className="h-8 w-8 rounded-full overflow-hidden border border-slate-300 bg-slate-100 flex items-center justify-center">
+                    {user?.profileImage ? (
+                      <img src={user.profileImage} alt={user.name} className="h-full w-full object-cover" />
+                    ) : (
+                      <User className="h-4 w-4 text-slate-600" />
+                    )}
+                  </div>
+                  <div className="hidden lg:block text-left pr-1">
+                    <div className="flex items-center space-x-1">
+                      <p className="text-xs font-semibold max-w-[80px] truncate text-slate-900">{user?.name}</p>
+                      <span className="text-[9px] font-bold px-1.5 py-0.2 bg-purple-100 text-purple-700 rounded-full">
+                        Lvl {level}
+                      </span>
+                    </div>
+                  </div>
+                </Link>
+
+                <Link
+                  to="/settings"
+                  className="p-1.5 text-slate-500 hover:text-slate-900 transition rounded-full hover:bg-slate-100"
+                  title="Profile Settings"
+                >
+                  <Settings className="h-4 w-4" />
+                </Link>
+
+                {/* Solid Primary Pill Logout Button */}
+                <button
+                  onClick={handleLogout}
+                  className="eterna-btn-primary !py-1.5 !px-3 !text-xs shadow-sm flex items-center space-x-1"
+                  title="Logout"
+                >
+                  <LogOut className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">Logout</span>
+                </button>
               </div>
-              <div className="hidden lg:block text-left pr-1">
-                <div className="flex items-center space-x-1">
-                  <p className="text-xs font-semibold max-w-[80px] truncate text-slate-900">{user?.name}</p>
-                  <span className="text-[9px] font-bold px-1.5 py-0.2 bg-purple-100 text-purple-700 rounded-full">
-                    Lvl {level}
-                  </span>
-                </div>
-              </div>
-            </Link>
-
-            <Link
-              to="/settings"
-              className="p-1.5 text-slate-500 hover:text-slate-900 transition rounded-full hover:bg-slate-100"
-              title="Profile Settings"
-            >
-              <Settings className="h-4 w-4" />
-            </Link>
-
-            {/* Solid Primary Pill Logout Button */}
-            <button
-              onClick={handleLogout}
-              className="eterna-btn-primary !py-1.5 !px-3 !text-xs shadow-sm flex items-center space-x-1"
-              title="Logout"
-            >
-              <LogOut className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Logout</span>
-            </button>
-          </div>
+            </>
+          ) : (
+            <div className="flex items-center space-x-2">
+              <Link
+                to="/login"
+                className="text-xs font-bold text-slate-600 hover:text-slate-900 px-3 py-1.5 rounded-full hover:bg-slate-100 transition"
+              >
+                Sign In
+              </Link>
+              <Link
+                to="/signup"
+                className="eterna-btn-primary !py-1.5 !px-3.5 !text-xs shadow-sm flex items-center space-x-1 cursor-pointer"
+              >
+                <UserPlus className="h-3.5 w-3.5" />
+                <span>Get Started</span>
+              </Link>
+            </div>
+          )}
         </div>
       </header>
     </div>

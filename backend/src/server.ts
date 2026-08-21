@@ -17,9 +17,9 @@ const startServer = async () => {
   // Initialize background link-health scheduler
   initializeCronScheduler();
 
-  // Listen
-  app.listen(PORT, () => {
-    console.log(`Server is running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
+  // Listen on 0.0.0.0 to accept requests from both IPv4 and IPv6 localhost
+  app.listen(Number(PORT), '0.0.0.0', () => {
+    console.log(`Server is running in ${process.env.NODE_ENV || 'development'} mode on http://localhost:${PORT}`);
   });
 };
 

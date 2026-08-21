@@ -1,122 +1,142 @@
-# 🚀 EngineerPath — AI Career Learning Platform
+# 🚀 EngineerPath — AI Career Learning & Internship Platform
 
-**EngineerPath** is a modern, premium **AI Career Learning Platform** built specifically for engineering students and fresh graduates. Moving beyond basic productivity planners or habit trackers, EngineerPath answers one fundamental question for aspiring engineers:
+**EngineerPath** is a modern, production-grade **AI Career Learning & Opportunity Discovery Platform** built specifically for engineering students, fresh graduates, and transitioning software professionals. Moving beyond basic habit trackers and generic roadmaps, EngineerPath solves two fundamental challenges for aspiring engineers:
 
-> *"What should I learn next to become my dream engineer?"*
+> *"What structured path and verified resources should I follow to become job-ready in my dream domain, and where can I apply for verified, active engineering internships today?"*
 
-By combining 8 structured role-based career curriculums, an 8-step guided topic learning flow, strict programming language isolation (`Java` | `Python` | `C++`), a SaaS collapsible navigation system, an audited library of 291+ curated free resources, and verified direct links to industry-trusted courses, EngineerPath serves as a digital mentor guiding users from beginner to job-ready engineer.
+By combining **8 deeply curated career tracks**, an **8-step guided topic learning system**, **strict programming language isolation** (`Java` | `Python` | `C++`), deep-linked role routing (`/roadmap?role=...`), an audited library of **291+ curated free resources**, and a **Live Adzuna-Powered Internship Discovery Platform**, EngineerPath acts as an end-to-end digital mentor from Day 1 to job offer.
 
 ---
 
-## 🏗️ Tech Stack
+## 🏗️ Architecture & Tech Stack
 
-Built on a robust, type-safe **MERN Stack (MongoDB, Express, React, Node.js)** architecture:
+EngineerPath is architected on a type-safe, resilient **MERN Stack (MongoDB, Express, React, Node.js)** with TypeScript across the entire repository:
 
 ### Frontend
-- **Framework**: React 18 with TypeScript (powered by Vite)
-- **Styling**: Vanilla CSS & Tailwind CSS (custom Stripe/Vercel/Linear-inspired light canvas `#F8FAFC` & crisp white card design system)
-- **State Management**: Zustand (with token and sidebar collapse state persistence in `localStorage`)
-- **Routing**: React Router DOM (enforcing protected/public route guards)
+- **Framework**: React 18 + TypeScript (powered by Vite)
+- **Styling**: Vanilla CSS & Tailwind CSS with a clean Stripe/Vercel/Linear-inspired light canvas (`#F8FAFC`), crisp white cards (`#FFFFFF`), and refined typography
+- **State Management**: Zustand with persistent storage (`localStorage`) for auth sessions, collapse state, and user preferences
+- **Routing & Deep Linking**: React Router DOM with intelligent query parameter synchronization (`/roadmap?role=...`), fuzzy alias matching, and public/protected route boundaries
 - **Icons**: Lucide React icons
-- **HTTP Client**: Axios with interceptor-based authorization & refresh token rotation
+- **HTTP Client**: Axios with request/response interceptors for seamless JWT authentication
 
 ### Backend
-- **Framework**: Express with TypeScript (running via Node.js)
-- **Database**: MongoDB (mapped via Mongoose ODM)
-- **Curriculum & AI Engine**: Dedicated 8-Role Blueprint Service (`curriculumService.ts`) & Google Gemini API (`@google/generative-ai`)
-- **Automation & Scheduling**: `node-cron` automated weekly resource link health verifiers
-- **Validation**: Zod (for payload and schema integrity verification)
+- **Framework**: Express with TypeScript on Node.js
+- **Database**: MongoDB via Mongoose ODM
+- **Job & Internship Engine**: Extensible `JobSource` architecture with live **Adzuna Job Search API** integration, auto-sync crons, and compound deduplication (`source + externalId`)
+- **Curriculum & AI Engine**: Dedicated 8-Role Blueprint Service (`curriculumService.ts`) with smart language isolation + Google Gemini API (`@google/generative-ai`)
+- **Automation & Scheduling**: `node-cron` scheduled background workers for 12-hour internship listing synchronization and link health audits
+- **Validation & Schemas**: Zod & Mongoose schemas ensuring strict payload integrity
 
 ---
 
-## 📂 Project Architecture
+## 📂 Project Structure
 
 ```text
 EngineerPath/
-├── backend/                  # Express REST API
+├── backend/                        # Express REST API
 │   ├── src/
-│   │   ├── config/           # DB connection & configuration
-│   │   ├── constants/        # Single source of truth (careerPaths, resourceTypes)
-│   │   ├── controllers/      # Route controllers (auth, user, roadmaps, dashboard, etc.)
-│   │   ├── middlewares/      # JWT guards & error boundaries
-│   │   ├── models/           # Mongoose schemas (User, Roadmap, LearningResource, etc.)
-│   │   ├── resources/        # Modular Resource Library (291+ Curated Free Resources)
-│   │   │   ├── languages/    # Java, Python, C++, JS, TS resources
-│   │   │   ├── dsa/          # 20+ DSA topic modules (Arrays, Trees, Graphs, DP, etc.)
-│   │   │   ├── web/          # Frontend & Backend Web Development
-│   │   │   ├── cs/           # CS Fundamentals (OOP, DBMS, OS, CN)
-│   │   │   ├── interview/    # Resume, STAR Behavioral, Mock Interviews
-│   │   │   ├── tools/        # Git, Docker, Linux, AWS
-│   │   │   └── projects/     # Full-Stack Capstone Projects
-│   │   ├── routes/           # Router endpoints
-│   │   ├── scripts/          # Audit scripts (verifyResourceLibrary.ts, testLanguageFiltering.ts)
-│   │   ├── services/         # Dynamic Curriculum Service (curriculumService.ts), Gemini AI & LeetCode GraphQL
-│   │   └── server.ts         # Express server entry point & cron setup
+│   │   ├── config/                 # DB connection & environment configuration
+│   │   ├── constants/              # Central career paths, resource types & metadata
+│   │   ├── controllers/            # Route handlers (auth, user, roadmaps, internships, dashboard, etc.)
+│   │   ├── middlewares/            # JWT guards, optional auth & error boundaries
+│   │   ├── models/                 # Mongoose models (User, Internship, Roadmap, LearningResource, etc.)
+│   │   ├── resources/              # Modular Resource Library (291+ Curated Free Resources)
+│   │   ├── routes/                 # REST endpoints (/api/auth, /api/internships, /api/roadmaps, etc.)
+│   │   ├── scripts/                # Database seeders and audit scripts
+│   │   ├── services/               # Internship Service, Curriculum Service, Gemini AI & LeetCode GraphQL
+│   │   └── server.ts               # Express application entry point & cron setup
 │   ├── package.json
 │   └── tsconfig.json
-├── frontend/                 # React UI Client
+├── frontend/                       # React UI Client
 │   ├── src/
 │   │   ├── components/       
-│   │   │   ├── learning/     # TopicLearningView.tsx (8-step guided flow) & CategoryCard.tsx
-│   │   │   └── mosaic/       # SaaS Sidebar.tsx & MosaicShell.tsx (Light Canvas #F8FAFC)
-│   │   ├── pages/            # Views (Dashboard, Roadmap, LearningHub, Projects, Resume, Settings)
-│   │   ├── store/            # Zustand authentication store
-│   │   ├── services/         # Axios API connection endpoints
-│   │   └── main.tsx          # Client entry point
+│   │   │   ├── dashboard/          # DashboardHero.tsx (auto-rotating role carousel), Header, Metrics
+│   │   │   ├── internships/        # InternshipCard.tsx, FilterBar.tsx, InternshipDetailModal.tsx
+│   │   │   ├── learning/           # TopicLearningView.tsx (8-step guided flow), CategoryCard.tsx
+│   │   │   ├── mosaic/             # Responsive Sidebar.tsx & MosaicShell.tsx (Light Canvas #F8FAFC)
+│   │   │   └── roadmap/            # Interactive roadmap modules & timeline visualizations
+│   │   ├── pages/                  # Views (Dashboard, Internships, Roadmap, LearningHub, Resume, Settings)
+│   │   ├── store/                  # Zustand authentication & UI state stores
+│   │   ├── services/               # Axios API clients & service layers
+│   │   └── main.tsx                # Client entry point
 │   ├── package.json
 │   ├── tailwind.config.js
 │   └── tsconfig.json
-└── docs/                     # Specifications and architectural blueprints
+└── docs/                           # Architectural blueprints & implementation reports
 ```
 
 ---
 
-## 🌟 Key Features & Highlights
+## 🌟 Core Features & Modules
 
-### 1. 🎨 Modern SaaS Visual Hierarchy & Collapsible Navigation
-- **Light SaaS Canvas (`#F8FAFC`)**: Crisp white cards (`#FFFFFF`), subtle borders (`border-slate-200`), and dark text typography (`text-slate-900`).
-- **Collapsible Desktop Sidebar**: Icons-only default state (~76px) expanding smoothly to 256px on toggle. Remembers state via `localStorage` with hover tooltips.
-- **Responsive Mobile Drawer**: Topbar with hamburger menu opening a slide-over backdrop-blurred navigation drawer.
+### 1. 💼 Live Internship Discovery Engine (`/internships`)
+- **Live Adzuna Integration**: Real-time aggregation of active engineering internships across major tech hubs (*Bangalore*, *Hyderabad*, *Pune*, *Mumbai*, *Delhi NCR*, *Remote*).
+- **Multi-Dimensional Filters**: Filter by role, location, remote/on-site work mode, company, and minimum stipend.
+- **Personalized Rule-Based Recommendations**: Automatically ranks and surfaces listings matching the user's selected career target, preferred programming language, and key technical skills.
+- **Direct Application CTA**: External deep links leading directly to authentic employer job listings.
+- **Bookmarking & Tracking**: Save listings with persistent bookmark state to monitor application pipelines.
 
-### 2. 🎡 5-Second Auto-Rotating Hero Carousel
-- Highlights 8 core engineering roles: **Software Engineer**, **Frontend Engineer**, **Backend Engineer**, **AI/ML Engineer**, **Flutter Developer**, **DevOps Engineer**, **Cybersecurity Engineer**, and **Data Analyst**.
-- Features rich dark gradient card (`from-slate-950 via-slate-900 to-slate-950`), soft radial glows, 3D visual icons, skills tags, preparation durations, and average compensation benchmarks. Pause on hover enabled.
+### 2. 🗺️ 8 Comprehensive Career Roadmaps (`/roadmap`)
+Full end-to-end curriculum modules across 8 high-demand engineering specializations:
+1. **Software Engineer (SDE)** — Core CS fundamentals, DSA, System Design, Multithreading & Database Internals.
+2. **Frontend Engineer** — Modern HTML/CSS, React, TypeScript, Performance Optimization, Next.js, and State Architecture.
+3. **Backend Engineer** — Node.js/Java/Python backends, REST/GraphQL/gRPC APIs, Distributed Caching, Message Queues & SQL/NoSQL databases.
+4. **AI / ML Engineer** — Python numerical stack, Deep Learning (PyTorch/TensorFlow), LLMs, RAG Architectures & MLOps pipelines.
+5. **Data Scientist / Analyst** — SQL, Pandas, NumPy, Exploratory Data Analysis, BI Dashboards (Tableau/PowerBI) & Statistical Modeling.
+6. **DevOps & Cloud Engineer** — Linux internals, Docker, Kubernetes, CI/CD with GitHub Actions, Terraform & AWS/GCP Cloud Architecture.
+7. **Mobile App Developer** — React Native, Flutter, Native Swift/Kotlin modules, offline-first SQLite databases & App Store deployment with Fastlane.
+8. **Cybersecurity Engineer** — Network security, cryptography, OWASP Top 10, penetration testing, SIEM logging & cloud defense.
 
 ### 3. 🎯 8-Step Guided Topic Learning Flow (`TopicLearningView.tsx`)
-Clicking any topic opens a dedicated, step-by-step guided view:
-- **Step 1 — Primary Playlist**: ONE language-specific, 100% verified playlist (*Kunal Kushwaha Java*, *Corey Schafer Python*, *Striver C++*, *TechWorld with Nana DevOps*, *3Blue1Brown AI/ML*).
-- **Step 2 — Official Documentation**: Direct official docs (*React.dev*, *Python.org*, *PyTorch.org*, *Docker Docs*, *Nodejs.org*).
-- **Step 3 — Recommended Practice Sheet**: Language-specific DSA sheet (*⭐ Striver A2Z* for Java/C++, *⭐ NeetCode 150* for Python).
-- **Step 4 — Curated Practice Problems**: Direct problem links with completion checkboxes.
-- **Step 5 — Capstone Mini-Projects**: Real-world application challenges.
-- **Step 6 — Interview Questions**: Curated top interview questions & answers.
-- **Step 7 — Revision Notes & Cheat Sheets**: Quick reference sheets.
-- **Step 8 — Complete Topic**: Marks progress and unlocks next topic.
+Selecting any topic opens a focused 8-step learning journey:
+- **Step 1 — Verified Primary Playlist**: Curated playlist matching the selected language/track (*Kunal Kushwaha Java*, *Corey Schafer Python*, *Striver C++*, *TechWorld with Nana DevOps*, *3Blue1Brown AI/ML*).
+- **Step 2 — Official Documentation**: Direct references to official docs (*React.dev*, *Python.org*, *PyTorch.org*, *Docker Docs*, *Nodejs.org*).
+- **Step 3 — Recommended Practice Sheet**: Language-specific DSA & engineering sheets (*⭐ Striver A2Z Sheet*, *⭐ NeetCode 150*, *Blind 75*).
+- **Step 4 — Curated Practice Problems**: Direct problem links with interactive completion tracking.
+- **Step 5 — Real-World Capstone Projects**: Practical challenges to build and add to portfolios.
+- **Step 6 — Interview Questions**: Curated top technical and behavioral interview questions with solutions.
+- **Step 7 — Revision Notes & Cheat Sheets**: Concise summary sheets for rapid recall before exams or interviews.
+- **Step 8 — Complete Topic**: Marks progress on the user's dashboard and unlocks successive milestones.
 
 ### 4. 🔒 Strict Language-Aware Resource Isolation
-The backend curriculum service enforces strict language boundaries matching the user's preferred language (`Java` | `Python` | `C++`). Python learners receive Python playlists, Python practice sheets, and Python interview questions without cross-language leaks.
+- Curriculums and practice sheets dynamically adapt to the user's target language (`Java`, `Python`, or `C++`).
+- Python learners receive Python DSA problems, Python interview questions, and Python playlists with zero cross-language pollution.
+- Specialized tracks (e.g. Data Science, AI/ML, Cybersecurity) automatically lock into their domain standard (Python) for maximum relevance.
 
-### 5. 🛠️ Gap-Filler Tech Additions
-- **Mobile Track**: Added Native Android (Google Android Developers + Philipp Lackner) & Native iOS (Sean Allen + CodeWithChris SwiftUI) alongside Flutter with platform choice guidance.
-- **SDE Track**: Added NeetCode 150 & NeetCode Roadmap as video-walkthrough complement for DSA.
-- **AI/ML Track**: Added Andrew Ng Machine Learning Specialization (Coursera / DeepLearning.AI Free Audit) as foundational entry point.
-- **Data Analyst Track**: Added Kaggle Learn Interactive Micro-Courses.
-- **DevOps Track**: Added KodeKloud Free Interactive Terminal Labs.
+### 5. ⚡ URL Deep-Linking & Smart Hero Navigation
+- **Role Deep Linking**: Navigate to `/roadmap?role=Frontend+Engineer` or `/roadmap?role=DevOps` with fuzzy alias recognition (`cyber`, `devops`, `fullstack`, `ai/ml`, `mobile`).
+- **5-Second Rotating Hero Carousel**: Interactive Dashboard showcase highlighting each role's key skills, preparation duration, compensation metrics, and direct "Explore Roadmap" CTA.
+
+### 6. 🛠️ Direct Access Engineering Tools
+- **AI Resume Analyzer**: Review resume fit against targeted engineering job descriptions with instant ATS scoring and gap analysis.
+- **Profile & Settings**: Manage career track preferences, preferred programming language, target graduation year, and UI customization.
 
 ---
 
 ## ⚙️ Getting Started
 
 ### Prerequisites
-- Node.js (v18+)
-- MongoDB (running locally or a remote MongoDB Atlas URI)
-- Google Gemini API Key (optional; backend includes dynamic curriculum fallbacks)
+- **Node.js**: v18.0.0 or later
+- **npm**: v9.0.0 or later
+- **MongoDB**: Local instance (`mongodb://127.0.0.1:27017`) or remote MongoDB Atlas connection string
+- **Adzuna Developer API Credentials**: `ADZUNA_APP_ID` & `ADZUNA_APP_KEY` (Free tier from [Adzuna Developer Portal](https://developer.adzuna.com/))
+- **Google Gemini API Key** *(Optional)*: For dynamic AI resume insights and topic synthesis
 
 ---
 
-### Backend Setup
+### 1. Clone & Setup Repository
 
-1. Navigate to the backend directory:
+```bash
+git clone https://github.com/suhas181/EngineernigPath.git
+cd EngineernigPath
+```
+
+---
+
+### 2. Backend Configuration & Launch
+
+1. Navigate to the `backend` directory:
    ```bash
    cd backend
    ```
@@ -126,32 +146,35 @@ The backend curriculum service enforces strict language boundaries matching the 
    npm install
    ```
 
-3. Configure environment variables in `backend/.env`:
+3. Create and configure your `.env` file:
    ```env
    PORT=5001
    MONGODB_URI=mongodb://127.0.0.1:27017/engineerpath
-   JWT_SECRET=your_jwt_signing_key
+   JWT_SECRET=your_super_secret_jwt_signing_key_here
+
+   # Adzuna Job Search API
+   ADZUNA_APP_ID=your_adzuna_app_id
+   ADZUNA_APP_KEY=your_adzuna_app_key
+   ADZUNA_COUNTRY=in
+
+   # Optional Gemini AI API Key
    GEMINI_API_KEY=your_gemini_api_key
    ```
 
-4. Audit the resource library and verify 0 broken links:
+4. Build and start the backend development server:
    ```bash
    npm run build
-   npx ts-node src/scripts/verifyResourceLibrary.ts
-   ```
-
-5. Start the backend dev server:
-   ```bash
    npm run dev
    ```
+   *The backend REST API will be available at [http://localhost:5001](http://localhost:5001).*
 
 ---
 
-### Frontend Setup
+### 3. Frontend Configuration & Launch
 
-1. Navigate to the frontend directory:
+1. Open a new terminal and navigate to the `frontend` directory:
    ```bash
-   cd ../frontend
+   cd frontend
    ```
 
 2. Install dependencies:
@@ -163,13 +186,25 @@ The backend curriculum service enforces strict language boundaries matching the 
    ```bash
    npm run dev
    ```
-
-4. Open [http://localhost:5173](http://localhost:5173) in your browser.
+   *The React client will launch at [http://localhost:5173](http://localhost:5173).*
 
 ---
 
-## 📈 Platform Audit & Verification
+## 🧪 Testing & Verification Scripts
 
-- **Resource Library Health**: `verifyResourceLibrary.ts` verifies 291 audited resources, 0 unwhitelisted duplicate URLs, and 100% active 200 OK links across all 8 career tracks.
-- **Language Isolation Audit**: Verifies 100% language boundary isolation with zero cross-language leaks.
-- **Build Integrity**: Both frontend and backend compile cleanly with zero TypeScript errors.
+The repository includes audit and health-check scripts to guarantee resource reliability:
+
+```bash
+# Verify 291+ curated free resources and link health
+npx ts-node src/scripts/verifyResourceLibrary.ts
+
+# Compile check across both workspaces
+npm --prefix backend run build
+npm --prefix frontend run build
+```
+
+---
+
+## 📄 License
+
+Distributed under the **MIT License**. See `LICENSE` for more information.

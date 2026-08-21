@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { Response, NextFunction } from 'express';
 import { z } from 'zod';
 import pdfParse from 'pdf-parse';
@@ -29,10 +30,10 @@ export const uploadResume = async (
 ): Promise<void> => {
   try {
     const user = req.user;
-    if (!user) {
-      res.status(401).json({ success: false, message: 'Not authorized' });
-      return;
-    }
+    const userId = user ? user.id : new mongoose.Types.ObjectId();
+    const userName = user ? user.name : 'Guest User';
+    const userEmail = user ? user.email : 'guest@engineerpath.com';
+    const userCareer = user ? user.preferredCareer : 'Software Engineer';
 
     let fileBuffer: Buffer | null = null;
     let fileName = 'resume.txt';
@@ -141,7 +142,7 @@ export const uploadResume = async (
     }
 
     // Get next version number
-    const latest = await Resume.findOne({ userId: user.id }).sort({ version: -1 });
+    const latest = await Resume.findOne({ userId }).sort({ version: -1 });
     const version = latest ? latest.version + 1 : 1;
 
     let inputTextForStage1 = rawText;
@@ -161,7 +162,7 @@ export const uploadResume = async (
     // 5. STAGE 1 — Extraction LLM Call (with SHA-256 caching lookup)
     let extractionResult: any = null;
 
-    const cachedResume = await Resume.findOne({ userId: user.id, fileHash });
+    const cachedResume = await Resume.findOne({ userId, fileHash });
     if (cachedResume && cachedResume.extractionResult) {
       console.log(`[RESUME PIPELINE CACHE HIT] Reusing Stage 1 extraction for fileHash: ${fileHash}`);
       extractionResult = cachedResume.extractionResult;
@@ -177,7 +178,7 @@ export const uploadResume = async (
     }
 
     // 6. STAGE 2 — Scoring LLM Call
-    const targetRole = req.body.role || user.preferredCareer || 'Software Engineer';
+    const targetRole = req.body.role || userCareer || 'Software Engineer';
     const jobDescription = req.body.jobDescription || null;
 
     console.log(`[RESUME PIPELINE STAGE 2] Triggering Stage 2 scoring for role: ${targetRole}`);
@@ -185,8 +186,8 @@ export const uploadResume = async (
 
     // 7. Map pipeline results to legacy schema fields for backwards compatibility
     const parsedDetails = {
-      name: extractionResult?.contact_info?.name || user.name,
-      email: extractionResult?.contact_info?.email || user.email,
+      name: extractionResult?.contact_info?.name || userName,
+      email: extractionResult?.contact_info?.email || userEmail,
       phone: extractionResult?.contact_info?.phone || '',
       education: (extractionResult?.education || []).map((e: any) => ({
         institution: e.institution || 'University',
@@ -226,7 +227,7 @@ export const uploadResume = async (
 
     // 8. Save to Mongo Database
     const newResume = await Resume.create({
-      userId: user.id,
+      userId,
       fileName,
       fileUrl,
       fileHash,
@@ -261,7 +262,7 @@ export const getResumes = async (
   try {
     const user = req.user;
     if (!user) {
-      res.status(401).json({ success: false, message: 'Not authorized' });
+      res.status(200).json({ success: true, count: 0, resumes: [] });
       return;
     }
 

@@ -2,6 +2,8 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from '../store/useAuthStore';
 
+import AuthPromptModal from '../components/auth/AuthPromptModal';
+
 // Pages
 import LandingPage from '../pages/LandingPage';
 import Login from '../pages/Login';
@@ -14,14 +16,15 @@ import CompleteProfile from '../pages/CompleteProfile';
 import Dashboard from '../pages/Dashboard';
 import Roadmap from '../pages/Roadmap';
 import Resources from '../pages/Resources';
+import Internships from '../pages/Internships';
 import ResumeAnalyzer from '../pages/ResumeAnalyzer';
 import Planner from '../pages/Planner';
 import ProfileSettings from '../pages/ProfileSettings';
 import AdminDashboard from '../pages/AdminDashboard';
 import NotFound from '../pages/NotFound';
 
-// Wrapper for routes requiring authentication
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
+// Wrapper for routes requiring authentication (available for restricted admin / custom routes)
+export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const user = useAuthStore((state) => state.user);
 
@@ -72,124 +75,75 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 
 export function AppRouter() {
   return (
-    <Routes>
-      {/* Public Landing */}
-      <Route path="/" element={<LandingPage />} />
+    <>
+      <AuthPromptModal />
+      <Routes>
+        {/* Default Root Route & Landing Page */}
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/landing" element={<LandingPage />} />
 
-      {/* Auth Flows */}
-      <Route
-        path="/login"
-        element={
-          <PublicRoute>
-            <Login />
-          </PublicRoute>
-        }
-      />
-      <Route
-        path="/signup"
-        element={
-          <PublicRoute>
-            <Signup />
-          </PublicRoute>
-        }
-      />
-      <Route path="/verify-email" element={<VerifyEmail />} />
-      <Route
-        path="/forgot-password"
-        element={
-          <PublicRoute>
-            <ForgotPassword />
-          </PublicRoute>
-        }
-      />
-      <Route
-        path="/reset-password"
-        element={
-          <PublicRoute>
-            <ResetPassword />
-          </PublicRoute>
-        }
-      />
+        {/* Auth Flows */}
+        <Route
+          path="/login"
+          element={
+            <PublicRoute>
+              <Login />
+            </PublicRoute>
+          }
+        />
+        <Route
+          path="/signup"
+          element={
+            <PublicRoute>
+              <Signup />
+            </PublicRoute>
+          }
+        />
+        <Route path="/verify-email" element={<VerifyEmail />} />
+        <Route
+          path="/forgot-password"
+          element={
+            <PublicRoute>
+              <ForgotPassword />
+            </PublicRoute>
+          }
+        />
+        <Route
+          path="/reset-password"
+          element={
+            <PublicRoute>
+              <ResetPassword />
+            </PublicRoute>
+          }
+        />
 
-      {/* Admin Route */}
-      <Route
-        path="/admin"
-        element={
-          <AdminRoute>
-            <AdminDashboard />
-          </AdminRoute>
-        }
-      />
+        {/* Admin Route */}
+        <Route
+          path="/admin"
+          element={
+            <AdminRoute>
+              <AdminDashboard />
+            </AdminRoute>
+          }
+        />
 
-      {/* Protected Student Routes */}
-      <Route
-        path="/profile-setup"
-        element={
-          <ProtectedRoute>
-            <ProfileSetup />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/complete-profile"
-        element={
-          <ProtectedRoute>
-            <CompleteProfile />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/dashboard"
-        element={
-          <ProtectedRoute>
-            <Dashboard />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/roadmaps"
-        element={
-          <ProtectedRoute>
-            <Roadmap />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/resources"
-        element={
-          <ProtectedRoute>
-            <Resources />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/resume"
-        element={
-          <ProtectedRoute>
-            <ResumeAnalyzer />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/planner"
-        element={
-          <ProtectedRoute>
-            <Planner />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/settings"
-        element={
-          <ProtectedRoute>
-            <ProfileSettings />
-          </ProtectedRoute>
-        }
-      />
+        {/* Exploration & Direct Access Student Routes */}
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/roadmaps" element={<Roadmap />} />
+        <Route path="/learning-paths" element={<Roadmap />} />
+        <Route path="/learning-hub" element={<Resources />} />
+        <Route path="/resources" element={<Resources />} />
+        <Route path="/internships" element={<Internships />} />
+        <Route path="/resume" element={<ResumeAnalyzer />} />
+        <Route path="/planner" element={<Planner />} />
+        <Route path="/settings" element={<ProfileSettings />} />
+        <Route path="/profile-setup" element={<ProfileSetup />} />
+        <Route path="/complete-profile" element={<CompleteProfile />} />
 
-      {/* Fallback Catch All */}
-      <Route path="*" element={<NotFound />} />
-    </Routes>
+        {/* Fallback Catch All */}
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </>
   );
 }
 
