@@ -80,13 +80,14 @@ EngineerPath/
 ### 2. 🗺️ 8 Comprehensive Career Roadmaps (`/roadmap`)
 Full end-to-end curriculum modules across 8 high-demand engineering specializations:
 1. **Software Engineer (SDE)** — Core CS fundamentals, DSA, System Design, Multithreading & Database Internals.
-2. **Frontend Engineer** — Modern HTML/CSS, React, TypeScript, Performance Optimization, Next.js, and State Architecture.
-3. **Backend Engineer** — Node.js/Java/Python backends, REST/GraphQL/gRPC APIs, Distributed Caching, Message Queues & SQL/NoSQL databases.
-4. **AI / ML Engineer** — Python numerical stack, Deep Learning (PyTorch/TensorFlow), LLMs, RAG Architectures & MLOps pipelines.
-5. **Data Scientist / Analyst** — SQL, Pandas, NumPy, Exploratory Data Analysis, BI Dashboards (Tableau/PowerBI) & Statistical Modeling.
-6. **DevOps & Cloud Engineer** — Linux internals, Docker, Kubernetes, CI/CD with GitHub Actions, Terraform & AWS/GCP Cloud Architecture.
-7. **Mobile App Developer** — React Native, Flutter, Native Swift/Kotlin modules, offline-first SQLite databases & App Store deployment with Fastlane.
-8. **Cybersecurity Engineer** — Network security, cryptography, OWASP Top 10, penetration testing, SIEM logging & cloud defense.
+2. **Full Stack Developer (2026 Industry Standard)** — Complete 8-category / 16-topic path covering TypeScript strict mode, React 19 architecture, Next.js 15 App Router (RSC & Server Actions), Node.js & Express REST APIs, PostgreSQL & Prisma ORM (ACID & indexing), Dual-token JWT security & OWASP API Top 10, Redis Cache-Aside & BullMQ queues, Vitest/Supertest/Playwright testing, Pino structured observability, Multi-stage Docker Compose, GitHub Actions CI/CD, and the flagship *CloudPulse* multi-tenant SaaS capstone.
+3. **Frontend Engineer** — Modern HTML5/CSS3, React, TypeScript, Core Web Vitals, Next.js, TanStack Query, and State Architecture.
+4. **Backend Engineer** — Node.js/Java/Python backends, REST/GraphQL/gRPC APIs, PostgreSQL, Distributed Caching, Message Queues & SQL/NoSQL databases.
+5. **AI / ML Engineer** — Python numerical stack, Deep Learning (PyTorch/TensorFlow), LLMs, RAG Architectures & MLOps pipelines.
+6. **Data Scientist / Analyst** — SQL, Pandas, NumPy, Exploratory Data Analysis, BI Dashboards (Tableau/PowerBI) & Statistical Modeling.
+7. **DevOps & Cloud Engineer** — Linux internals, Docker, Kubernetes, CI/CD with GitHub Actions, Terraform & AWS/GCP Cloud Architecture.
+8. **Mobile App Developer** — React Native, Flutter, Native Swift/Kotlin modules, offline-first SQLite databases & App Store deployment with Fastlane.
+9. **Cybersecurity Engineer** — Network security, cryptography, OWASP Top 10, penetration testing, SIEM logging & cloud defense.
 
 ### 3. 🎯 8-Step Guided Topic Learning Flow (`TopicLearningView.tsx`)
 Selecting any topic opens a focused 8-step learning journey:
