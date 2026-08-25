@@ -151,7 +151,7 @@ export const webFrontendResources: LibraryResource[] = [
     level: 'intermediate',
     estimatedHours: 20,
     tags: ['React', 'Virtual DOM', 'Reconciliation', 'Custom Hooks'],
-    url: 'https://www.youtube.com/playlist?list=PLlasXeu85E9c4idTXF4y24l22i08502gq',
+    url: 'https://www.youtube.com/watch?v=pN6jk0uUrD8',
     free: true,
     order: 2,
     stage: 'learn',
