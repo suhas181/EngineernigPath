@@ -7,14 +7,15 @@ import { api } from './services/api';
 import { Loader2 } from 'lucide-react';
 
 function App() {
-  const { accessToken, setUser, logout, isAuthenticated } = useAuthStore();
+  const { setUser, logout } = useAuthStore();
   const [isInitializing, setIsInitializing] = useState(true);
 
   useEffect(() => {
     const initializeAuth = async () => {
-      if (isAuthenticated && accessToken) {
+      const { accessToken, refreshToken, isAuthenticated } = useAuthStore.getState();
+      if (isAuthenticated || accessToken || refreshToken) {
         try {
-          // Verify access token validity and fetch latest profile details
+          // Verify access token validity and fetch latest profile details (recovering via refresh token if expired)
           const response = await api.get('/auth/me');
           if (response.data && response.data.user) {
             setUser(response.data.user);
@@ -28,7 +29,7 @@ function App() {
     };
 
     initializeAuth();
-  }, [isAuthenticated, accessToken, setUser, logout]);
+  }, [setUser, logout]);
 
   if (isInitializing) {
     return (
