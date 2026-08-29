@@ -6,13 +6,13 @@ import { useAuthModalStore } from '../store/useAuthModalStore';
 import internshipService, {
   InternshipItem,
   InternshipStats,
+  RecommendedItem,
 } from '../services/internshipService';
 import InternshipCard from '../components/internships/InternshipCard';
 import InternshipDetailModal from '../components/internships/InternshipDetailModal';
 import toast from 'react-hot-toast';
 import {
   Search,
-  RotateCw,
   Briefcase,
   Globe,
   Building,
@@ -74,10 +74,10 @@ export function Internships() {
   const [totalCount, setTotalCount] = useState<number>(0);
   const [totalPages, setTotalPages] = useState<number>(1);
   const [currentPage, setCurrentPage] = useState<number>(1);
+  const [backendRecommendations, setBackendRecommendations] = useState<RecommendedItem[]>([]);
 
   // UI state
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedInternship, setSelectedInternship] = useState<InternshipItem | null>(null);
 
@@ -125,24 +125,27 @@ export function Internships() {
     }
   }, [searchQuery, selectedRole, selectedLocation, workMode, selectedSkill, sortOption, bookmarkedOnly]);
 
+  // Fetch backend recommendations when user is authenticated
+  const fetchRecommendations = useCallback(async () => {
+    if (!isAuthenticated) {
+      setBackendRecommendations([]);
+      return;
+    }
+    try {
+      const recResponse = await internshipService.getRecommendations(3);
+      if (recResponse && recResponse.success && Array.isArray(recResponse.recommendations)) {
+        setBackendRecommendations(recResponse.recommendations);
+      }
+    } catch (err) {
+      // Non-blocking recommendation fetch failure
+      setBackendRecommendations([]);
+    }
+  }, [isAuthenticated]);
+
   useEffect(() => {
     fetchListings(1);
-  }, [fetchListings]);
-
-  // Trigger manual refresh / Adzuna fetch sync
-  const handleManualRefresh = async () => {
-    setIsRefreshing(true);
-    const toastId = toast.loading('Syncing latest engineering internships from Adzuna...');
-    try {
-      const result = await internshipService.refreshInternships();
-      toast.success(result.message || 'Internships updated successfully!', { id: toastId });
-      fetchListings(1);
-    } catch (err: any) {
-      toast.error('Failed to sync internships. Please try again.', { id: toastId });
-    } finally {
-      setIsRefreshing(false);
-    }
-  };
+    fetchRecommendations();
+  }, [fetchListings, fetchRecommendations]);
 
   // Toggle bookmark handler
   const handleToggleBookmark = async (id: string, e?: React.MouseEvent) => {
@@ -182,9 +185,15 @@ export function Internships() {
     setBookmarkedOnly(false);
   };
 
-  // Recommended opportunities (matched against student's profile)
+  // Recommended opportunities (Backend scored with safe fallback)
   const recommendedListings = useMemo(() => {
-    if (!user || !isAuthenticated || internships.length === 0) return [];
+    if (!user || !isAuthenticated) return [];
+
+    if (backendRecommendations.length > 0) {
+      return backendRecommendations;
+    }
+
+    if (internships.length === 0) return [];
 
     const preferredCareer = (user.preferredCareer || '').toLowerCase();
     const preferredLang = (user.preferredProgrammingLanguage || '').toLowerCase();
@@ -215,7 +224,7 @@ export function Internships() {
       .filter((rec) => rec.score > 0)
       .sort((a, b) => b.score - a.score)
       .slice(0, 3);
-  }, [user, isAuthenticated, internships]);
+  }, [user, isAuthenticated, backendRecommendations, internships]);
 
   return (
     <div className="flex h-screen bg-[#F8FAFC] overflow-hidden text-slate-900 font-sans">
@@ -241,7 +250,7 @@ export function Internships() {
               <div className="space-y-2 text-left max-w-2xl">
                 <div className="inline-flex items-center space-x-2 rounded-full bg-purple-500/10 border border-purple-400/20 px-3.5 py-1 text-xs font-bold text-purple-300">
                   <Briefcase className="h-3.5 w-3.5 text-purple-400" />
-                  <span>Verified Opportunity Engine</span>
+                  <span>Internship Opportunity Engine</span>
                 </div>
                 <h1 className="text-2xl sm:text-4xl font-extrabold font-heading tracking-tight">
                   Find Your Next Internship 🚀
@@ -251,17 +260,16 @@ export function Internships() {
                 </p>
               </div>
 
-              {/* Sync / Refresh Button */}
-              <div className="flex items-center space-x-3">
-                <button
-                  onClick={handleManualRefresh}
-                  disabled={isRefreshing}
-                  className="eterna-btn-primary flex items-center space-x-2 px-4 py-2.5 text-xs font-bold shadow-lg shadow-purple-600/30 cursor-pointer disabled:opacity-50"
-                  title="Sync fresh listings from external job APIs"
-                >
-                  <RotateCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-                  <span>{isRefreshing ? 'Syncing...' : 'Sync Opportunities'}</span>
-                </button>
+              {/* Automatic Freshness Indicator */}
+              <div className="flex items-center space-x-2 self-start md:self-center">
+                <span className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-white/10 border border-white/15 text-xs font-semibold text-purple-200 shadow-sm backdrop-blur-sm">
+                  <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <span>
+                    {stats?.lastCheckedAt
+                      ? `Auto-synced • ${new Date(stats.lastCheckedAt).toLocaleDateString([], { month: 'short', day: 'numeric' })}`
+                      : 'Auto-synced every 12 hours'}
+                  </span>
+                </span>
               </div>
             </div>
 
@@ -500,10 +508,10 @@ export function Internships() {
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-xl font-bold font-heading text-slate-900 tracking-tight">
-                  {bookmarkedOnly ? 'Saved Internships' : isAuthenticated ? 'Recommended Internships' : 'Latest Internships'}
+                  {bookmarkedOnly ? 'Saved Internships' : 'Available Internships'}
                 </h2>
                 <p className="text-xs text-slate-500 mt-0.5 font-medium">
-                  Showing {totalCount} verified engineering listings
+                  Showing {totalCount} engineering opportunities
                 </p>
               </div>
             </div>

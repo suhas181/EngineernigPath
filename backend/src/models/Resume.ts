@@ -13,11 +13,19 @@ export interface IStage1ExtractionResult {
     email?: string | null;
     phone?: string | null;
     location?: string | null;
+    linkedin?: string | null;
+    github?: string | null;
+    portfolio?: string | null;
     links?: string[];
   };
   skills: {
     technical: string[];
-    tools_and_technologies: string[];
+    programming_languages?: string[];
+    frameworks?: string[];
+    libraries?: string[];
+    databases?: string[];
+    cloud_and_tools?: string[];
+    tools_and_technologies?: string[];
     soft: string[];
   };
   projects: Array<{
@@ -25,6 +33,7 @@ export interface IStage1ExtractionResult {
     description: string[];
     technologies: string[];
     duration?: string | null;
+    link?: string | null;
   }>;
   education: Array<{
     institution: string;
@@ -37,15 +46,36 @@ export interface IStage1ExtractionResult {
     company: string;
     role: string;
     duration?: string | null;
+    location?: string | null;
+    responsibilities: string[];
+  }>;
+  internships?: Array<{
+    company: string;
+    role: string;
+    duration?: string | null;
+    location?: string | null;
     responsibilities: string[];
   }>;
   certifications: Array<{
     name: string;
     issuer?: string | null;
     date?: string | null;
+    link?: string | null;
   }>;
   achievements: Array<{
     title: string;
+    description?: string | null;
+  }>;
+  publications?: Array<{
+    title: string;
+    publisher?: string | null;
+    date?: string | null;
+    link?: string | null;
+  }>;
+  awards?: Array<{
+    title: string;
+    issuer?: string | null;
+    date?: string | null;
     description?: string | null;
   }>;
   parsing_warnings: string[];
@@ -64,6 +94,19 @@ export interface IStage2ScoringResult {
   job_match_score?: number | null;
   content_quality_score: number;
   ats_compatibility_score: number;
+  experience_evidence_score: number;
+  projects_quality_score: number;
+  completeness_score: number;
+  placeholder_penalty: number;
+  component_explanations: {
+    overall?: string;
+    ats_compatibility?: string;
+    content_quality?: string;
+    job_match?: string;
+    experience_evidence?: string;
+    projects_quality?: string;
+    completeness?: string;
+  };
   matched_keywords: string[];
   missing_keywords: string[];
   strengths: string[];
@@ -115,6 +158,13 @@ export interface IResume extends Document {
   version: number;
   atsScore: number;
   readinessScore: number;
+  overallScore: number;
+  contentQualityScore: number;
+  jobMatchScore: number | null;
+  experienceEvidenceScore?: number;
+  projectsQualityScore?: number;
+  completenessScore?: number;
+  analysisConfidence: 'HIGH' | 'MEDIUM' | 'LOW';
   extractionMetadata: IExtractionMetadata;
   extractionResult: IStage1ExtractionResult;
   scoringResult: IStage2ScoringResult;
@@ -133,27 +183,33 @@ export interface IResume extends Document {
     keywordSuggestions: string[];
     projectRecommendations: IProjectRecommendation[];
     improvements: string[];
+    placeholderWarnings: Array<{
+      type: string;
+      text: string;
+      severity: string;
+      message: string;
+    }>;
   };
   createdAt: Date;
   updatedAt: Date;
 }
 
 const EducationParsedSchema = new Schema<IEducationParsed>({
-  institution: { type: String, required: true },
+  institution: { type: String, default: '' },
   degree: { type: String, default: '' },
   year: { type: String, default: '' },
-  cgpa: String,
+  cgpa: { type: String, default: '' },
 });
 
 const ExperienceParsedSchema = new Schema<IExperienceParsed>({
-  company: { type: String, required: true },
-  role: { type: String, required: true },
+  company: { type: String, default: '' },
+  role: { type: String, default: '' },
   duration: { type: String, default: '' },
   description: { type: String, default: '' },
 });
 
 const ProjectParsedSchema = new Schema<IProjectParsed>({
-  title: { type: String, required: true },
+  title: { type: String, default: '' },
   description: { type: String, default: '' },
   technologies: { type: [String], default: [] },
 });
@@ -211,6 +267,47 @@ const ResumeSchema = new Schema<IResume>(
       min: 0,
       max: 100,
     },
+    overallScore: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 100,
+    },
+    contentQualityScore: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 100,
+    },
+    jobMatchScore: {
+      type: Number,
+      default: null,
+      min: 0,
+      max: 100,
+    },
+    experienceEvidenceScore: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 100,
+    },
+    projectsQualityScore: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 100,
+    },
+    completenessScore: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 100,
+    },
+    analysisConfidence: {
+      type: String,
+      enum: ['HIGH', 'MEDIUM', 'LOW'],
+      default: 'HIGH',
+    },
     extractionMetadata: {
       garbledTextRatio: { type: Number, default: 0 },
       tablesDetected: { type: Boolean, default: false },
@@ -240,6 +337,17 @@ const ResumeSchema = new Schema<IResume>(
       keywordSuggestions: { type: [String], default: [] },
       projectRecommendations: [ProjectRecommendationSchema],
       improvements: { type: [String], default: [] },
+      placeholderWarnings: {
+        type: [
+          {
+            type: { type: String, default: 'PLACEHOLDER' },
+            text: { type: String, default: '' },
+            severity: { type: String, default: 'HIGH' },
+            message: { type: String, default: '' },
+          },
+        ],
+        default: [],
+      },
     },
   },
   {

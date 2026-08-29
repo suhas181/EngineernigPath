@@ -24,6 +24,7 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { MosaicShell } from '../components/mosaic/MosaicShell';
+import { recordResourceOpened } from '../services/recentResourceService';
 
 export interface LearningHubResource {
   id: string;
@@ -807,6 +808,17 @@ function ResourceCard({
             href={resource.url}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() => {
+              recordResourceOpened({
+                id: resource.id,
+                resourceId: resource.id,
+                title: resource.title,
+                provider: resource.provider,
+                type: resource.type,
+                url: resource.url,
+                thumbnail: resource.thumbnail,
+              });
+            }}
             className="w-full py-2.5 px-4 rounded-xl bg-slate-900 hover:bg-purple-600 text-white text-xs font-bold transition-all duration-200 flex items-center justify-center space-x-2 shadow-sm group-hover:shadow-md"
           >
             <span>{isVideo ? 'Watch Now' : isGithub ? 'Explore Repo' : 'Open Resource'}</span>

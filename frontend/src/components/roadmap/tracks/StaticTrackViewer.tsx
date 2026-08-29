@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { StaticTrackMonth } from '../roadmap.types';
 import { Badge } from '../../mosaic/Badge';
+import { recordResourceOpened } from '../../../services/recentResourceService';
 
 interface StaticTrackViewerProps {
   track: string;
@@ -284,6 +285,15 @@ export const StaticTrackViewer: React.FC<StaticTrackViewerProps> = ({
                               href={yt.searchUrl}
                               target="_blank"
                               rel="noopener noreferrer"
+                              onClick={() => {
+                                recordResourceOpened({
+                                  id: `yt-channel-${yt.channel}`,
+                                  title: `${yt.channel} (${yt.bestFor})`,
+                                  provider: 'YouTube',
+                                  type: 'video',
+                                  url: yt.searchUrl,
+                                });
+                              }}
                               className="flex-shrink-0 text-teal-600 hover:text-teal-800 transition bg-slate-50 hover:bg-slate-100 p-2 rounded-lg"
                               title={`Search ${yt.channel}`}
                             >

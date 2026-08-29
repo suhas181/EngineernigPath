@@ -6,7 +6,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/useAuthStore';
 import { api } from '../services/api';
 import toast from 'react-hot-toast';
-import { Mail, Lock, Loader2, LogIn, ShieldCheck, UserCheck } from 'lucide-react';
+import { Mail, Lock, Loader2, LogIn } from 'lucide-react';
 
 const loginSchema = z.object({
   email: z.string().min(1, 'Email is required').email('Invalid email address'),
@@ -16,7 +16,6 @@ const loginSchema = z.object({
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 export function Login() {
-  const [activeTab, setActiveTab] = useState<'student' | 'admin'>('student');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const loginStore = useAuthStore((state) => state.login);
@@ -34,12 +33,6 @@ export function Login() {
     try {
       const response = await api.post('/auth/login', data);
       const { accessToken, refreshToken, user } = response.data;
-
-      if (activeTab === 'admin' && user.role !== 'admin') {
-        toast.error('Access denied: Selected account does not have Admin privileges.');
-        setIsLoading(false);
-        return;
-      }
 
       loginStore(user, accessToken, refreshToken);
       toast.success(`Welcome back, ${user.name}!`);
@@ -75,32 +68,11 @@ export function Login() {
           </p>
         </div>
 
-        {/* Role Tab Switcher */}
-        <div className="flex bg-slate-100 p-1 rounded-full border border-slate-200">
-          <button
-            type="button"
-            onClick={() => setActiveTab('student')}
-            className={`flex-1 py-2 text-xs font-bold rounded-full flex items-center justify-center space-x-2 transition ${
-              activeTab === 'student'
-                ? 'bg-white text-[var(--ink-900)] shadow-sm'
-                : 'text-[var(--ink-muted)] hover:text-[var(--ink-900)]'
-            }`}
-          >
-            <UserCheck className="h-3.5 w-3.5" />
-            <span>Student Portal</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('admin')}
-            className={`flex-1 py-2 text-xs font-bold rounded-full flex items-center justify-center space-x-2 transition ${
-              activeTab === 'admin'
-                ? 'bg-[#101826] text-white shadow-sm'
-                : 'text-[var(--ink-muted)] hover:text-[var(--ink-900)]'
-            }`}
-          >
-            <ShieldCheck className="h-3.5 w-3.5" />
-            <span>Admin Login</span>
-          </button>
+        {/* Student Login Badge */}
+        <div className="flex items-center justify-center">
+          <span className="text-xs font-semibold px-3 py-1 bg-teal-50 text-teal-700 rounded-full border border-teal-100">
+            Student Login
+          </span>
         </div>
 
         {/* Form */}
@@ -156,7 +128,7 @@ export function Login() {
             ) : (
               <>
                 <LogIn className="h-4 w-4" />
-                <span>Sign In to {activeTab === 'admin' ? 'Admin Portal' : 'Student Dashboard'}</span>
+                <span>Sign In to Student Dashboard</span>
               </>
             )}
           </button>

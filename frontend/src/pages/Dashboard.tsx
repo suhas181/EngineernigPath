@@ -1,9 +1,15 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuthStore } from '../store/useAuthStore';
 import { useAuthModalStore } from '../store/useAuthModalStore';
 import { MosaicShell } from '../components/mosaic/MosaicShell';
 import { DashboardHero, CAREER_ROLES } from '../components/dashboard/DashboardHero';
+import {
+  getRecentResources,
+  recordResourceOpened,
+  RecentResourceItem,
+} from '../services/recentResourceService';
+import { formatRelativeTime } from '../utils/dateUtils';
 import {
   ArrowRight,
   ExternalLink,
@@ -17,6 +23,9 @@ import {
   Layers,
   Award,
   Sparkles,
+  Code,
+  GraduationCap,
+  Clock,
 } from 'lucide-react';
 
 interface SavedTopicInfo {
@@ -25,14 +34,6 @@ interface SavedTopicInfo {
   module: string;
   topic: string;
   topicId: string;
-}
-
-interface SavedResourceItem {
-  id: string;
-  title: string;
-  provider: string;
-  type: string;
-  url: string;
 }
 
 export function Dashboard() {
@@ -58,42 +59,67 @@ export function Dashboard() {
     };
   });
 
-  const [recentResources] = useState<SavedResourceItem[]>(() => {
-    const saved = localStorage.getItem('engineerpath_recent_resources');
-    if (saved) {
+  const [recentResources, setRecentResources] = useState<RecentResourceItem[]>([]);
+  const [isLoadingRecent, setIsLoadingRecent] = useState<boolean>(true);
+
+  // Dynamic fetch of user/guest recent history
+  useEffect(() => {
+    let isMounted = true;
+    const loadRecentResources = async () => {
+      setIsLoadingRecent(true);
       try {
-        return JSON.parse(saved);
-      } catch (e) {
-        return [];
+        const items = await getRecentResources(6);
+        if (isMounted) {
+          setRecentResources(items);
+        }
+      } catch (err) {
+        if (isMounted) {
+          setRecentResources([]);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoadingRecent(false);
+        }
       }
-    }
-    return [
-      {
-        id: 'res-1',
-        title: '⭐ Striver A2Z DSA Master Practice Sheet',
-        provider: 'takeUforward',
-        type: 'practice',
-        url: 'https://takeuforward.org/strivers-a2z-dsa-course/strivers-a2z-dsa-course-sheet-2/',
-      },
-      {
-        id: 'res-2',
-        title: 'Corey Schafer: Python Beginner & OOP Masterclass',
-        provider: 'Corey Schafer',
-        type: 'video',
-        url: 'https://www.youtube.com/playlist?list=PL-osiE80TeTskrapNbzXvwh68gCdW0LVc',
-      },
-      {
-        id: 'res-3',
-        title: 'React.dev: Official Documentation & Interactive Guide',
-        provider: 'Meta Open Source',
-        type: 'article',
-        url: 'https://react.dev/learn',
-      },
-    ];
-  });
+    };
+
+    loadRecentResources();
+    return () => {
+      isMounted = false;
+    };
+  }, [isAuthenticated]);
 
   const handleStartRole = (categoryName: string) => {
     navigate(`/roadmaps?role=${encodeURIComponent(categoryName)}`);
+  };
+
+  const handleOpenAgain = async (res: RecentResourceItem) => {
+    // Re-record recent action so it refreshes lastOpenedAt
+    await recordResourceOpened({
+      id: res.id || res.resourceId,
+      resourceId: res.resourceId,
+      title: res.title,
+      provider: res.provider,
+      type: res.type,
+      url: res.url,
+      thumbnail: res.thumbnail,
+    });
+
+    // Optimistically update the UI order and relative time
+    setRecentResources((prev) => {
+      const updated = { ...res, lastOpenedAt: new Date().toISOString() };
+      return [updated, ...prev.filter((item) => (item.id || item.resourceId) !== (res.id || res.resourceId))].slice(0, 6);
+    });
+  };
+
+  const getResourceIcon = (type: string) => {
+    const t = (type || '').toLowerCase();
+    if (t === 'video' || t === 'playlist') return PlayCircle;
+    if (t === 'practice' || t === 'problem') return Target;
+    if (t === 'github' || t === 'project' || t === 'open-source') return Code;
+    if (t === 'course') return GraduationCap;
+    if (t === 'article' || t === 'documentation' || t === 'doc') return BookOpen;
+    return FileCheck;
   };
 
   return (
@@ -307,53 +333,103 @@ export function Dashboard() {
           )}
         </section>
 
-        {/* ==================== SECTION 4: RECENTLY OPENED RESOURCES (LIGHT CANVAS) ==================== */}
+        {/* ==================== SECTION 4: RECENTLY OPENED RESOURCES ==================== */}
         <section className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">Recently Opened Resources</h2>
             <span className="text-xs text-slate-500 font-semibold">Direct Access</span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {recentResources.map((res) => {
-              const ResourceIcon =
-                res.type === 'video' ? PlayCircle : res.type === 'article' ? BookOpen : FileCheck;
-              return (
-                <div
-                  key={res.id}
-                  className="rounded-2xl border border-slate-200/90 bg-white/85 backdrop-blur-xl p-6 flex flex-col justify-between shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-250 text-left"
-                >
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="p-2.5 rounded-xl bg-blue-50 text-blue-600 border border-blue-100">
-                        <ResourceIcon className="w-5 h-5" />
-                      </span>
-                      <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider px-2.5 py-1 rounded-md bg-slate-100/90 border border-slate-200">
-                        {res.provider}
-                      </span>
-                    </div>
-
-                    <h4 className="text-sm font-bold text-slate-900 line-clamp-2 leading-snug">
-                      {res.title}
-                    </h4>
+          {isLoadingRecent ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              {[1, 2, 3].map((n) => (
+                <div key={n} className="rounded-2xl border border-slate-200 bg-white/80 p-6 animate-pulse space-y-4">
+                  <div className="flex justify-between items-center">
+                    <div className="w-10 h-10 bg-slate-200 rounded-xl" />
+                    <div className="w-20 h-5 bg-slate-200 rounded-md" />
                   </div>
-
-                  <div className="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between">
-                    <span className="text-xs text-slate-500 font-medium capitalize">{res.type} Resource</span>
-                    <a
-                      href={res.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center"
-                    >
-                      Open Again
-                      <ExternalLink className="w-3.5 h-3.5 ml-1" />
-                    </a>
+                  <div className="h-4 bg-slate-200 rounded w-3/4" />
+                  <div className="h-4 bg-slate-200 rounded w-1/2" />
+                  <div className="pt-4 border-t border-slate-100 flex justify-between">
+                    <div className="w-20 h-4 bg-slate-200 rounded" />
+                    <div className="w-16 h-4 bg-slate-200 rounded" />
                   </div>
                 </div>
-              );
-            })}
-          </div>
+              ))}
+            </div>
+          ) : recentResources.length === 0 ? (
+            /* Clean Empty State: No Fake Resources */
+            <div className="rounded-2xl border border-slate-200/90 bg-white/85 backdrop-blur-xl p-8 sm:p-10 text-center space-y-4 shadow-sm">
+              <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto border border-blue-100 shadow-sm">
+                <BookOpen className="w-6 h-6" />
+              </div>
+              <div className="max-w-md mx-auto space-y-1.5">
+                <h3 className="text-base font-bold text-slate-900">No resources opened yet</h3>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  Explore the Learning Hub or your curriculum topics to start building your personal direct access history.
+                </p>
+              </div>
+              <button
+                onClick={() => navigate('/resources')}
+                className="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 transition-all inline-flex items-center space-x-1.5 shadow-sm shadow-blue-600/20 cursor-pointer"
+              >
+                <span>Explore Learning Hub</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              {recentResources.map((res) => {
+                const ResourceIcon = getResourceIcon(res.type);
+                const relativeTimeLabel = formatRelativeTime(res.lastOpenedAt);
+
+                return (
+                  <div
+                    key={res.id || res.resourceId || res.url}
+                    className="rounded-2xl border border-slate-200/90 bg-white/85 backdrop-blur-xl p-6 flex flex-col justify-between shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-250 text-left"
+                  >
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="p-2.5 rounded-xl bg-blue-50 text-blue-600 border border-blue-100">
+                          <ResourceIcon className="w-5 h-5" />
+                        </span>
+                        <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider px-2.5 py-1 rounded-md bg-slate-100/90 border border-slate-200">
+                          {res.provider || 'Resource'}
+                        </span>
+                      </div>
+
+                      <h4 className="text-sm font-bold text-slate-900 line-clamp-2 leading-snug">
+                        {res.title}
+                      </h4>
+                    </div>
+
+                    <div className="pt-4 mt-4 border-t border-slate-100 flex flex-col space-y-3">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-slate-400 font-medium flex items-center space-x-1">
+                          <Clock className="w-3 h-3 text-slate-400" />
+                          <span>Opened {relativeTimeLabel.toLowerCase()}</span>
+                        </span>
+                        <span className="text-slate-500 font-medium capitalize text-[11px] px-2 py-0.5 rounded bg-slate-50 border border-slate-100">
+                          {res.type}
+                        </span>
+                      </div>
+
+                      <a
+                        href={res.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={() => handleOpenAgain(res)}
+                        className="w-full py-2 px-3 rounded-xl bg-blue-50 hover:bg-blue-600 text-blue-700 hover:text-white text-xs font-bold transition-all duration-200 flex items-center justify-center space-x-1.5 group cursor-pointer"
+                      >
+                        <span>Open Again</span>
+                        <ExternalLink className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                      </a>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </section>
       </div>
     </MosaicShell>

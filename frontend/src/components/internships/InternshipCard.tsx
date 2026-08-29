@@ -1,6 +1,6 @@
 import React from 'react';
 import { InternshipItem } from '../../services/internshipService';
-import { MapPin, Globe, ExternalLink, Heart, Sparkles, Building2, Clock, ShieldCheck } from 'lucide-react';
+import { MapPin, Globe, ExternalLink, Heart, Sparkles, Building2, Clock } from 'lucide-react';
 
 interface InternshipCardProps {
   internship: InternshipItem;
@@ -37,10 +37,48 @@ export const InternshipCard: React.FC<InternshipCardProps> = ({
     const date = new Date(dateString);
     const diffMs = Date.now() - date.getTime();
     const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-    if (diffHours < 1) return 'Verified < 1h ago';
-    if (diffHours === 1) return 'Verified 1h ago';
-    if (diffHours < 24) return `Verified ${diffHours}h ago`;
-    return `Verified ${Math.floor(diffHours / 24)}d ago`;
+    if (diffHours < 1) return 'Checked < 1h ago';
+    if (diffHours === 1) return 'Checked 1h ago';
+    if (diffHours < 24) return `Checked ${diffHours}h ago`;
+    return `Checked ${Math.floor(diffHours / 24)}d ago`;
+  };
+
+  // Render truthful status indicator
+  const renderStatusBadge = () => {
+    if (internship.status === 'OPEN') {
+      return (
+        <div className="flex items-center space-x-1.5">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+          </span>
+          <span className="text-[11px] font-bold text-slate-700">
+            Active Opportunity
+          </span>
+        </div>
+      );
+    }
+
+    if (internship.status === 'CLOSED') {
+      return (
+        <div className="flex items-center space-x-1.5">
+          <span className="inline-flex rounded-full h-2 w-2 bg-slate-400" />
+          <span className="text-[11px] font-semibold text-slate-500">
+            Closed
+          </span>
+        </div>
+      );
+    }
+
+    // Default: UNKNOWN
+    return (
+      <div className="flex items-center space-x-1.5">
+        <span className="inline-flex rounded-full h-2 w-2 bg-amber-400" />
+        <span className="text-[11px] font-semibold text-slate-600">
+          Status Unknown
+        </span>
+      </div>
+    );
   };
 
   return (
@@ -77,11 +115,10 @@ export const InternshipCard: React.FC<InternshipCardProps> = ({
           {/* Bookmark Heart Action */}
           <button
             onClick={(e) => onToggleBookmark(internship._id, e)}
-            className={`p-2 rounded-full border transition-all cursor-pointer ${
-              isBookmarked
+            className={`p-2 rounded-full border transition-all cursor-pointer ${isBookmarked
                 ? 'bg-rose-50 border-rose-200 text-rose-500 shadow-sm'
                 : 'bg-slate-50 border-slate-200 text-slate-400 hover:text-rose-500 hover:bg-rose-50/50 hover:border-rose-200'
-            }`}
+              }`}
             title={isBookmarked ? 'Remove Bookmark' : 'Save Internship'}
           >
             <Heart className={`h-4 w-4 ${isBookmarked ? 'fill-rose-500' : ''}`} />
@@ -96,7 +133,7 @@ export const InternshipCard: React.FC<InternshipCardProps> = ({
           </div>
         )}
 
-        {/* Meta Info Badges: Location, Remote, Salary */}
+        {/* Meta Info Badges: Location, Remote, Salary, Employment Type */}
         <div className="mt-3.5 flex flex-wrap items-center gap-2">
           {/* Location Badge */}
           <span className="inline-flex items-center space-x-1 rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-700">
@@ -114,6 +151,13 @@ export const InternshipCard: React.FC<InternshipCardProps> = ({
             <span className="inline-flex items-center space-x-1 rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-600">
               <Building2 className="h-3 w-3 text-slate-500" />
               <span>On-site / Hybrid</span>
+            </span>
+          )}
+
+          {/* Employment Type if specified */}
+          {internship.employmentType && internship.employmentType !== 'Internship' && (
+            <span className="inline-flex items-center rounded-full bg-blue-50 border border-blue-200/60 px-2.5 py-1 text-[11px] font-semibold text-blue-700">
+              {internship.employmentType}
             </span>
           )}
 
@@ -143,20 +187,10 @@ export const InternshipCard: React.FC<InternshipCardProps> = ({
         </div>
       </div>
 
-      {/* Card Footer: Verified Status, Posted Date, and Primary Apply Button */}
+      {/* Card Footer: Truthful Status, Posted Date, and Primary Apply Button */}
       <div className="mt-5 pt-3.5 border-t border-slate-100 flex items-center justify-between">
         <div className="text-left">
-          {/* Status Badge Rule: OPEN verified status or UNKNOWN status */}
-          <div className="flex items-center space-x-1.5">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-            </span>
-            <span className="text-[11px] font-bold text-slate-700 flex items-center gap-1">
-              <span>Verified Opportunity</span>
-              <ShieldCheck className="h-3 w-3 text-emerald-600 inline" />
-            </span>
-          </div>
+          {renderStatusBadge()}
 
           <div className="flex items-center space-x-2 mt-0.5 text-[10px] text-slate-400 font-medium">
             <span>{formatPostedDate(internship.publishedAt)}</span>

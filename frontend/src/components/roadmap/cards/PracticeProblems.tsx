@@ -2,6 +2,7 @@ import React from 'react';
 import { ExternalLink, CheckCircle2, Circle } from 'lucide-react';
 import { PracticeProblem } from '../roadmap.types';
 import { Badge } from '../../mosaic/Badge';
+import { recordResourceOpened } from '../../../services/recentResourceService';
 
 interface PracticeProblemsProps {
   topicId: string;
@@ -71,6 +72,15 @@ export const PracticeProblems: React.FC<PracticeProblemsProps> = ({
               href={prob.url}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={() => {
+                recordResourceOpened({
+                  id: prob.id,
+                  resourceId: prob.id,
+                  title: prob.title,
+                  type: 'practice',
+                  url: prob.url,
+                });
+              }}
               className="text-teal-600 hover:text-teal-800 transition p-1 rounded"
             >
               <ExternalLink className="h-3.5 w-3.5" />

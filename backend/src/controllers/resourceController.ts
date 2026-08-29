@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { AuthenticatedRequest } from '../types';
 import { Resource } from '../models/Resource';
 import { UserResourceState } from '../models/UserResourceState';
+import { RecentResource } from '../models/RecentResource';
 import { CURATED_RESOURCES } from '../resources';
 import { LibraryResource } from '../resources/types';
 
@@ -23,6 +24,15 @@ const toggleBookmarkSchema = z.object({
 
 const toggleCompleteSchema = z.object({
   isCompleted: z.boolean({ required_error: 'isCompleted is required' }),
+});
+
+const recordRecentResourceSchema = z.object({
+  resourceId: z.string().min(1, 'Resource ID is required').trim(),
+  title: z.string().min(1, 'Title is required').trim(),
+  provider: z.string().optional().default('EngineerPath'),
+  type: z.string().optional().default('article'),
+  url: z.string().min(1, 'URL is required').url('Must be a valid URL').trim(),
+  thumbnail: z.string().optional().default(''),
 });
 
 // Helper to derive YouTube thumbnail if not explicitly given
@@ -279,6 +289,115 @@ export const toggleComplete = async (
       success: true,
       message: isCompleted ? 'Marked as completed' : 'Marked as uncompleted',
       isCompleted: state.isCompleted,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * POST /api/resources/recent
+ * Records or updates a recently opened resource for the authenticated student.
+ * Idempotent, deduplicated per user+resourceId, strictly scoped to req.user.id.
+ */
+export const recordRecentResource = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const user = req.user;
+    if (!user) {
+      res.status(401).json({ success: false, message: 'Not authorized' });
+      return;
+    }
+
+    const parseResult = recordRecentResourceSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: parseResult.error.flatten().fieldErrors,
+      });
+      return;
+    }
+
+    const { resourceId, title, provider, type, url, thumbnail } = parseResult.data;
+
+    // Atomic upsert: Updates lastOpenedAt and metadata if already exists, or creates new record
+    const recent = await RecentResource.findOneAndUpdate(
+      { userId: user.id, resourceId },
+      {
+        $set: {
+          title,
+          provider: provider || 'EngineerPath',
+          type: type || 'article',
+          url,
+          thumbnail: thumbnail || '',
+          lastOpenedAt: new Date(),
+        },
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+
+    res.status(200).json({
+      success: true,
+      message: 'Resource activity recorded successfully',
+      resource: {
+        id: recent.resourceId,
+        resourceId: recent.resourceId,
+        title: recent.title,
+        provider: recent.provider,
+        type: recent.type,
+        url: recent.url,
+        thumbnail: recent.thumbnail,
+        lastOpenedAt: recent.lastOpenedAt,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * GET /api/resources/recent
+ * Fetches the authenticated user's recently opened resources sorted by lastOpenedAt DESC.
+ * Strictly scoped to req.user.id. Never trusts client-supplied user IDs.
+ */
+export const getRecentResources = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const user = req.user;
+    if (!user) {
+      // Unauthenticated guests have no server-side history
+      res.status(200).json({ success: true, count: 0, resources: [] });
+      return;
+    }
+
+    const limit = Math.min(20, Math.max(1, parseInt(String(req.query.limit || '10'), 10) || 10));
+
+    // Fetch user's recent resources strictly scoped to req.user.id, ordered by lastOpenedAt DESC
+    const recentItems = await RecentResource.find({ userId: user.id })
+      .sort({ lastOpenedAt: -1 })
+      .limit(limit)
+      .lean();
+
+    res.status(200).json({
+      success: true,
+      count: recentItems.length,
+      resources: recentItems.map((r) => ({
+        id: r.resourceId,
+        resourceId: r.resourceId,
+        title: r.title,
+        provider: r.provider,
+        type: r.type,
+        url: r.url,
+        thumbnail: r.thumbnail,
+        lastOpenedAt: r.lastOpenedAt,
+      })),
     });
   } catch (error) {
     next(error);

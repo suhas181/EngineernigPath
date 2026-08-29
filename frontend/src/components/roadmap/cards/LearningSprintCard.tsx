@@ -16,6 +16,7 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { LearningSprint } from '../roadmap.types';
+import { recordResourceOpened } from '../../../services/recentResourceService';
 
 interface LearningSprintCardProps {
   sprint: LearningSprint;
@@ -124,6 +125,14 @@ export const LearningSprintCard: React.FC<LearningSprintCardProps> = ({
                     href={res.url}
                     target="_blank"
                     rel="noopener noreferrer"
+                    onClick={() => {
+                      recordResourceOpened({
+                        id: res.id,
+                        title: res.title,
+                        type: 'video',
+                        url: res.url,
+                      });
+                    }}
                     className="p-3 bg-slate-800/40 border border-slate-800 hover:border-indigo-500/40 rounded-xl flex items-center justify-between group transition-all"
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
@@ -153,6 +162,14 @@ export const LearningSprintCard: React.FC<LearningSprintCardProps> = ({
                     href={res.url}
                     target="_blank"
                     rel="noopener noreferrer"
+                    onClick={() => {
+                      recordResourceOpened({
+                        id: res.id,
+                        title: res.title,
+                        type: 'documentation',
+                        url: res.url,
+                      });
+                    }}
                     className="p-3 bg-slate-800/40 border border-slate-800 hover:border-cyan-500/40 rounded-xl flex items-center justify-between group transition-all"
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
@@ -196,6 +213,14 @@ export const LearningSprintCard: React.FC<LearningSprintCardProps> = ({
                         href={prob.url}
                         target="_blank"
                         rel="noopener noreferrer"
+                        onClick={() => {
+                          recordResourceOpened({
+                            id: prob.id,
+                            title: prob.title,
+                            type: 'practice',
+                            url: prob.url,
+                          });
+                        }}
                         className="text-xs font-medium text-slate-200 hover:text-emerald-400 truncate flex items-center gap-1.5"
                       >
                         {prob.title}
@@ -269,6 +294,14 @@ export const LearningSprintCard: React.FC<LearningSprintCardProps> = ({
                     href={rev.url}
                     target="_blank"
                     rel="noopener noreferrer"
+                    onClick={() => {
+                      recordResourceOpened({
+                        id: rev.id,
+                        title: rev.title,
+                        type: 'article',
+                        url: rev.url,
+                      });
+                    }}
                     className="px-3 py-1.5 bg-slate-800/60 hover:bg-slate-800 text-slate-300 hover:text-white text-xs rounded-lg border border-slate-700/60 flex items-center gap-1.5 transition-colors"
                   >
                     <span>{rev.title}</span>

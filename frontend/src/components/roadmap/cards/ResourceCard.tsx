@@ -1,6 +1,7 @@
 import React from 'react';
 import { ExternalLink, Video, Book, BookOpen, CheckCircle2, Circle } from 'lucide-react';
 import { Resource } from '../roadmap.types';
+import { recordResourceOpened } from '../../../services/recentResourceService';
 
 interface ResourceCardProps {
   topicId: string;
@@ -81,6 +82,16 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({
           href={resource.url}
           target="_blank"
           rel="noopener noreferrer"
+          onClick={() => {
+            recordResourceOpened({
+              id: resource.id,
+              resourceId: resource.id,
+              title: resource.title,
+              provider: getPlatformFromUrl(resource.url),
+              type: resource.type || 'article',
+              url: resource.url,
+            });
+          }}
           className="text-xs text-teal-600 hover:text-teal-800 transition flex items-center space-x-1 font-bold"
         >
           <span>Study</span>
