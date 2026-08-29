@@ -7,10 +7,14 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 import app from './app';
 import { connectDB } from './config/db';
 import { initializeCronScheduler } from './services/cronScheduler';
+import { validateJwtEnvironment } from './utils/jwt';
 
 const PORT = process.env.PORT || 5001;
 
 const startServer = async () => {
+  // Validate critical security environment variables
+  validateJwtEnvironment();
+
   // Connect to Database
   await connectDB();
 
