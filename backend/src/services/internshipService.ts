@@ -1,4 +1,5 @@
 import { Internship, IInternship, InternshipRole, InternshipStatus } from '../models/Internship';
+import { InternshipSyncLog } from '../models/InternshipSyncLog';
 import { User } from '../models/User';
 import mongoose from 'mongoose';
 
@@ -23,9 +24,104 @@ export interface RawInternship {
   role: InternshipRole;
 }
 
+export interface FetchResult {
+  listings: RawInternship[];
+  totalFetched: number;
+  rejectedCount: number;
+}
+
 export interface JobSource {
   name: string;
-  fetchInternships(query: string): Promise<RawInternship[]>;
+  fetchInternships(query: string): Promise<FetchResult>;
+}
+
+// In-process synchronization lock to prevent concurrent sync executions
+let isSyncInProgress = false;
+
+/**
+ * Validates whether an external job opportunity is genuinely an internship, trainee, or co-op role.
+ * Conservative validator that rejects senior, lead, staff, management, and standard full-time positions.
+ */
+export function isValidInternshipOpportunity(item: {
+  title: string;
+  description?: string;
+  contract_type?: string;
+  contract_time?: string;
+  category?: { tag?: string; label?: string } | string;
+}): boolean {
+  const title = (item.title || '').trim().toLowerCase();
+  const description = (item.description || '').trim().toLowerCase();
+  const contractType = (item.contract_type || '').toLowerCase();
+  const contractTime = (item.contract_time || '').toLowerCase();
+
+  // 1. Definite negative title exclusions (Senior/Lead/Manager/Principal/Staff/Architect/Director/etc.)
+  const seniorExclusionPattern =
+    /\b(senior|sr\.?|lead|principal|staff|architect|manager|director|vp|head of|associate director|partner|specialist|expert|experienced|consultant|se-2|se-3|sde-2|sde-3|sde-ii|sde-iii|sde 2|sde 3|level 2|level 3|l2|l3|l4|l5|l6)\b/i;
+
+  // Explicit positive internship keywords in title
+  const internshipTitlePattern =
+    /\b(intern|interns|internship|trainee|trainees|co-op|coop|apprentice|apprenticeship|graduate trainee|student intern)\b/i;
+
+  if (seniorExclusionPattern.test(title) && !internshipTitlePattern.test(title)) {
+    return false;
+  }
+
+  // 2. Direct positive match in title (Highest confidence)
+  if (internshipTitlePattern.test(title)) {
+    return true;
+  }
+
+  // 3. Contract type / time explicitly mentions internship
+  if (contractType.includes('intern') || contractTime.includes('intern')) {
+    return true;
+  }
+
+  // 4. Description checks (conservative to prevent false positives from "mentoring interns")
+  const falsePositiveDescPatterns = [
+    /mentor(ing)?\s+(the\s+)?interns?/gi,
+    /guide\s+(the\s+)?interns?/gi,
+    /lead(ing)?\s+(the\s+)?interns?/gi,
+    /manage\s+(the\s+)?interns?/gi,
+    /supervis(e|ing)\s+(the\s+)?interns?/gi,
+    /training\s+interns?/gi,
+    /direct(ing)?\s+(the\s+)?interns?/gi,
+  ];
+
+  let cleanDesc = description;
+  for (const fp of falsePositiveDescPatterns) {
+    cleanDesc = cleanDesc.replace(fp, '');
+  }
+
+  const strongInternshipDescPatterns = [
+    /\b(internship duration|duration of internship|stipend\s*:\s*|months?\s+internship|summer internship|winter internship|fall internship|spring internship)\b/i,
+    /\b(we are looking for an? (engineering|software|developer|frontend|backend|data|ai|ml|qa|ui|web)?\s*intern)\b/i,
+    /\b(internship opportunity|internship role|intern role|intern position|internship position)\b/i,
+    /\b(graduate engineer trainee|graduate apprentice|engineering trainee|student trainee)\b/i,
+    /\b(certificate of internship|letter of recommendation upon completion of internship)\b/i,
+    /\b(currently enrolled in|pre-final year|final year students?|freshers? (can apply|eligible))\b/i,
+  ];
+
+  const hasStrongDescIndicator = strongInternshipDescPatterns.some((pattern) => pattern.test(cleanDesc));
+
+  if (hasStrongDescIndicator) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Determines employment type from source data without blindly hard-coding "Internship"
+ */
+function determineEmploymentType(item: any, title: string, description: string): string {
+  const combined = `${title} ${description} ${item.contract_type || ''} ${item.contract_time || ''}`.toLowerCase();
+  if (/\b(co-op|coop)\b/i.test(combined)) {
+    return 'Co-op';
+  }
+  if (/\b(trainee|apprentice|apprenticeship)\b/i.test(combined)) {
+    return 'Trainee';
+  }
+  return 'Internship';
 }
 
 /**
@@ -114,7 +210,6 @@ function extractSkills(title: string, description: string): string[] {
   const matched = new Set<string>();
 
   KNOWN_SKILL_KEYWORDS.forEach((skill) => {
-    // Escaped regex search for exact skill matches
     const escaped = skill.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
     const regex = new RegExp(`\\b${escaped}\\b`, 'i');
     if (regex.test(text)) {
@@ -122,7 +217,6 @@ function extractSkills(title: string, description: string): string[] {
     }
   });
 
-  // Default fallback skills if none found
   if (matched.size === 0) {
     matched.add('Software Engineering');
     matched.add('Problem Solving');
@@ -148,19 +242,19 @@ function cleanSnippet(str: string): string {
 export class AdzunaSource implements JobSource {
   name = 'Adzuna';
 
-  async fetchInternships(query: string): Promise<RawInternship[]> {
+  async fetchInternships(query: string): Promise<FetchResult> {
     const appId = (process.env.ADZUNA_APP_ID || '').trim();
     const appKey = (process.env.ADZUNA_APP_KEY || '').trim();
     const country = (process.env.ADZUNA_COUNTRY || 'in').trim();
 
     if (!appId || !appKey) {
-      console.warn('[ADZUNA-SOURCE] ADZUNA_APP_ID or ADZUNA_APP_KEY not set in environment. Skipping Adzuna API fetch.');
-      return [];
+      console.warn('[ADZUNA-SOURCE] ADZUNA_APP_ID or ADZUNA_APP_KEY not set in environment. Skipping external API fetch.');
+      return { listings: [], totalFetched: 0, rejectedCount: 0 };
     }
 
     try {
       const url = `https://api.adzuna.com/v1/api/jobs/${country}/search/1?app_id=${appId}&app_key=${appKey}&results_per_page=50&what=${encodeURIComponent(query)}&content-type=application/json`;
-      
+
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000);
 
@@ -169,19 +263,36 @@ export class AdzunaSource implements JobSource {
 
       if (!response.ok) {
         console.warn(`[ADZUNA-SOURCE] API error: ${response.status} ${response.statusText} for query "${query}"`);
-        return [];
+        return { listings: [], totalFetched: 0, rejectedCount: 0 };
       }
 
       const data: any = await response.json();
       if (!data || !Array.isArray(data.results)) {
-        return [];
+        return { listings: [], totalFetched: 0, rejectedCount: 0 };
       }
 
-      return data.results.map((item: any) => {
-        const title = cleanSnippet(item.title || 'Software Engineering Intern');
+      const validListings: RawInternship[] = [];
+      let rejectedCount = 0;
+
+      for (const item of data.results) {
+        const title = cleanSnippet(item.title || '');
         const company = cleanSnippet(item.company?.display_name || 'Technology Company');
         const description = cleanSnippet(item.description || '');
-        
+
+        // Validate that item is genuinely an internship
+        const isValid = isValidInternshipOpportunity({
+          title,
+          description,
+          contract_type: item.contract_type,
+          contract_time: item.contract_time,
+          category: item.category,
+        });
+
+        if (!isValid) {
+          rejectedCount++;
+          continue;
+        }
+
         let location = 'India';
         if (item.location?.display_name) {
           location = cleanSnippet(item.location.display_name);
@@ -192,6 +303,7 @@ export class AdzunaSource implements JobSource {
         const isRemote = /remote|wfh|work from home|home-based/i.test(`${title} ${description} ${location}`);
         const role = classifyRole(title, description);
         const skills = extractSkills(title, description);
+        const employmentType = determineEmploymentType(item, title, description);
 
         let salary = '';
         if (item.salary_min || item.salary_max) {
@@ -209,7 +321,7 @@ export class AdzunaSource implements JobSource {
         const publishedAt = item.created ? new Date(item.created) : new Date();
         const applicationUrl = item.redirect_url || `https://www.adzuna.in/details/${item.id}`;
 
-        return {
+        validListings.push({
           externalId: String(item.id),
           source: 'Adzuna',
           title,
@@ -218,20 +330,26 @@ export class AdzunaSource implements JobSource {
           location,
           country,
           remote: isRemote,
-          employmentType: 'Internship',
+          employmentType,
           skills,
           applicationUrl,
           companyUrl: '',
           sourceUrl: applicationUrl,
           salary,
           publishedAt,
-          status: 'UNKNOWN', // Status is UNKNOWN as Adzuna does not provide explicit expiry
+          status: 'OPEN',
           role,
-        };
-      });
+        });
+      }
+
+      return {
+        listings: validListings,
+        totalFetched: data.results.length,
+        rejectedCount,
+      };
     } catch (error: any) {
       console.error(`[ADZUNA-SOURCE] Exception fetching query "${query}":`, error.message || error);
-      return [];
+      return { listings: [], totalFetched: 0, rejectedCount: 0 };
     }
   }
 }
@@ -255,56 +373,228 @@ const SEARCH_QUERIES = [
   'Cybersecurity Intern',
 ];
 
+export interface RefreshResult {
+  added: number;
+  updated: number;
+  rejected: number;
+  totalFetched: number;
+  status: 'SUCCESS' | 'FAILED' | 'ALREADY_RUNNING';
+  errorMessage?: string;
+}
+
 /**
  * Service to execute backend refresh & sync of internships
+ * Fully automated, idempotent, resilient, tracked in MongoDB
  */
-export async function refreshInternships(): Promise<{ added: number; updated: number; totalFetched: number }> {
-  const source = new AdzunaSource();
+export async function refreshInternships(
+  triggerType: 'SCHEDULED_CRON' | 'BOOTSTRAP' | 'MANUAL_TRIGGER' | 'WEBHOOK' = 'SCHEDULED_CRON',
+  triggeredBy: string = 'SYSTEM_SCHEDULER',
+  customSource?: JobSource,
+  customQueries?: string[]
+): Promise<RefreshResult> {
+  // Prevent duplicate concurrent executions
+  if (isSyncInProgress) {
+    console.log('[Internship Sync] Synchronization is already running. Skipping concurrent invocation.');
+    return {
+      added: 0,
+      updated: 0,
+      rejected: 0,
+      totalFetched: 0,
+      status: 'ALREADY_RUNNING',
+    };
+  }
+
+  isSyncInProgress = true;
+  const startedAt = new Date();
+  console.log('[Internship Sync] Started');
+
+  let syncLog: any = null;
+  try {
+    syncLog = await InternshipSyncLog.create({
+      syncType: triggerType,
+      status: 'RUNNING',
+      startedAt,
+      triggeredBy,
+    });
+  } catch (logErr: any) {
+    console.error('[Internship Sync] Could not record initial sync log:', logErr.message);
+  }
+
+  const source = customSource || new AdzunaSource();
+  const queries = customQueries || SEARCH_QUERIES;
   let addedCount = 0;
   let updatedCount = 0;
-  let totalFetched = 0;
+  let totalFetchedCount = 0;
+  let totalRejectedCount = 0;
 
-  console.log('[INTERNSHIP-SERVICE] Starting internship database refresh cycle...');
+  try {
+    for (const query of queries) {
+      const fetchResult = await source.fetchInternships(query);
+      totalFetchedCount += fetchResult.totalFetched;
+      totalRejectedCount += fetchResult.rejectedCount;
 
-  for (const query of SEARCH_QUERIES) {
-    const rawListings = await source.fetchInternships(query);
-    totalFetched += rawListings.length;
+      for (const raw of fetchResult.listings) {
+        try {
+          const now = new Date();
+          const existing = await Internship.findOne({ source: raw.source, externalId: raw.externalId });
 
-    for (const raw of rawListings) {
-      try {
-        const now = new Date();
-        const existing = await Internship.findOne({ source: raw.source, externalId: raw.externalId });
-
-        if (!existing) {
-          await Internship.create({
-            ...raw,
-            lastCheckedAt: now,
-          });
-          addedCount++;
-        } else {
-          existing.title = raw.title;
-          existing.company = raw.company;
-          existing.description = raw.description || existing.description;
-          existing.location = raw.location;
-          existing.remote = raw.remote;
-          existing.skills = raw.skills;
-          existing.applicationUrl = raw.applicationUrl;
-          if (raw.salary) existing.salary = raw.salary;
-          existing.lastCheckedAt = now;
-          await existing.save();
-          updatedCount++;
+          if (!existing) {
+            await Internship.create({
+              ...raw,
+              lastCheckedAt: now,
+            });
+            addedCount++;
+          } else {
+            existing.title = raw.title;
+            existing.company = raw.company;
+            existing.description = raw.description || existing.description;
+            existing.location = raw.location;
+            existing.remote = raw.remote;
+            existing.skills = raw.skills;
+            existing.applicationUrl = raw.applicationUrl;
+            existing.employmentType = raw.employmentType;
+            if (raw.salary) existing.salary = raw.salary;
+            existing.status = 'OPEN';
+            existing.lastCheckedAt = now;
+            await existing.save();
+            updatedCount++;
+          }
+        } catch (err: any) {
+          if (err.code !== 11000) {
+            console.error(`[Internship Sync] Error saving listing ${raw.externalId}:`, err.message);
+          }
         }
-      } catch (err: any) {
-        // Handle duplicate key edge cases gracefully
-        if (err.code !== 11000) {
-          console.error(`[INTERNSHIP-SERVICE] Error saving listing ${raw.externalId}:`, err.message);
-        }
+      }
+    }
+
+    // Record success in log
+    if (syncLog) {
+      syncLog.status = 'SUCCESS';
+      syncLog.completedAt = new Date();
+      syncLog.fetchedCount = totalFetchedCount;
+      syncLog.insertedCount = addedCount;
+      syncLog.updatedCount = updatedCount;
+      syncLog.rejectedCount = totalRejectedCount;
+      await syncLog.save();
+    }
+
+    console.log(`[Internship Sync] Fetched: ${totalFetchedCount}`);
+    console.log(`[Internship Sync] Inserted: ${addedCount}`);
+    console.log(`[Internship Sync] Updated: ${updatedCount}`);
+    console.log(`[Internship Sync] Rejected: ${totalRejectedCount}`);
+    console.log('[Internship Sync] Completed successfully');
+
+    return {
+      added: addedCount,
+      updated: updatedCount,
+      rejected: totalRejectedCount,
+      totalFetched: totalFetchedCount,
+      status: 'SUCCESS',
+    };
+  } catch (error: any) {
+    const errorMsg = error.message || 'Unknown synchronization error';
+    console.error(`[Internship Sync] FAILED: ${errorMsg}`);
+
+    if (syncLog) {
+      syncLog.status = 'FAILED';
+      syncLog.completedAt = new Date();
+      syncLog.errorMessage = errorMsg;
+      await syncLog.save();
+    }
+
+    return {
+      added: addedCount,
+      updated: updatedCount,
+      rejected: totalRejectedCount,
+      totalFetched: totalFetchedCount,
+      status: 'FAILED',
+      errorMessage: errorMsg,
+    };
+  } finally {
+    isSyncInProgress = false;
+  }
+}
+
+/**
+ * Returns latest synchronization health status from database
+ */
+export async function getSyncHealthStatus() {
+  const latestLog = await InternshipSyncLog.findOne().sort({ startedAt: -1 }).lean();
+  const lastSuccessLog = await InternshipSyncLog.findOne({ status: 'SUCCESS' }).sort({ startedAt: -1 }).lean();
+  const [totalListings, openListings] = await Promise.all([
+    Internship.countDocuments(),
+    Internship.countDocuments({ status: 'OPEN' }),
+  ]);
+
+  return {
+    latestSync: latestLog || null,
+    lastSuccessfulSync: lastSuccessLog || null,
+    isRunning: isSyncInProgress,
+    totalListings,
+    openListings,
+  };
+}
+
+/**
+ * Safely re-evaluates existing internship records against isValidInternshipOpportunity.
+ * Marks validated active listings as OPEN and preserves UNKNOWN/CLOSED for non-matching records.
+ * Idempotent, non-destructive.
+ */
+export async function reEvaluateInternshipStatuses(): Promise<{
+  total: number;
+  openCount: number;
+  unknownCount: number;
+  closedCount: number;
+}> {
+  const allListings = await Internship.find().lean();
+  const now = new Date();
+  const bulkOps: any[] = [];
+
+  for (const item of allListings) {
+    if (item.status === 'CLOSED') {
+      // Preserve CLOSED status
+      continue;
+    }
+
+    const isValid = isValidInternshipOpportunity({
+      title: item.title,
+      description: item.description,
+      contract_type: item.employmentType,
+    });
+
+    if (isValid) {
+      if (item.status !== 'OPEN') {
+        bulkOps.push({
+          updateOne: {
+            filter: { _id: item._id },
+            update: { $set: { status: 'OPEN', lastCheckedAt: now } },
+          },
+        });
+      }
+    } else {
+      if (item.status !== 'UNKNOWN') {
+        bulkOps.push({
+          updateOne: {
+            filter: { _id: item._id },
+            update: { $set: { status: 'UNKNOWN' } },
+          },
+        });
       }
     }
   }
 
-  console.log(`[INTERNSHIP-SERVICE] Refresh completed: ${addedCount} new added, ${updatedCount} updated (${totalFetched} total processed).`);
-  return { added: addedCount, updated: updatedCount, totalFetched };
+  if (bulkOps.length > 0) {
+    await Internship.bulkWrite(bulkOps);
+  }
+
+  const [openCount, unknownCount, closedCount, total] = await Promise.all([
+    Internship.countDocuments({ status: 'OPEN' }),
+    Internship.countDocuments({ status: 'UNKNOWN' }),
+    Internship.countDocuments({ status: 'CLOSED' }),
+    Internship.countDocuments(),
+  ]);
+
+  return { total, openCount, unknownCount, closedCount };
 }
 
 export interface GetInternshipsParams {
@@ -314,6 +604,7 @@ export interface GetInternshipsParams {
   skills?: string;
   search?: string;
   source?: string;
+  status?: string;
   page?: number | string;
   limit?: number | string;
   sort?: string;
@@ -370,7 +661,12 @@ export async function getInternshipsList(params: GetInternshipsParams, userId?: 
     query.source = params.source;
   }
 
-  // 7. Filter by User Saved Bookmarks
+  // 7. Filter by Status if requested
+  if (params.status) {
+    query.status = params.status;
+  }
+
+  // 8. Filter by User Saved Bookmarks
   let savedInternshipIds: string[] = [];
   if (userId) {
     const currentUser = await User.findById(userId).select('savedInternships').lean();
@@ -400,12 +696,13 @@ export async function getInternshipsList(params: GetInternshipsParams, userId?: 
     Internship.countDocuments(query),
   ]);
 
-  // Global aggregate stats across all available records in DB
-  const [totalDbCount, softwareCount, remoteCount, distinctCompanies] = await Promise.all([
-    Internship.countDocuments(),
+  // Global aggregate stats: "Open Now" ONLY counts status: "OPEN"
+  const [openCount, softwareCount, remoteCount, distinctCompanies, lastSuccessLog] = await Promise.all([
+    Internship.countDocuments({ status: 'OPEN' }),
     Internship.countDocuments({ role: { $in: ['Software Engineer', 'Frontend Engineer', 'Backend Engineer'] } }),
     Internship.countDocuments({ remote: true }),
     Internship.distinct('company'),
+    InternshipSyncLog.findOne({ status: 'SUCCESS' }).sort({ completedAt: -1 }).lean(),
   ]);
 
   return {
@@ -415,10 +712,11 @@ export async function getInternshipsList(params: GetInternshipsParams, userId?: 
     page,
     pages: Math.ceil(totalCount / limit) || 1,
     stats: {
-      openCount: totalDbCount,
+      openCount,
       softwareCount,
       remoteCount,
       companyCount: distinctCompanies.length,
+      lastCheckedAt: lastSuccessLog?.completedAt || null,
     },
     savedInternshipIds,
     internships,
@@ -448,6 +746,63 @@ export async function getInternshipById(id: string, userId?: string) {
     ...internship,
     isBookmarked,
   };
+}
+
+/**
+ * Computes deterministic, explainable internship recommendations for a student based on their profile.
+ * Only recommends status = OPEN opportunities across the entire database.
+ */
+export async function getRecommendedInternships(userId: string, limit: number = 3) {
+  const user = await User.findById(userId).select('preferredCareer preferredProgrammingLanguage skills').lean();
+  if (!user) {
+    return [];
+  }
+
+  const preferredCareer = (user.preferredCareer || '').trim().toLowerCase();
+  const preferredLang = (user.preferredProgrammingLanguage || '').trim().toLowerCase();
+  const userSkills = (user.skills || []).map((s: string) => s.trim().toLowerCase()).filter(Boolean);
+
+  // Query up to 100 OPEN opportunities to score from the database
+  let candidatePool = await Internship.find({ status: 'OPEN' })
+    .sort({ publishedAt: -1, createdAt: -1 })
+    .limit(100)
+    .lean();
+
+  // If no OPEN listings exist in current DB, fallback to any available listings
+  if (candidatePool.length === 0) {
+    candidatePool = await Internship.find()
+      .sort({ publishedAt: -1, createdAt: -1 })
+      .limit(100)
+      .lean();
+  }
+
+  const scored = candidatePool
+    .map((item) => {
+      let score = 0;
+      let reason = '✓ Recommended for your engineering profile';
+
+      const roleLower = (item.role || '').toLowerCase();
+      const titleLower = (item.title || '').toLowerCase();
+      const skillsLower = (item.skills || []).map((s) => s.toLowerCase());
+
+      if (preferredCareer && (roleLower.includes(preferredCareer) || titleLower.includes(preferredCareer))) {
+        score += 5;
+        reason = `✓ Matches your target role (${user.preferredCareer})`;
+      } else if (preferredLang && skillsLower.includes(preferredLang)) {
+        score += 4;
+        reason = `✓ Matches your language (${user.preferredProgrammingLanguage})`;
+      } else if (userSkills.some((s) => skillsLower.includes(s))) {
+        score += 3;
+        reason = '✓ Matches your core skill set';
+      }
+
+      return { item, score, reason };
+    })
+    .filter((rec) => rec.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit);
+
+  return scored;
 }
 
 /**

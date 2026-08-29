@@ -40,6 +40,7 @@ export interface InternshipStats {
   softwareCount: number;
   remoteCount: number;
   companyCount: number;
+  lastCheckedAt?: string | null;
 }
 
 export interface GetInternshipsResponse {
@@ -60,10 +61,17 @@ export interface GetInternshipsQueryParams {
   skills?: string;
   search?: string;
   source?: string;
+  status?: string;
   page?: number;
   limit?: number;
   sort?: string;
   bookmarkedOnly?: boolean | string;
+}
+
+export interface RecommendedItem {
+  item: InternshipItem;
+  score: number;
+  reason: string;
 }
 
 export const internshipService = {
@@ -84,10 +92,13 @@ export const internshipService = {
   },
 
   /**
-   * Trigger backend sync/refresh cycle
+   * Fetch personalized recommendations for the authenticated student
    */
-  async refreshInternships(): Promise<{ success: boolean; message: string; stats: any }> {
-    const response = await api.post<{ success: boolean; message: string; stats: any }>('/internships/refresh');
+  async getRecommendations(limit: number = 3): Promise<{ success: boolean; recommendations: RecommendedItem[] }> {
+    const response = await api.get<{ success: boolean; recommendations: RecommendedItem[] }>(
+      '/internships/recommendations',
+      { params: { limit } }
+    );
     return response.data;
   },
 

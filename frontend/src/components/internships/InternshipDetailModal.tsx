@@ -1,6 +1,6 @@
 import React from 'react';
 import { InternshipItem } from '../../services/internshipService';
-import { X, MapPin, Globe, ExternalLink, Heart, Building2, Calendar, Clock, ShieldCheck, Sparkles, Briefcase } from 'lucide-react';
+import { X, MapPin, Globe, ExternalLink, Heart, Building2, Calendar, Clock, Sparkles, Briefcase, HelpCircle, AlertOctagon } from 'lucide-react';
 
 interface InternshipDetailModalProps {
   internship: InternshipItem | null;
@@ -26,6 +26,86 @@ export const InternshipDetailModal: React.FC<InternshipDetailModalProps> = ({
       month: 'long',
       day: 'numeric',
     });
+  };
+
+  // Render truthful status banner
+  const renderStatusBanner = () => {
+    if (internship.status === 'OPEN') {
+      return (
+        <div className="rounded-2xl bg-emerald-50/80 border border-emerald-200 p-4 flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 rounded-xl bg-emerald-600 text-white">
+              <Briefcase className="h-5 w-5" />
+            </div>
+            <div>
+              <h4 className="text-xs font-bold text-emerald-950 uppercase tracking-wide">
+                Active Opportunity
+              </h4>
+              <p className="text-xs text-emerald-800 mt-0.5">
+                Listing synced and validated from {internship.source}.
+              </p>
+            </div>
+          </div>
+          <div className="text-right text-[11px] font-semibold text-emerald-700">
+            <div className="flex items-center space-x-1">
+              <Clock className="h-3 w-3" />
+              <span>Last checked: {formatDate(internship.lastCheckedAt)}</span>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (internship.status === 'CLOSED') {
+      return (
+        <div className="rounded-2xl bg-slate-100 border border-slate-200 p-4 flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 rounded-xl bg-slate-500 text-white">
+              <AlertOctagon className="h-5 w-5" />
+            </div>
+            <div>
+              <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wide">
+                Closed Opportunity
+              </h4>
+              <p className="text-xs text-slate-600 mt-0.5">
+                This opportunity is no longer accepting applications.
+              </p>
+            </div>
+          </div>
+          <div className="text-right text-[11px] font-semibold text-slate-600">
+            <div className="flex items-center space-x-1">
+              <Clock className="h-3 w-3" />
+              <span>Last checked: {formatDate(internship.lastCheckedAt)}</span>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Default: UNKNOWN
+    return (
+      <div className="rounded-2xl bg-amber-50/80 border border-amber-200 p-4 flex items-center justify-between">
+        <div className="flex items-center space-x-3">
+          <div className="p-2 rounded-xl bg-amber-600 text-white">
+            <HelpCircle className="h-5 w-5" />
+          </div>
+          <div>
+            <h4 className="text-xs font-bold text-amber-950 uppercase tracking-wide">
+              Status Unknown
+            </h4>
+            <p className="text-xs text-amber-800 mt-0.5">
+              Listing sourced from {internship.source} (active status unconfirmed).
+            </p>
+          </div>
+        </div>
+        <div className="text-right text-[11px] font-semibold text-amber-700">
+          <div className="flex items-center space-x-1">
+            <Clock className="h-3 w-3" />
+            <span>Last checked: {formatDate(internship.lastCheckedAt)}</span>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -88,6 +168,12 @@ export const InternshipDetailModal: React.FC<InternshipDetailModalProps> = ({
               <span>{internship.role}</span>
             </div>
 
+            {internship.employmentType && internship.employmentType !== 'Internship' && (
+              <div className="flex items-center space-x-1.5 rounded-xl bg-blue-50 border border-blue-200/80 px-3 py-1.5 text-xs font-bold text-blue-700">
+                <span>{internship.employmentType}</span>
+              </div>
+            )}
+
             {internship.salary && (
               <div className="flex items-center space-x-1.5 rounded-xl bg-amber-50 border border-amber-200/80 px-3 py-1.5 text-xs font-extrabold text-amber-800">
                 <span>{internship.salary}</span>
@@ -95,28 +181,8 @@ export const InternshipDetailModal: React.FC<InternshipDetailModalProps> = ({
             )}
           </div>
 
-          {/* Verification Status Banner */}
-          <div className="rounded-2xl bg-emerald-50/80 border border-emerald-200 p-4 flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="p-2 rounded-xl bg-emerald-600 text-white">
-                <ShieldCheck className="h-5 w-5" />
-              </div>
-              <div>
-                <h4 className="text-xs font-bold text-emerald-950 uppercase tracking-wide">
-                  Verified Opportunity
-                </h4>
-                <p className="text-xs text-emerald-800 mt-0.5">
-                  Source status checked and confirmed active from {internship.source}.
-                </p>
-              </div>
-            </div>
-            <div className="text-right text-[11px] font-semibold text-emerald-700">
-              <div className="flex items-center space-x-1">
-                <Clock className="h-3 w-3" />
-                <span>Last verified: {formatDate(internship.lastCheckedAt)}</span>
-              </div>
-            </div>
-          </div>
+          {/* Truthful Status Banner */}
+          {renderStatusBanner()}
 
           {/* Description Section */}
           <div className="space-y-2">

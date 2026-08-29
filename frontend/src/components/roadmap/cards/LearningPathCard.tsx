@@ -1,6 +1,7 @@
 import React from 'react';
 import { ExternalLink } from 'lucide-react';
 import { Badge } from '../../mosaic/Badge';
+import { recordResourceOpened } from '../../../services/recentResourceService';
 
 export interface PathTask {
   title: string;
@@ -37,6 +38,14 @@ export const LearningPathCard: React.FC<LearningPathCardProps> = ({ todayPath })
                 href={task.url}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() => {
+                  recordResourceOpened({
+                    id: `task-${idx}-${task.title}`,
+                    title: task.title,
+                    type: task.type.toLowerCase(),
+                    url: task.url!,
+                  });
+                }}
                 className="text-teal-600 hover:text-teal-800 transition p-1"
               >
                 <ExternalLink className="h-3.5 w-3.5" />

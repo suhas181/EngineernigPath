@@ -68,3 +68,6 @@ prompt.txt
 # Local DB Data
 backend/data/
 
+# Local Resume Uploads
+backend/uploads/
+

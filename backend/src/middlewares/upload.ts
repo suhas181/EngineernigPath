@@ -9,17 +9,11 @@ export const upload = multer({
   },
   fileFilter: (req, file, cb) => {
     const allowedMimeTypes = [
-      'image/jpeg',
-      'image/png',
-      'image/webp',
       'application/pdf',
-      'application/msword',
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       'text/plain',
       'text/markdown',
       'text/x-markdown',
-      'text/html',
-      'text/csv',
     ];
 
     const lowerName = file.originalname.toLowerCase();
@@ -30,7 +24,7 @@ export const upload = multer({
     } else {
       cb(
         new Error(
-          'Invalid file type. Only PDF, DOCX, TXT, MD documents and JPG, PNG images are allowed.'
+          'Invalid file type. Only PDF, DOCX, TXT, and Markdown documents are allowed.'
         )
       );
     }

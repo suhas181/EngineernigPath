@@ -95,11 +95,12 @@ export const signup = async (
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    // Create user (automatically verified for immediate dashboard access)
+    // Create user (automatically verified for immediate dashboard access with student role)
     const newUser = await User.create({
       name,
       email,
       password: hashedPassword,
+      role: 'student',
       isVerified: true,
     });
 

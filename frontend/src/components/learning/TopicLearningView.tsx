@@ -22,6 +22,7 @@ import {
   CurriculumModule,
   CurriculumTopic,
 } from '../../services/curriculumServiceTypes';
+import { recordResourceOpened } from '../../services/recentResourceService';
 
 interface TopicLearningViewProps {
   role: string;
@@ -210,34 +211,46 @@ export const TopicLearningView: React.FC<TopicLearningViewProps> = ({
               </div>
             </div>
 
-            {guided.step1PrimaryPlaylist ? (
-              <div className="p-4 rounded-xl border border-purple-200 bg-purple-50/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="space-y-1">
-                  <div className="flex items-center space-x-2">
-                    <span className="text-[10px] font-extrabold uppercase tracking-wider bg-purple-100 text-purple-800 px-2 py-0.5 rounded">
-                      Primary Playlist
-                    </span>
-                    <span className="text-xs text-slate-500">
-                      Provider: <strong>{guided.step1PrimaryPlaylist.provider}</strong>
-                    </span>
+            {guided.step1PrimaryPlaylist ? (() => {
+              const playlist = guided.step1PrimaryPlaylist;
+              return (
+                <div className="p-4 rounded-xl border border-purple-200 bg-purple-50/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="space-y-1">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-[10px] font-extrabold uppercase tracking-wider bg-purple-100 text-purple-800 px-2 py-0.5 rounded">
+                        Primary Playlist
+                      </span>
+                      <span className="text-xs text-slate-500">
+                        Provider: <strong>{playlist.provider}</strong>
+                      </span>
+                    </div>
+                    <h4 className="text-sm font-bold text-slate-900">
+                      {playlist.title}
+                    </h4>
                   </div>
-                  <h4 className="text-sm font-bold text-slate-900">
-                    {guided.step1PrimaryPlaylist.title}
-                  </h4>
-                </div>
 
-                <a
-                  href={guided.step1PrimaryPlaylist.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mosaic-btn-brand !py-2 !px-4 !text-xs flex items-center space-x-1.5 flex-shrink-0"
-                >
-                  <PlayCircle className="h-4 w-4" />
-                  <span>Watch Playlist</span>
-                  <ExternalLink className="h-3 w-3" />
-                </a>
-              </div>
-            ) : (
+                  <a
+                    href={playlist.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => {
+                      recordResourceOpened({
+                        id: `playlist-${topic.id}`,
+                        title: playlist.title,
+                        provider: playlist.provider,
+                        type: 'playlist',
+                        url: playlist.url,
+                      });
+                    }}
+                    className="mosaic-btn-brand !py-2 !px-4 !text-xs flex items-center space-x-1.5 flex-shrink-0"
+                  >
+                    <PlayCircle className="h-4 w-4" />
+                    <span>Watch Playlist</span>
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                </div>
+              );
+            })() : (
               <p className="text-xs text-slate-400 italic">No primary playlist attached for this topic.</p>
             )}
           </div>
@@ -258,34 +271,46 @@ export const TopicLearningView: React.FC<TopicLearningViewProps> = ({
               </div>
             </div>
 
-            {guided.step2Documentation ? (
-              <div className="p-4 rounded-xl border border-blue-200 bg-blue-50/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="space-y-1">
-                  <div className="flex items-center space-x-2">
-                    <span className="text-[10px] font-extrabold uppercase tracking-wider bg-blue-100 text-blue-800 px-2 py-0.5 rounded">
-                      Official Reference
-                    </span>
-                    <span className="text-xs text-slate-500">
-                      Provider: <strong>{guided.step2Documentation.provider}</strong>
-                    </span>
+            {guided.step2Documentation ? (() => {
+              const doc = guided.step2Documentation;
+              return (
+                <div className="p-4 rounded-xl border border-blue-200 bg-blue-50/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="space-y-1">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-[10px] font-extrabold uppercase tracking-wider bg-blue-100 text-blue-800 px-2 py-0.5 rounded">
+                        Official Reference
+                      </span>
+                      <span className="text-xs text-slate-500">
+                        Provider: <strong>{doc.provider}</strong>
+                      </span>
+                    </div>
+                    <h4 className="text-sm font-bold text-slate-900">
+                      {doc.title}
+                    </h4>
                   </div>
-                  <h4 className="text-sm font-bold text-slate-900">
-                    {guided.step2Documentation.title}
-                  </h4>
-                </div>
 
-                <a
-                  href={guided.step2Documentation.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mosaic-btn-outline !py-2 !px-4 !text-xs flex items-center space-x-1.5 flex-shrink-0 !border-blue-300 !text-blue-900 hover:!bg-blue-100"
-                >
-                  <BookOpen className="h-4 w-4" />
-                  <span>Read Documentation</span>
-                  <ExternalLink className="h-3 w-3" />
-                </a>
-              </div>
-            ) : (
+                  <a
+                    href={doc.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => {
+                      recordResourceOpened({
+                        id: `doc-${topic.id}`,
+                        title: doc.title,
+                        provider: doc.provider,
+                        type: 'documentation',
+                        url: doc.url,
+                      });
+                    }}
+                    className="mosaic-btn-outline !py-2 !px-4 !text-xs flex items-center space-x-1.5 flex-shrink-0 !border-blue-300 !text-blue-900 hover:!bg-blue-100"
+                  >
+                    <BookOpen className="h-4 w-4" />
+                    <span>Read Documentation</span>
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                </div>
+              );
+            })() : (
               <p className="text-xs text-slate-400 italic">No official documentation attached for this topic.</p>
             )}
           </div>
@@ -306,29 +331,41 @@ export const TopicLearningView: React.FC<TopicLearningViewProps> = ({
               </div>
             </div>
 
-            {guided.step3PracticeSheet ? (
-              <div className="p-4 rounded-xl border border-emerald-200 bg-emerald-50/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="space-y-1">
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">
-                    {guided.step3PracticeSheet.badge || 'Recommended Practice Sheet'}
-                  </span>
-                  <h4 className="text-sm font-bold text-slate-900">
-                    {guided.step3PracticeSheet.title}
-                  </h4>
-                </div>
+            {guided.step3PracticeSheet ? (() => {
+              const sheet = guided.step3PracticeSheet;
+              return (
+                <div className="p-4 rounded-xl border border-emerald-200 bg-emerald-50/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">
+                      {sheet.badge || 'Recommended Practice Sheet'}
+                    </span>
+                    <h4 className="text-sm font-bold text-slate-900">
+                      {sheet.title}
+                    </h4>
+                  </div>
 
-                <a
-                  href={guided.step3PracticeSheet.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mosaic-btn-primary !py-2 !px-4 !text-xs !bg-emerald-700 hover:!bg-emerald-800 flex items-center space-x-1.5 flex-shrink-0"
-                >
-                  <Award className="h-4 w-4" />
-                  <span>Open Practice Sheet</span>
-                  <ExternalLink className="h-3 w-3" />
-                </a>
-              </div>
-            ) : (
+                  <a
+                    href={sheet.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => {
+                      recordResourceOpened({
+                        id: `practice-sheet-${topic.id}`,
+                        title: sheet.title,
+                        provider: 'takeUforward',
+                        type: 'practice',
+                        url: sheet.url,
+                      });
+                    }}
+                    className="mosaic-btn-primary !py-2 !px-4 !text-xs !bg-emerald-700 hover:!bg-emerald-800 flex items-center space-x-1.5 flex-shrink-0"
+                  >
+                    <Award className="h-4 w-4" />
+                    <span>Open Practice Sheet</span>
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                </div>
+              );
+            })() : (
               <p className="text-xs text-slate-400 italic">No practice sheet specified for this topic.</p>
             )}
           </div>
@@ -390,6 +427,15 @@ export const TopicLearningView: React.FC<TopicLearningViewProps> = ({
                         href={prob.url}
                         target="_blank"
                         rel="noopener noreferrer"
+                        onClick={() => {
+                          recordResourceOpened({
+                            id: prob.id || `prob-${topic.id}-${idx}`,
+                            title: prob.title,
+                            provider: prob.provider,
+                            type: 'practice',
+                            url: prob.url,
+                          });
+                        }}
                         className="text-xs font-bold text-teal-700 hover:underline flex items-center space-x-1 flex-shrink-0"
                       >
                         <span>Solve</span>
@@ -439,6 +485,15 @@ export const TopicLearningView: React.FC<TopicLearningViewProps> = ({
                       href={proj.url}
                       target="_blank"
                       rel="noopener noreferrer"
+                      onClick={() => {
+                        recordResourceOpened({
+                          id: proj.id || `proj-${topic.id}-${proj.title}`,
+                          title: proj.title,
+                          provider: 'EngineerPath Project',
+                          type: 'project',
+                          url: proj.url,
+                        });
+                      }}
                       className="text-xs font-bold text-teal-700 hover:underline flex items-center space-x-1 pt-2"
                     >
                       <FolderGit2 className="h-3.5 w-3.5" />
@@ -574,6 +629,15 @@ export const TopicLearningView: React.FC<TopicLearningViewProps> = ({
                           href={v.url}
                           target="_blank"
                           rel="noopener noreferrer"
+                          onClick={() => {
+                            recordResourceOpened({
+                              id: `alt-video-${topic.id}-${v.url}`,
+                              title: v.title,
+                              provider: v.provider,
+                              type: 'video',
+                              url: v.url,
+                            });
+                          }}
                           className="p-3 rounded-lg border border-slate-200 bg-white hover:border-slate-300 transition flex items-center justify-between text-xs"
                         >
                           <span className="font-bold text-slate-800 truncate pr-2">
@@ -588,6 +652,15 @@ export const TopicLearningView: React.FC<TopicLearningViewProps> = ({
                           href={n.url}
                           target="_blank"
                           rel="noopener noreferrer"
+                          onClick={() => {
+                            recordResourceOpened({
+                              id: `alt-doc-${topic.id}-${n.url}`,
+                              title: n.title,
+                              provider: n.provider,
+                              type: 'documentation',
+                              url: n.url,
+                            });
+                          }}
                           className="p-3 rounded-lg border border-slate-200 bg-white hover:border-slate-300 transition flex items-center justify-between text-xs"
                         >
                           <span className="font-bold text-slate-800 truncate pr-2">

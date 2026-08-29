@@ -1,10 +1,10 @@
 # 🚀 EngineerPath — AI Career Learning & Internship Platform
 
-**EngineerPath** is a modern, production-grade **AI Career Learning & Opportunity Discovery Platform** built specifically for engineering students, fresh graduates, and transitioning software professionals. Moving beyond basic habit trackers and generic roadmaps, EngineerPath solves two fundamental challenges for aspiring engineers:
+**EngineerPath** is a modern, production-grade **AI Career Learning & Opportunity Discovery Platform** built specifically for engineering students, fresh graduates, and transitioning software professionals. Moving beyond basic habit trackers and generic roadmaps, EngineerPath solves the fundamental challenges for aspiring engineers:
 
 > *"What structured path and verified resources should I follow to become job-ready in my dream domain, and where can I apply for verified, active engineering internships today?"*
 
-By combining **8 deeply curated career tracks**, a **7-step guided topic learning system**, **strict programming language isolation** (`Java` | `Python` | `C++`), deep-linked role routing (`/roadmap?role=...`), an audited library of **290+ curated free resources with verified working video links**, and a **Live Adzuna-Powered Internship Discovery Platform**, EngineerPath acts as an end-to-end digital mentor from Day 1 to job offer.
+By combining **8 deeply curated career tracks**, a **7-step guided topic learning system**, **strict programming language isolation** (`Java` | `Python` | `C++`), an audited library of **curated free resources with verified working video links**, a **Live Adzuna-Powered Internship Discovery Engine**, an **ATS-Ready Resume Analyzer**, and a **Dynamic Recently Opened Resources Engine**, EngineerPath acts as an end-to-end digital mentor from Day 1 to job offer.
 
 ---
 
@@ -14,18 +14,19 @@ EngineerPath is architected on a type-safe, resilient **MERN Stack (MongoDB, Exp
 
 ### Frontend
 - **Framework**: React 18 + TypeScript (powered by Vite)
-- **Styling**: Vanilla CSS & Tailwind CSS with a clean Stripe/Vercel/Linear-inspired light canvas (`#F8FAFC`), crisp white cards (`#FFFFFF`), and refined typography (Inter, Outfit, Space Grotesk)
+- **Styling**: Vanilla CSS & Tailwind CSS with a clean Mosaic Light Canvas (`#F8FAFC`), crisp cards (`#FFFFFF`), and refined typography (Inter, Outfit, Space Grotesk)
 - **State Management**: Zustand with persistent storage (`localStorage`) for auth sessions, collapse state, and user preferences
-- **Routing & Deep Linking**: React Router DOM with intelligent query parameter synchronization (`/roadmap?role=...`), fuzzy alias matching, and public/protected route boundaries
+- **Routing & Deep Linking**: React Router DOM with public student login (`/login`), separated admin route (`/admin/login`), query parameter synchronization (`/roadmaps?role=...`), and role-based route guards
 - **Icons**: Lucide React icons
-- **HTTP Client**: Axios with request/response interceptors for seamless JWT authentication and auto-refresh
+- **HTTP Client**: Axios with interceptors for dual-token JWT authentication and error boundaries
 
 ### Backend
 - **Framework**: Express with TypeScript on Node.js
 - **Database**: MongoDB via Mongoose ODM (compatible with local MongoDB & MongoDB Atlas)
-- **Job & Internship Engine**: Extensible `JobSource` architecture with live **Adzuna Job Search API** integration, auto-sync crons, and compound deduplication (`source + externalId`)
-- **Curriculum & AI Engine**: Dedicated 8-Role Blueprint Service (`curriculumService.ts`) with smart language isolation + Google Gemini API (`@google/generative-ai`)
-- **Automation & Scheduling**: `node-cron` scheduled background workers for 12-hour internship listing synchronization and link health audits
+- **Job & Internship Engine**: Extensible `JobSource` architecture with live **Adzuna Job Search API** integration, automatic 12-hour cron scheduler, in-process mutex locking, and compound deduplication (`source + externalId`)
+- **Activity & Resource Engine**: User-scoped `RecentResource` tracking with relative time computation and browser-scoped guest fallback
+- **Resume Parser Engine**: In-memory multi-format extraction (`pdf-parse`, `mammoth`, `multer`) with keyword matching, quantifiable metric detection, and optional Google Gemini AI synthesis
+- **Automation & Scheduling**: `node-cron` background task scheduler with singleton startup guards
 - **Validation & Schemas**: Zod & Mongoose schemas ensuring strict payload integrity
 
 ---
@@ -38,84 +39,84 @@ EngineerPath/
 │   ├── src/
 │   │   ├── config/                 # DB connection & environment configuration
 │   │   ├── constants/              # Central career paths, resource types & metadata
-│   │   ├── controllers/            # Route handlers (auth, user, roadmaps, internships, dashboard, etc.)
-│   │   ├── middlewares/            # JWT guards, optional auth & error boundaries
-│   │   ├── models/                 # Mongoose models (User, Internship, Roadmap, LearningResource, etc.)
-│   │   ├── resources/              # Modular Resource Library (290+ Curated Free Resources)
-│   │   │   ├── cs/                 # CS Core (OS, DBMS, Computer Networks, System Design)
-│   │   │   ├── dsa/                # DSA Sheets, Algorithms, Arrays, Trees, DP
-│   │   │   ├── languages/          # Java, Python, C++, JavaScript
-│   │   │   ├── web/                # Frontend, Backend, Full Stack
-│   │   │   └── data/               # AI/ML, Data Science, DevOps, Mobile, Security
-│   │   ├── routes/                 # REST endpoints (/api/auth, /api/internships, /api/roadmaps, etc.)
-│   │   ├── scripts/                # Database seeders, link verifiers, and audit scripts
-│   │   ├── services/               # Internship Service, Curriculum Service, Gemini AI & LeetCode GraphQL
-│   │   └── server.ts               # Express application entry point & cron setup
+│   │   ├── controllers/            # Route handlers (auth, user, resources, internships, resume, admin)
+│   │   ├── middlewares/            # JWT guards, upload handler, optional auth & error boundaries
+│   │   ├── models/                 # Mongoose models (User, Internship, InternshipSyncLog, RecentResource, Resume)
+│   │   ├── resources/              # Modular Resource Library (Curated Free Resources)
+│   │   ├── routes/                 # REST endpoints (/api/auth, /api/internships, /api/resources, /api/resumes)
+│   │   ├── scripts/                # Verification & automated test suites
+│   │   ├── services/               # Internship Service, Cron Scheduler, Resume Pipeline, Gemini AI
+│   │   └── server.ts               # Express application entry point & cron bootstrap
 │   ├── package.json
 │   └── tsconfig.json
 ├── frontend/                       # React UI Client
 │   ├── src/
 │   │   ├── components/       
-│   │   │   ├── dashboard/          # DashboardHero.tsx (auto-rotating role carousel), Header, Metrics
+│   │   │   ├── dashboard/          # DashboardHero.tsx, Metrics, Statistics
 │   │   │   ├── internships/        # InternshipCard.tsx, FilterBar.tsx, InternshipDetailModal.tsx
-│   │   │   ├── learning/           # TopicLearningView.tsx (7-step guided flow), CategoryCard.tsx
-│   │   │   ├── mosaic/             # Responsive Sidebar.tsx & MosaicShell.tsx (Light Canvas #F8FAFC)
-│   │   │   └── roadmap/            # Interactive roadmap modules & timeline visualizations
-│   │   ├── pages/                  # Views (Dashboard, Internships, Roadmap, LearningHub, Resume, Settings)
-│   │   ├── store/                  # Zustand authentication & UI state stores
-│   │   ├── services/               # Axios API clients & service layers
+│   │   │   ├── learning/           # TopicLearningView.tsx (7-step guided flow)
+│   │   │   ├── mosaic/             # Responsive Sidebar.tsx & MosaicShell.tsx
+│   │   │   └── roadmap/            # Roadmap cards, practice sheets, and timeline modules
+│   │   ├── pages/                  # Views (Dashboard, Internships, Roadmaps, Resources, ResumeAnalyzer, Login, AdminLogin)
+│   │   ├── store/                  # Zustand authentication & UI modal stores
+│   │   ├── services/               # Axios API clients (internshipService, recentResourceService, api)
+│   │   ├── utils/                  # Date & relative time formatters
 │   │   └── main.tsx                # Client entry point
 │   ├── package.json
 │   ├── tailwind.config.js
 │   └── tsconfig.json
-└── docs/                           # Architectural blueprints & implementation reports
+└── README.md
 ```
 
 ---
 
 ## 🌟 Core Features & Modules
 
-### 1. 💼 Live Internship Discovery Engine (`/internships`)
-- **Live Adzuna Integration**: Real-time aggregation of active engineering internships across major tech hubs (*Bangalore*, *Hyderabad*, *Pune*, *Mumbai*, *Delhi NCR*, *Remote*).
-- **Multi-Dimensional Filters**: Filter by role, location, remote/on-site work mode, company, and minimum stipend.
-- **Personalized Rule-Based Recommendations**: Automatically ranks and surfaces listings matching the user's selected career target, preferred programming language, and key technical skills.
-- **Direct Application CTA**: External deep links leading directly to authentic employer job listings.
-- **Bookmarking & Tracking**: Save listings with persistent bookmark state to monitor application pipelines.
+### 1. 💼 Production Internship Discovery Engine (`/internships`)
+- **Automated 12-Hour Backend Synchronization**: Uses `node-cron` (`0 */12 * * *`) with server startup bootstrap to keep opportunities refreshed automatically without human intervention.
+- **Robust Failure Resilience**: External API timeouts or network outages preserve existing records intact and log status as `FAILED` in `InternshipSyncLog`.
+- **Duplicate Protection**: Compound unique index `{ source: 1, externalId: 1 }` prevents duplicates and upserts listings idempotently.
+- **Truthful Status Calculation**: Only authentic active postings are counted in "Open Now" statistics.
+- **Student-Centric Interface**: Clean UI with freshness indicators (`Auto-synced • <Date>`) and zero administrative controls exposed to students.
 
-### 2. 🗺️ 8 Comprehensive Career Roadmaps (`/roadmap`)
+### 2. ⚡ Dynamic Recently Opened Resources Engine
+- **Activity-Driven History**: Resources are only recorded when a user actually clicks to study, solve, or open a resource.
+- **User Privacy & Isolation**: Authenticated student history is stored strictly per user in MongoDB (`RecentResource`), preventing cross-user data leaks.
+- **Browser-Scoped Guest Mode**: Logged-out guests have their recent activity safely isolated to browser `localStorage`.
+- **Deduplication & Chronological Ordering**: Re-opening an existing resource updates its `lastOpenedAt` and moves it to the top (`DESC`).
+- **Relative Time Badges**: Real timestamps formatted as `"Just now"`, `"5 minutes ago"`, `"2 hours ago"`, `"Yesterday"`, or `"3 days ago"`.
+- **Clean Empty State**: If no resources have been accessed, displays an intuitive empty state with an *"Explore Learning Hub"* CTA.
+
+### 3. 🔐 Secure Authentication & Role Separation
+- **Public Student Portal (`/login`)**: Simple, clean student login and sign-up with no administrative tabs or buttons.
+- **Dedicated Admin Portal (`/admin/login`)**: Separated administrative gateway with backend-enforced role verification.
+- **Role Escalation Protection**: Public registration strictly assigns `role: 'student'` and ignores forged role overrides.
+
+### 4. 📄 ATS Resume Analyzer (`/resume-analyzer`)
+- **Real File Parsing**: In-memory text extraction for `.pdf` (via `pdf-parse`) and `.docx` (via `mammoth`).
+- **Deterministic ATS Scoring**: Evaluates contact information, education, technical skills, quantifiable impact metrics, and project depth.
+- **Gemini AI Synthesis**: Optional AI-powered section-by-section breakdown, keyword suggestions, and formatting recommendations.
+
+### 5. 🗺️ 8 Comprehensive Career Roadmaps (`/roadmaps`)
 Full end-to-end curriculum modules across 8 high-demand engineering specializations:
-1. **Software Development Engineer (SDE)** — Core CS fundamentals (OS, DBMS, CN), DSA with language isolation (`Java`, `Python`, `C++`), System Design, Multithreading & Database Internals.
-2. **Full Stack Developer (2026 Industry Standard)** — Complete 8-category / 16-topic path covering TypeScript strict mode, React 19 architecture, Next.js 15 App Router (RSC & Server Actions), Node.js & Express REST APIs, PostgreSQL & Prisma ORM (ACID & indexing), Dual-token JWT security & OWASP API Top 10, Redis Cache-Aside & BullMQ queues, Vitest/Supertest/Playwright testing, Pino structured observability, Multi-stage Docker Compose, GitHub Actions CI/CD, and the flagship *CloudPulse* multi-tenant SaaS capstone.
+1. **Software Development Engineer (SDE)** — Core CS fundamentals (OS, DBMS, CN), DSA with language isolation (`Java`, `Python`, `C++`), System Design & Database Internals.
+2. **Full Stack Developer** — TypeScript strict mode, React 19, Next.js 15 App Router, Node.js REST APIs, PostgreSQL & Prisma ORM, Dual-token JWT security, Redis & BullMQ, and Docker Compose.
 3. **Frontend Engineer** — Modern HTML5/CSS3, React, TypeScript, Core Web Vitals, Next.js, TanStack Query, and State Architecture.
-4. **Backend Engineer** — Node.js/Java/Python backends, REST/GraphQL/gRPC APIs, PostgreSQL, Distributed Caching, Message Queues & SQL/NoSQL databases.
+4. **Backend Engineer** — Node.js/Java/Python backends, REST/GraphQL/gRPC APIs, PostgreSQL, Distributed Caching & Message Queues.
 5. **AI / ML Engineer** — Python numerical stack (NumPy/Pandas), Deep Learning (PyTorch/TensorFlow), LLMs, RAG Architectures & MLOps pipelines.
-6. **Data Scientist / Analyst** — SQL, Pandas, NumPy, Exploratory Data Analysis, BI Dashboards (Tableau/PowerBI) & Statistical Modeling.
+6. **Data Scientist / Analyst** — SQL, Pandas, NumPy, Exploratory Data Analysis, BI Dashboards & Statistical Modeling.
 7. **DevOps & Cloud Engineer** — Linux internals, Docker, Kubernetes, CI/CD with GitHub Actions, Terraform & AWS/GCP Cloud Architecture.
-8. **Mobile App Developer** — React Native, Flutter, Native Swift/Kotlin modules, offline-first SQLite databases & App Store deployment with Fastlane.
+8. **Mobile App Developer** — React Native, Flutter, Native Swift/Kotlin modules & App Store deployment with Fastlane.
 9. **Cybersecurity Engineer** — Network security, cryptography, OWASP Top 10, penetration testing, SIEM logging & cloud defense.
 
-### 3. 🎯 7-Step Guided Topic Learning Flow (`TopicLearningView.tsx`)
-Selecting any topic opens a focused 7-step learning journey:
-- **Step 1 — Verified Primary Playlist**: Audited high-yield playlists matching the selected language/track (*Kunal Kushwaha Java*, *Corey Schafer Python*, *Striver C++*, *TechWorld with Nana DevOps*, *3Blue1Brown AI/ML*, *Keith Galli Pandas*).
-- **Step 2 — Official Documentation**: Direct references to official documentation (*React.dev*, *Python.org*, *PyTorch.org*, *Docker Docs*, *Nodejs.org*, *PostgreSQL Docs*).
-- **Step 3 — Recommended Practice Sheet**: Language-specific DSA & engineering sheets (*⭐ Striver A2Z Sheet*, *⭐ NeetCode 150*, *Blind 75*).
-- **Step 4 — Curated Practice Problems**: Direct problem links with interactive completion tracking.
-- **Step 5 — Real-World Capstone Projects**: Practical engineering challenges to build and add to portfolios.
-- **Step 6 — High-Yield Interview Questions**: Curated top technical and architectural interview questions with solutions.
-- **Step 7 — Revision Notes & Cheat Sheets**: Concise key takeaways and trap warnings for rapid recall.
-
-### 4. 🔒 Strict Language-Aware Resource Isolation
-- Curriculums and practice sheets dynamically adapt to the user's target language (`Java`, `Python`, or `C++`).
-- Python learners receive Python DSA problems, Python interview questions, and Python playlists with zero cross-language pollution.
-- Specialized tracks (e.g. Data Science, AI/ML, Cybersecurity) automatically lock into their domain standard (Python) for maximum relevance.
-
-### 5. ⚡ URL Deep-Linking & Smart Hero Navigation
-- **Role Deep Linking**: Navigate directly to `/roadmap?role=Frontend+Engineer` or `/roadmap?role=DevOps` with fuzzy alias recognition (`cyber`, `devops`, `fullstack`, `ai/ml`, `mobile`).
-- **Rotating Hero Carousel**: Interactive Dashboard showcase highlighting each role's key skills, preparation duration, compensation metrics, and direct "Explore Roadmap" CTA.
-
-### 6. 🛠️ Direct Access Engineering Tools
-- **AI Resume Analyzer**: Review resume fit against targeted engineering job descriptions with instant ATS scoring and gap analysis.
-- **Profile & Settings**: Manage career track preferences, preferred programming language, target graduation year, and UI customization.
+### 6. 🎯 7-Step Guided Topic Learning Flow (`TopicLearningView.tsx`)
+- **Step 1 — Verified Primary Playlist**: High-yield playlists curated for each track.
+- **Step 2 — Official Documentation**: Authoritative references to official documentation.
+- **Step 3 — Recommended Practice Sheet**: Structured DSA & engineering practice sheets.
+- **Step 4 — Curated Practice Problems**: Direct coding exercises with status toggles.
+- **Step 5 — Real-World Capstone Projects**: Practical portfolio projects.
+- **Step 6 — High-Yield Interview Questions**: Top conceptual interview questions with solutions.
+- **Step 7 — Revision Notes & Cheat Sheets**: Concise key takeaways and trap warnings.
 
 ---
 
@@ -139,11 +140,11 @@ You can run both the Frontend and Backend concurrently from the root directory:
 git clone https://github.com/suhas181/EngineernigPath.git
 cd EngineernigPath
 
-# 2. Install all dependencies
+# 2. Install dependencies
 npm --prefix backend install
 npm --prefix frontend install
 
-# 3. Start both backend (port 5001) and frontend (port 5173)
+# 3. Start development servers
 npm run dev
 ```
 
@@ -153,38 +154,23 @@ npm run dev
 
 ---
 
-### Standalone Backend / Frontend Setup
+## 🧪 Automated Test Suites
 
-#### Backend Setup
-```bash
-cd backend
-npm install
-npm run build
-npm run dev
-```
-
-#### Frontend Setup
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
----
-
-## 🧪 Testing & Verification Scripts
-
-The repository includes audit and health-check scripts to guarantee resource reliability:
+The repository contains comprehensive end-to-end automated test suites:
 
 ```bash
-# Verify curated free resources and link health
-npx ts-node src/scripts/verifyResourceLibrary.ts
+# 1. Authentication & Role Separation (10/10 Tests)
+cd backend && npx ts-node src/scripts/testAuthSeparation.ts
 
-# Audit SDE Curriculum and verified playlists
-npx ts-node src/scripts/auditSdeCurriculum.ts
+# 2. Production Internship Auto-Sync (12/12 Tests)
+cd backend && npx ts-node src/scripts/testInternshipAutoSync.ts
 
-# Compile check across both workspaces
-npm run build
+# 3. Dynamic Recently Opened Resources (15/15 Tests)
+cd backend && npx ts-node src/scripts/testRecentResources.ts
+
+# 4. Full Production Type & Build Verification
+npm run build --prefix backend
+npm run build --prefix frontend
 ```
 
 ---

@@ -7,6 +7,7 @@ import AuthPromptModal from '../components/auth/AuthPromptModal';
 // Pages
 import LandingPage from '../pages/LandingPage';
 import Login from '../pages/Login';
+import AdminLogin from '../pages/AdminLogin';
 import Signup from '../pages/Signup';
 import VerifyEmail from '../pages/VerifyEmail';
 import ForgotPassword from '../pages/ForgotPassword';
@@ -23,7 +24,7 @@ import ProfileSettings from '../pages/ProfileSettings';
 import AdminDashboard from '../pages/AdminDashboard';
 import NotFound from '../pages/NotFound';
 
-// Wrapper for routes requiring authentication (available for restricted admin / custom routes)
+// Wrapper for routes requiring authentication (available for restricted student / custom routes)
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const user = useAuthStore((state) => state.user);
@@ -40,13 +41,13 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-// Wrapper for admin routes
+// Wrapper for protected admin routes
 function AdminRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const user = useAuthStore((state) => state.user);
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/admin/login" replace />;
   }
 
   if (user?.role !== 'admin') {
@@ -56,7 +57,22 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-// Wrapper for routes that are for unauthenticated users only
+// Wrapper for the admin login route
+function AdminLoginRoute({ children }: { children: React.ReactNode }) {
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const user = useAuthStore((state) => state.user);
+
+  if (isAuthenticated) {
+    if (user?.role === 'admin') {
+      return <Navigate to="/admin" replace />;
+    }
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return <>{children}</>;
+}
+
+// Wrapper for routes that are for unauthenticated users only (student login, signup, etc.)
 function PublicRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const user = useAuthStore((state) => state.user);
@@ -82,7 +98,7 @@ export function AppRouter() {
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/landing" element={<LandingPage />} />
 
-        {/* Auth Flows */}
+        {/* Public Student Auth Flows */}
         <Route
           path="/login"
           element={
@@ -117,7 +133,15 @@ export function AppRouter() {
           }
         />
 
-        {/* Admin Route */}
+        {/* Dedicated Admin Routes */}
+        <Route
+          path="/admin/login"
+          element={
+            <AdminLoginRoute>
+              <AdminLogin />
+            </AdminLoginRoute>
+          }
+        />
         <Route
           path="/admin"
           element={
