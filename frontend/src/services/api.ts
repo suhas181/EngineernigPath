@@ -1,7 +1,11 @@
 import axios from 'axios';
 import { useAuthStore } from '../store/useAuthStore';
 
-export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+const rawApiUrl = import.meta.env.VITE_API_URL;
+export const API_URL =
+  typeof rawApiUrl === 'string' && rawApiUrl.trim() !== ''
+    ? rawApiUrl.trim().replace(/\/+$/, '')
+    : 'http://localhost:5001/api';
 
 export const api = axios.create({
   baseURL: API_URL,
