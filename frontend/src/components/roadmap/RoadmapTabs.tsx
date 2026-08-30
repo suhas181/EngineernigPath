@@ -56,8 +56,8 @@ export const RoadmapTabs: React.FC<RoadmapTabsProps> = ({
             onClick={() => setActiveTab('personalized')}
             className={`pb-2.5 px-4 font-bold text-xs transition-all relative flex items-center space-x-2 border-none bg-transparent cursor-pointer ${
               activeTab === 'personalized'
-                ? 'text-teal-700 font-extrabold border-b-2 border-teal-600'
-                : 'text-slate-500 hover:text-slate-900'
+                ? 'text-teal-700 dark:text-teal-400 font-extrabold border-b-2 border-teal-600 dark:border-teal-400'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
             <Sparkles className="h-3.5 w-3.5 text-amber-500" />
@@ -73,11 +73,11 @@ export const RoadmapTabs: React.FC<RoadmapTabsProps> = ({
                 onClick={() => setActiveTab(tab.id)}
                 className={`pb-2.5 px-3 font-semibold text-xs transition-all relative flex items-center space-x-1.5 border-none bg-transparent cursor-pointer ${
                   isActive
-                    ? 'text-teal-700 font-extrabold border-b-2 border-teal-600'
-                    : 'text-slate-500 hover:text-slate-900'
+                    ? 'text-teal-700 dark:text-teal-400 font-extrabold border-b-2 border-teal-600 dark:border-teal-400'
+                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
-                <Icon className={`h-3.5 w-3.5 ${isActive ? 'text-teal-600' : 'text-slate-400'}`} />
+                <Icon className={`h-3.5 w-3.5 ${isActive ? 'text-teal-600 dark:text-teal-400' : 'text-slate-400 dark:text-slate-500'}`} />
                 <span>{tab.label}</span>
               </button>
             );
@@ -100,8 +100,8 @@ export const RoadmapTabs: React.FC<RoadmapTabsProps> = ({
                 onClick={() => setActiveTab(tab.id)}
                 className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all cursor-pointer flex items-center space-x-1.5 ${
                   isActive
-                    ? 'bg-teal-100 border-teal-300 text-teal-900 font-extrabold'
-                    : 'bg-white border border-[var(--card-border)] text-slate-600 hover:bg-slate-50'
+                    ? 'bg-teal-100 dark:bg-teal-950/60 border-teal-300 dark:border-teal-800 text-teal-900 dark:text-teal-300 font-extrabold'
+                    : 'bg-white dark:bg-slate-900 border border-[var(--card-border)] text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
                 }`}
               >
                 <Icon className="h-3 w-3" />
