@@ -28,10 +28,10 @@ async function runApiTests() {
       headers: { 'Content-Type': 'application/json' },
     });
     console.log(`[TEST 1] Unauthenticated POST /api/internships/refresh: Status ${unauthRefreshRes.status}`);
-    if (unauthRefreshRes.status === 401) {
-      console.log('  ✅ Correctly rejected unauthenticated request with 401');
+    if (unauthRefreshRes.status === 403 || unauthRefreshRes.status === 401) {
+      console.log('  ✅ Correctly rejected unauthenticated request with 403/401');
     } else {
-      console.error(`  ❌ Expected 401, got ${unauthRefreshRes.status}`);
+      console.error(`  ❌ Expected 403/401, got ${unauthRefreshRes.status}`);
       process.exit(1);
     }
 

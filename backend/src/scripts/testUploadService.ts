@@ -66,15 +66,42 @@ async function runUploadTests() {
   }
 
   // -------------------------------------------------------------------------
-  // TEST 4: Cleanup test artifacts
+  // TEST 4: Production mode rejects silent ephemeral disk write if Cloudinary is unconfigured
   // -------------------------------------------------------------------------
-  console.log('\nTEST 4: Local test artifacts cleanup');
+  console.log('\nTEST 4: Production mode rejects silent local fallback when Cloudinary is unconfigured');
+  const prevEnv = process.env.NODE_ENV;
+  try {
+    process.env.NODE_ENV = 'production';
+    const testBuf = Buffer.from('Production test buffer', 'utf-8');
+    let threw = false;
+    try {
+      await uploadToCloudinary(testBuf, 'resumes', 'prod_test.pdf');
+    } catch (err: any) {
+      if (err.message.includes('Cloud storage (Cloudinary) is not configured in production')) {
+        threw = true;
+      }
+    }
+
+    if (threw) {
+      console.log('  [PASS] Successfully rejected local fallback in production with explicit security error.');
+      passed++;
+    } else {
+      console.error('  [FAIL] Failed to throw error in production when Cloudinary is missing.');
+    }
+  } finally {
+    process.env.NODE_ENV = prevEnv;
+  }
+
+  // -------------------------------------------------------------------------
+  // TEST 5: Local test artifacts cleanup
+  // -------------------------------------------------------------------------
+  console.log('\nTEST 5: Local test artifacts cleanup');
   try {
     const uploadsDir = path.join(process.cwd(), 'uploads');
     if (fs.existsSync(uploadsDir)) {
       const files = fs.readdirSync(uploadsDir);
       for (const file of files) {
-        if (file.includes('test_resume') || file.includes('passwd.pdf')) {
+        if (file.includes('test_resume') || file.includes('passwd.pdf') || file.includes('prod_test')) {
           fs.unlinkSync(path.join(uploadsDir, file));
         }
       }
@@ -86,10 +113,10 @@ async function runUploadTests() {
   }
 
   console.log('\n================================================================');
-  console.log(`🏁 UPLOAD AUDIT RESULTS: ${passed} / ${total} PASSED`);
+  console.log(`🏁 UPLOAD AUDIT RESULTS: ${passed} / ${total + 1} PASSED`);
   console.log('================================================================\n');
 
-  if (passed === total) {
+  if (passed === total + 1) {
     process.exit(0);
   } else {
     process.exit(1);

@@ -1,5 +1,6 @@
 import path from 'path';
 import fs from 'fs';
+import crypto from 'crypto';
 import cloudinary, { isCloudinaryConfigured } from '../config/cloudinary';
 
 /**
@@ -32,9 +33,15 @@ export const uploadToCloudinary = (
         }
 
         const baseName = path.basename(fileName || 'upload_file.pdf');
-        const cleanName = baseName.replace(/[^a-zA-Z0-9.-]/g, '_');
-        const uniqueName = `${Date.now()}_${cleanName}`;
-        const filePath = path.join(uploadsDir, uniqueName);
+        const cleanName = baseName.replace(/[^a-zA-Z0-9.-]/g, '_').replace(/\.{2,}/g, '.');
+        const randomSalt = crypto.randomBytes(6).toString('hex');
+        const uniqueName = `${Date.now()}_${randomSalt}_${cleanName}`;
+        const filePath = path.resolve(uploadsDir, uniqueName);
+
+        // Path traversal guard
+        if (!filePath.startsWith(path.resolve(uploadsDir))) {
+          return reject(new Error('Invalid filename path traversal detected.'));
+        }
 
         fs.writeFileSync(filePath, fileBuffer);
 
@@ -48,6 +55,13 @@ export const uploadToCloudinary = (
 
     // ── Cloudinary Cloud Storage (Production Path) ─────────────────────────
     if (!isCloudinaryConfigured()) {
+      if (process.env.NODE_ENV === 'production') {
+        return reject(
+          new Error(
+            'Cloud storage (Cloudinary) is not configured in production. Ephemeral local storage fallback is disabled to prevent permanent data loss.'
+          )
+        );
+      }
       handleLocalStorage();
       return;
     }

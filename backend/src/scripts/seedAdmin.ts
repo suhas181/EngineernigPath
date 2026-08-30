@@ -16,7 +16,23 @@ const seedAdmin = async () => {
 
     const adminName = process.env.ADMIN_NAME || 'System Admin';
     const adminEmail = (process.env.ADMIN_EMAIL || 'admin@engineerpath.com').toLowerCase().trim();
-    const adminPassword = process.env.ADMIN_PASSWORD || 'Admin@12345';
+    const isProduction = process.env.NODE_ENV === 'production';
+    const rawAdminPassword = process.env.ADMIN_PASSWORD;
+
+    if (isProduction) {
+      if (!rawAdminPassword || rawAdminPassword.trim() === '' || rawAdminPassword === 'Admin@12345') {
+        console.error(
+          '[SECURITY ERROR] In production, ADMIN_PASSWORD must be explicitly configured in environment variables and cannot use default fallback passwords.'
+        );
+        process.exit(1);
+      }
+      if (rawAdminPassword.length < 12) {
+        console.error('[SECURITY ERROR] In production, ADMIN_PASSWORD must be at least 12 characters long.');
+        process.exit(1);
+      }
+    }
+
+    const adminPassword = rawAdminPassword || 'Admin@12345';
 
     console.log(`[SEED] Checking if admin user '${adminEmail}' already exists...`);
 
@@ -31,6 +47,7 @@ const seedAdmin = async () => {
       } else {
         console.log(`[SEED] Admin account '${adminEmail}' already exists. No changes needed.`);
       }
+      await mongoose.connection.close();
       process.exit(0);
     }
 
@@ -54,7 +71,6 @@ const seedAdmin = async () => {
     console.log('======================================================');
     console.log(` Name     : ${admin.name}`);
     console.log(` Email    : ${admin.email}`);
-    console.log(` Password : ${adminPassword}`);
     console.log(` Role     : ${admin.role}`);
     console.log(` ID       : ${admin._id}`);
     console.log('======================================================\n');

@@ -8,99 +8,194 @@ on:
     branches:
       - main
 
+concurrency:
+  group: ci-cd-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   # ─────────────────────────────────────────────────────────────
-  # Job 1: Build & Type-Check Backend
+  # Job 1: Validate, Lint, Test & Build Backend
   # ─────────────────────────────────────────────────────────────
-  check-backend:
-    name: Test & Build Backend
+  validate-backend:
+    name: Validate, Test & Build Backend
     runs-on: ubuntu-latest
+
+    services:
+      mongodb:
+        image: mongo:7.0
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.runCommand({ ping: 1 })'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node.js 20
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: 'npm'
           cache-dependency-path: backend/package-lock.json
 
-      - name: Install Dependencies
+      - name: Install Backend Dependencies
         run: |
           cd backend
           npm ci
 
-      - name: TypeScript & Build Check
+      - name: Lint & Type-Check Backend
+        run: |
+          cd backend
+          npm run lint
+
+      - name: Run Standalone Unit & Scoring Tests
+        env:
+          JWT_SECRET: ci_test_jwt_secret_key_minimum_32_characters_long
+          JWT_REFRESH_SECRET: ci_test_jwt_refresh_secret_key_minimum_32_characters_long
+        run: |
+          cd backend
+          npm run test:unit
+
+      - name: Run Integration & Security Tests
+        env:
+          NODE_ENV: test
+          MONGO_URI: mongodb://127.0.0.1:27017/engineerpath_test
+          JWT_SECRET: ci_test_jwt_secret_key_minimum_32_characters_long
+          JWT_REFRESH_SECRET: ci_test_jwt_refresh_secret_key_minimum_32_characters_long
+          CRON_SECRET: ci_test_cron_secret_minimum_16_chars
+        run: |
+          cd backend
+          npm run test:integration
+
+      - name: Build Backend Production Artifact
         run: |
           cd backend
           npm run build
 
   # ─────────────────────────────────────────────────────────────
-  # Job 2: Build & Type-Check Frontend
+  # Job 2: Validate, Lint & Build Frontend
   # ─────────────────────────────────────────────────────────────
-  check-frontend:
-    name: Test & Build Frontend
+  validate-frontend:
+    name: Validate, Lint & Build Frontend
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node.js 20
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
 
-      - name: Install Dependencies
+      - name: Install Frontend Dependencies
         run: |
           cd frontend
           npm ci
 
-      - name: Build Production Bundle
+      - name: Lint Frontend
+        run: |
+          cd frontend
+          npm run lint
+
+      - name: Build Frontend Production Bundle
         run: |
           cd frontend
           npm run build
 
   # ─────────────────────────────────────────────────────────────
-  # Job 3: Auto-Deploy Backend to Render
+  # Job 3: Auto-Deploy Backend to Render (main branch only)
   # ─────────────────────────────────────────────────────────────
   deploy-backend:
     name: Deploy Backend to Render
-    needs: check-backend
+    needs: [validate-backend, validate-frontend]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+
     steps:
-      - name: Trigger Render Deploy Hook
+      - name: Trigger Render Backend Deploy Hook
         env:
           RENDER_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
         run: |
           if [ -z "$RENDER_HOOK" ]; then
-            echo "::warning ::RENDER_DEPLOY_HOOK_URL secret is not set. Skipping manual trigger (Render auto-deploy via GitHub integration will run)."
+            echo "::warning ::RENDER_DEPLOY_HOOK_URL secret is not configured in GitHub Repository Secrets. Skipping webhook trigger."
           else
-            echo "Triggering Render backend deployment..."
-            curl -s -X POST "$RENDER_HOOK"
-            echo "Render deployment triggered successfully!"
+            echo "Triggering Render backend deployment via deploy hook..."
+            HTTP_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$RENDER_HOOK")
+            if [ "$HTTP_RESPONSE" -ge 200 ] && [ "$HTTP_RESPONSE" -lt 300 ]; then
+              echo "Render deployment hook triggered successfully (HTTP $HTTP_RESPONSE)."
+            else
+              echo "::error ::Render deployment hook failed with HTTP status $HTTP_RESPONSE."
+              exit 1
+            fi
           fi
 
   # ─────────────────────────────────────────────────────────────
-  # Job 4: Auto-Deploy Frontend to Vercel
+  # Job 4: Auto-Deploy Frontend to Vercel (main branch only)
   # ─────────────────────────────────────────────────────────────
   deploy-frontend:
     name: Deploy Frontend to Vercel
-    needs: check-frontend
+    needs: [validate-backend, validate-frontend, deploy-backend]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+
     steps:
-      - name: Trigger Vercel Deploy Hook
+      - name: Trigger Vercel Frontend Deploy Hook
         env:
           VERCEL_HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
         run: |
           if [ -z "$VERCEL_HOOK" ]; then
-            echo "::warning ::VERCEL_DEPLOY_HOOK_URL secret is not set. Skipping manual trigger (Vercel auto-deploy via GitHub integration will run)."
+            echo "::warning ::VERCEL_DEPLOY_HOOK_URL secret is not configured in GitHub Repository Secrets. Skipping webhook trigger."
           else
-            echo "Triggering Vercel frontend deployment..."
-            curl -s -X POST "$VERCEL_HOOK"
-            echo "Vercel deployment triggered successfully!"
+            echo "Triggering Vercel frontend deployment via deploy hook..."
+            HTTP_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$VERCEL_HOOK")
+            if [ "$HTTP_RESPONSE" -ge 200 ] && [ "$HTTP_RESPONSE" -lt 300 ]; then
+              echo "Vercel deployment hook triggered successfully (HTTP $HTTP_RESPONSE)."
+            else
+              echo "::error ::Vercel deployment hook failed with HTTP status $HTTP_RESPONSE."
+              exit 1
+            fi
+          fi
+
+  # ─────────────────────────────────────────────────────────────
+  # Job 5: Post-Deployment Health Check (main branch only)
+  # ─────────────────────────────────────────────────────────────
+  verify-deployment:
+    name: Verify Production Health
+    needs: [deploy-backend, deploy-frontend]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Verify Live Backend Health
+        env:
+          HEALTH_URL: ${{ secrets.PRODUCTION_HEALTH_URL }}
+        run: |
+          if [ -z "$HEALTH_URL" ]; then
+            echo "::notice ::PRODUCTION_HEALTH_URL secret not set. Skipping live health verification."
+          else
+            echo "Checking production health endpoint: $HEALTH_URL/health"
+            SUCCESS=false
+            for i in {1..12}; do
+              echo "Attempt $i: Fetching $HEALTH_URL/health..."
+              STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$HEALTH_URL/health" || echo "000")
+              if [ "$STATUS" -eq 200 ]; then
+                echo "Production health check passed with HTTP 200 OK!"
+                SUCCESS=true
+                break
+              fi
+              echo "Service not ready yet (HTTP $STATUS). Waiting 10s..."
+              sleep 10
+            done
+
+            if [ "$SUCCESS" != "true" ]; then
+              echo "::error ::Production health check timed out or returned non-200 status."
+              exit 1
+            fi
           fi

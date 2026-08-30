@@ -50,6 +50,30 @@ const serializeUser = (user: any) => ({
   createdAt: user.createdAt,
 });
 
+// Cookie configuration for refresh tokens
+const REFRESH_COOKIE_NAME = 'refreshToken';
+
+export const setRefreshTokenCookie = (res: Response, token: string): void => {
+  const isProduction = process.env.NODE_ENV === 'production';
+  res.cookie(REFRESH_COOKIE_NAME, token, {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? 'none' : 'lax',
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    path: '/',
+  });
+};
+
+export const clearRefreshTokenCookie = (res: Response): void => {
+  const isProduction = process.env.NODE_ENV === 'production';
+  res.clearCookie(REFRESH_COOKIE_NAME, {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? 'none' : 'lax',
+    path: '/',
+  });
+};
+
 // Signup validation schema
 const signupSchema = z.object({
   name: z.string().min(1, 'Name is required').trim(),
@@ -111,6 +135,9 @@ export const signup = async (
     // Save refresh token to user
     newUser.refreshToken = refreshToken;
     await newUser.save();
+
+    // Set secure HttpOnly refresh token cookie
+    setRefreshTokenCookie(res, refreshToken);
 
     console.log(`[AUTH] [SIGNUP] User registered & automatically logged in: ${email} (ID: ${newUser._id})`);
 
@@ -203,6 +230,9 @@ export const login = async (
     user.refreshToken = refreshToken;
     await user.save();
 
+    // Set secure HttpOnly refresh token cookie
+    setRefreshTokenCookie(res, refreshToken);
+
     console.log(`[AUTH] [LOGIN] User logged in: ${email} (ID: ${user._id})`);
     console.log(`[AUTH] [TOKENS] Tokens generated for ${email}`);
 
@@ -223,10 +253,10 @@ export const logout = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { refreshToken } = req.body;
+    const incomingRefreshToken = req.cookies?.refreshToken || req.body?.refreshToken;
 
-    if (refreshToken) {
-      const user = await User.findOne({ refreshToken });
+    if (incomingRefreshToken) {
+      const user = await User.findOne({ refreshToken: incomingRefreshToken });
       if (user) {
         user.refreshToken = undefined;
         await user.save();
@@ -237,6 +267,9 @@ export const logout = async (
     } else {
       console.log(`[AUTH] [LOGOUT] Logout request received without refresh token`);
     }
+
+    // Always clear the refresh cookie
+    clearRefreshTokenCookie(res);
 
     res.status(200).json({ message: 'Logged out successfully' });
   } catch (error) {
@@ -250,20 +283,21 @@ export const refreshToken = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { refreshToken } = req.body;
+    const incomingRefreshToken = req.cookies?.refreshToken || req.body?.refreshToken;
 
-    if (!refreshToken) {
-      console.log(`[AUTH] [REFRESH] Refresh failed: Missing token in payload`);
+    if (!incomingRefreshToken) {
+      console.log(`[AUTH] [REFRESH] Refresh failed: Missing token in cookies or payload`);
       res.status(400).json({ message: 'Refresh token is required' });
       return;
     }
 
     try {
-      const decoded = verifyRefreshToken(refreshToken);
-      const user = await User.findOne({ _id: decoded.id, refreshToken });
+      const decoded = verifyRefreshToken(incomingRefreshToken);
+      const user = await User.findOne({ _id: decoded.id, refreshToken: incomingRefreshToken });
 
       if (!user) {
         console.log(`[AUTH] [REFRESH] Refresh failed: User or session matching token not found in DB`);
+        clearRefreshTokenCookie(res);
         res.status(401).json({ message: 'Invalid or expired refresh token' });
         return;
       }
@@ -274,6 +308,9 @@ export const refreshToken = async (
       user.refreshToken = newRefreshToken;
       await user.save();
 
+      // Set rotated HttpOnly refresh cookie
+      setRefreshTokenCookie(res, newRefreshToken);
+
       console.log(`[AUTH] [REFRESH] Tokens rotated successfully for user: ${user.email}`);
 
       res.status(200).json({
@@ -282,6 +319,7 @@ export const refreshToken = async (
       });
     } catch (err) {
       console.log(`[AUTH] [REFRESH] Refresh failed: Token is expired or signatures mismatch`);
+      clearRefreshTokenCookie(res);
       res.status(401).json({ message: 'Invalid or expired refresh token' });
       return;
     }

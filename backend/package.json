@@ -6,6 +6,10 @@
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "build": "tsc",
+    "lint": "tsc --noEmit",
+    "test:unit": "npx ts-node src/scripts/testJwtSecurity.ts && npx ts-node src/scripts/testResumeAudit.ts && npx ts-node src/scripts/testScoringEngine.ts && npx ts-node src/scripts/testInternshipFeatures.ts",
+    "test:integration": "npx ts-node src/scripts/testUploadService.ts && npx ts-node src/scripts/testAuthSeparation.ts && npx ts-node src/scripts/testHealthAndReliability.ts && npx ts-node src/scripts/testInternshipAutoSync.ts",
+    "test": "npm run test:unit && npm run test:integration",
     "start": "node dist/server.js",
     "seed:admin": "npx ts-node src/scripts/seedAdmin.ts",
     "migrate:atlas": "npx ts-node src/scripts/migrateToAtlas.ts"
@@ -17,9 +21,12 @@
     "@google/generative-ai": "^0.14.0",
     "bcryptjs": "^2.4.3",
     "cloudinary": "^2.2.0",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
+    "express-rate-limit": "^8.7.0",
+    "helmet": "^8.3.0",
     "jsonwebtoken": "^9.0.2",
     "mammoth": "^1.12.0",
     "mongoose": "^8.4.4",
@@ -34,6 +41,7 @@
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
+    "@types/cookie-parser": "^1.4.10",
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
     "@types/jsonwebtoken": "^9.0.6",

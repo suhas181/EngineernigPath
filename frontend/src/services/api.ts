@@ -2,6 +2,14 @@ import axios from 'axios';
 import { useAuthStore } from '../store/useAuthStore';
 
 const rawApiUrl = import.meta.env.VITE_API_URL;
+const isProd = import.meta.env.PROD;
+
+if (isProd && (!rawApiUrl || rawApiUrl.includes('localhost') || rawApiUrl.includes('127.0.0.1'))) {
+  console.error(
+    '[CONFIG WARNING] VITE_API_URL is missing or pointing to localhost in a production build. Please set VITE_API_URL to your production backend URL in your deployment dashboard.'
+  );
+}
+
 export const API_URL =
   typeof rawApiUrl === 'string' && rawApiUrl.trim() !== ''
     ? rawApiUrl.trim().replace(/\/+$/, '')
@@ -9,6 +17,7 @@ export const API_URL =
 
 export const api = axios.create({
   baseURL: API_URL,
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -111,9 +120,11 @@ api.interceptors.response.use(
 
       try {
         // Attempt to refresh access token
-        const response = await axios.post(`${API_URL}/auth/refresh-token`, {
-          refreshToken,
-        });
+        const response = await axios.post(
+          `${API_URL}/auth/refresh-token`,
+          { refreshToken },
+          { withCredentials: true }
+        );
 
         const { accessToken: newAccessToken, refreshToken: newRefreshToken } = response.data;
 

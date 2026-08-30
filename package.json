@@ -7,6 +7,13 @@
     "dev": "npx -y concurrently -k -p \"[{name}]\" -n \"BACKEND,FRONTEND\" -c \"cyan,magenta\" \"npm run dev --prefix backend\" \"npm run dev --prefix frontend\"",
     "dev:backend": "npm run dev --prefix backend",
     "dev:frontend": "npm run dev --prefix frontend",
+    "lint:backend": "npm run lint --prefix backend",
+    "lint:frontend": "npm run lint --prefix frontend",
+    "lint": "npm run lint:backend && npm run lint:frontend",
+    "test:backend": "npm run test --prefix backend",
+    "test": "npm run test:backend",
+    "build:backend": "npm run build --prefix backend",
+    "build:frontend": "npm run build --prefix frontend",
     "build": "npm run build --prefix backend && npm run build --prefix frontend"
   }
 }
