@@ -32,7 +32,7 @@ export function AdminLogin() {
     setIsLoading(true);
     try {
       const response = await api.post('/auth/login', data);
-      const { accessToken, refreshToken, user } = response.data;
+      const { accessToken, user } = response.data;
 
       // Authoritative role check: ensure the authenticated user has admin role
       if (user.role !== 'admin') {
@@ -41,7 +41,7 @@ export function AdminLogin() {
         return;
       }
 
-      loginStore(user, accessToken, refreshToken);
+      loginStore(user, accessToken);
       toast.success(`Admin authenticated. Welcome, ${user.name}!`);
       navigate('/admin');
     } catch (error: any) {

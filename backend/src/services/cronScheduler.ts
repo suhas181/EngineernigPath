@@ -1,7 +1,21 @@
-import cron from 'node-cron';
+import cron, { ScheduledTask } from 'node-cron';
 import { checkAllResourcesHealth } from '../scripts/checkResourceHealth';
 
 let isSchedulerInitialized = false;
+let scheduledTasks: ScheduledTask[] = [];
+
+export function stopCronScheduler() {
+  scheduledTasks.forEach((task) => {
+    try {
+      task.stop();
+    } catch (err) {
+      console.error('[CRON] Error stopping task:', err);
+    }
+  });
+  scheduledTasks = [];
+  isSchedulerInitialized = false;
+  console.log('[CRON] Background task scheduler stopped cleanly.');
+}
 
 export function initializeCronScheduler() {
   if (isSchedulerInitialized) {
@@ -13,7 +27,7 @@ export function initializeCronScheduler() {
   console.log('[CRON] Initializing background task scheduler...');
 
   // 1. Weekly resource link health check schedule (Every Sunday at 00:00 UTC)
-  cron.schedule('0 0 * * 0', async () => {
+  const task1 = cron.schedule('0 0 * * 0', async () => {
     console.log('[CRON] Running scheduled weekly resource link health check...');
     try {
       await checkAllResourcesHealth();
@@ -21,11 +35,12 @@ export function initializeCronScheduler() {
       console.error('[CRON] Weekly resource health check failed:', err);
     }
   });
+  scheduledTasks.push(task1);
 
   console.log('[CRON] Weekly resource link health check job scheduled (0 0 * * 0).');
 
   // 2. Automatic Internship listings refresh schedule (Every 12 hours)
-  cron.schedule('0 */12 * * *', async () => {
+  const task2 = cron.schedule('0 */12 * * *', async () => {
     console.log('[CRON] Running scheduled 12-hour internship listings refresh cycle...');
     try {
       const { refreshInternships } = await import('./internshipService');
@@ -34,6 +49,7 @@ export function initializeCronScheduler() {
       console.error('[CRON] Internship refresh cycle failed:', err);
     }
   });
+  scheduledTasks.push(task2);
 
   console.log('[CRON] 12-hour internship refresh job scheduled (0 */12 * * *).');
 

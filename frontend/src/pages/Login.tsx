@@ -32,9 +32,9 @@ export function Login() {
     setIsLoading(true);
     try {
       const response = await api.post('/auth/login', data);
-      const { accessToken, refreshToken, user } = response.data;
+      const { accessToken, user } = response.data;
 
-      loginStore(user, accessToken, refreshToken);
+      loginStore(user, accessToken);
       toast.success(`Welcome back, ${user.name}!`);
 
       if (user.role === 'admin') {

@@ -7,7 +7,7 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 import mongoose from 'mongoose';
 import app from './app';
 import { connectDB } from './config/db';
-import { initializeCronScheduler } from './services/cronScheduler';
+import { initializeCronScheduler, stopCronScheduler } from './services/cronScheduler';
 import { validateJwtEnvironment } from './utils/jwt';
 
 const PORT = process.env.PORT || 5001;
@@ -30,6 +30,7 @@ const startServer = async () => {
   // Graceful shutdown handling for container termination (Render / Docker / Kubernetes)
   const shutdown = async (signal: string) => {
     console.log(`[SHUTDOWN] Received ${signal}. Starting graceful shutdown...`);
+    stopCronScheduler();
     server.close(async () => {
       console.log('[SHUTDOWN] HTTP server closed.');
       try {

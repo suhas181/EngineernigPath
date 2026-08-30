@@ -15,8 +15,11 @@ import {
   FetchResult,
   getInternshipsList,
 } from '../services/internshipService';
+import http from 'http';
+import app from '../app';
 
-const API_BASE = 'http://localhost:5001/api';
+const PORT = 5095;
+const API_BASE = `http://127.0.0.1:${PORT}/api`;
 
 class MockJobSource implements JobSource {
   name = 'MockSource';
@@ -85,6 +88,9 @@ async function runTests() {
   console.log('================================================================\n');
 
   await connectDB();
+
+  const server = http.createServer(app);
+  await new Promise<void>((resolve) => server.listen(PORT, '127.0.0.1', resolve));
 
   // Clean previous mock entries
   await Internship.deleteMany({ source: 'MockSource' });
@@ -265,8 +271,8 @@ async function runTests() {
       validateStatus: () => true,
     });
 
-    if (forbiddenRes.status === 403 && guestRes.status === 403) {
-      console.log('  [PASS] Both Student and unauthenticated Guest are rejected with 403 Forbidden.');
+    if (forbiddenRes.status === 403 && guestRes.status === 401) {
+      console.log('  [PASS] Student rejected with 403 Forbidden and unauthenticated Guest rejected with 401 Unauthorized.');
       passedTests++;
     } else {
       console.error(`  [FAIL] Security test failed. Student status: ${forbiddenRes.status}, Guest status: ${guestRes.status}`);
@@ -379,6 +385,7 @@ async function runTests() {
   console.log(`🏁 TEST RESULTS: ${passedTests} / ${totalTests} PASSED`);
   console.log('================================================================\n');
 
+  server.close();
   await mongoose.connection.close();
 
   if (passedTests === totalTests) {

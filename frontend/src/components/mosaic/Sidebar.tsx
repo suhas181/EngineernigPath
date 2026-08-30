@@ -40,8 +40,7 @@ export function Sidebar({
 
   const handleLogout = async () => {
     try {
-      const refreshToken = useAuthStore.getState().refreshToken;
-      await api.post('/auth/logout', { refreshToken });
+      await api.post('/auth/logout');
     } catch (err) {
       console.error('Logout API failed:', err);
     } finally {

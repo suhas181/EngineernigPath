@@ -5,12 +5,24 @@ import path from 'path';
 
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
-const BASE_URL = 'http://localhost:5001';
+import http from 'http';
+import app from '../app';
+
+const PORT = 5098;
+const BASE_URL = `http://127.0.0.1:${PORT}`;
 
 async function runHealthAndReliabilityTests() {
   console.log('================================================================');
   console.log('🩺 ENGINEERPATH PRODUCTION HEALTH & RELIABILITY TEST SUITE');
   console.log('================================================================\n');
+
+  const mongoUri = process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/engineerpath';
+  if (mongoose.connection.readyState !== 1) {
+    await mongoose.connect(mongoUri);
+  }
+
+  const server = http.createServer(app);
+  await new Promise<void>((resolve) => server.listen(PORT, '127.0.0.1', resolve));
 
   let passed = 0;
   const total = 5;
@@ -108,6 +120,9 @@ async function runHealthAndReliabilityTests() {
   console.log('\n================================================================');
   console.log(`🏁 HEALTH AUDIT RESULTS: ${passed} / ${total} PASSED`);
   console.log('================================================================\n');
+
+  server.close();
+  await mongoose.disconnect();
 
   if (passed === total) {
     process.exit(0);

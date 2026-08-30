@@ -102,25 +102,41 @@ export const refreshInternships = async (
   try {
     const cronSecretHeader = req.headers['x-cron-secret'];
     const expectedSecret = process.env.CRON_SECRET;
-    const isCronSecretValid = Boolean(expectedSecret && cronSecretHeader === expectedSecret);
+    const isCronSecretValid = Boolean(
+      expectedSecret &&
+      expectedSecret.trim() !== '' &&
+      cronSecretHeader &&
+      cronSecretHeader === expectedSecret
+    );
     const isAdmin = Boolean(req.user && req.user.role === 'admin');
 
-    if (!isAdmin && !isCronSecretValid) {
-      res.status(403).json({
-        success: false,
-        message: 'Forbidden: Admin role or valid CRON_SECRET is required to manually trigger sync.',
+    // 1. Authorized via valid CRON_SECRET or Admin token
+    if (isCronSecretValid || isAdmin) {
+      const triggerType = isCronSecretValid ? 'WEBHOOK' : 'MANUAL_TRIGGER';
+      const triggeredBy = isAdmin ? req.user?.email || 'ADMIN_USER' : 'EXTERNAL_CRON_JOB';
+
+      const stats = await runRefreshService(triggerType, triggeredBy);
+      res.status(200).json({
+        success: true,
+        message: `Internship sync completed with status '${stats.status}'. ${stats.added} new added, ${stats.updated} updated.`,
+        stats,
       });
       return;
     }
 
-    const triggerType = isCronSecretValid ? 'WEBHOOK' : 'MANUAL_TRIGGER';
-    const triggeredBy = req.user?.email || 'EXTERNAL_CRON_JOB';
+    // 2. Authenticated non-admin student -> 403 Forbidden
+    if (req.user) {
+      res.status(403).json({
+        success: false,
+        message: 'Forbidden: Administrator privileges are required to trigger manual internship synchronization.',
+      });
+      return;
+    }
 
-    const stats = await runRefreshService(triggerType, triggeredBy);
-    res.status(200).json({
-      success: true,
-      message: `Internship sync completed with status '${stats.status}'. ${stats.added} new added, ${stats.updated} updated.`,
-      stats,
+    // 3. Unauthenticated guest without valid CRON_SECRET -> 401 Unauthorized
+    res.status(401).json({
+      success: false,
+      message: 'Unauthorized: Authentication or valid CRON_SECRET is required to trigger synchronization.',
     });
   } catch (error) {
     next(error);

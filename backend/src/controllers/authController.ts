@@ -144,7 +144,6 @@ export const signup = async (
     res.status(201).json({
       message: 'Account created successfully!',
       accessToken,
-      refreshToken,
       user: serializeUser(newUser),
     });
   } catch (error) {
@@ -239,7 +238,6 @@ export const login = async (
     res.status(200).json({
       message: 'Login successful',
       accessToken,
-      refreshToken,
       user: serializeUser(user),
     });
   } catch (error) {
@@ -315,7 +313,6 @@ export const refreshToken = async (
 
       res.status(200).json({
         accessToken: newAccessToken,
-        refreshToken: newRefreshToken,
       });
     } catch (err) {
       console.log(`[AUTH] [REFRESH] Refresh failed: Token is expired or signatures mismatch`);

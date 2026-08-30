@@ -22,16 +22,16 @@ async function runApiTests() {
   const baseUrl = 'http://127.0.0.1:5099';
 
   try {
-    // 1. Test Unauthenticated Refresh -> MUST be 401
+    // 1. Test Unauthenticated Refresh without secret -> MUST be 401 Unauthorized
     const unauthRefreshRes = await fetch(`${baseUrl}/api/internships/refresh`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
     });
     console.log(`[TEST 1] Unauthenticated POST /api/internships/refresh: Status ${unauthRefreshRes.status}`);
-    if (unauthRefreshRes.status === 403 || unauthRefreshRes.status === 401) {
-      console.log('  ✅ Correctly rejected unauthenticated request with 403/401');
+    if (unauthRefreshRes.status === 401) {
+      console.log('  ✅ Correctly rejected unauthenticated request with 401 Unauthorized');
     } else {
-      console.error(`  ❌ Expected 403/401, got ${unauthRefreshRes.status}`);
+      console.error(`  ❌ Expected 401, got ${unauthRefreshRes.status}`);
       process.exit(1);
     }
 
@@ -80,10 +80,60 @@ async function runApiTests() {
       process.exit(1);
     }
 
-    // 4. Test Public/Student GET /api/internships
+    // 4. Test Invalid CRON_SECRET -> MUST be 401 Unauthorized
+    const invalidSecretRes = await fetch(`${baseUrl}/api/internships/refresh`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-cron-secret': 'invalid_secret_123',
+      },
+    });
+    console.log(`[TEST 3] Invalid CRON_SECRET POST /api/internships/refresh: Status ${invalidSecretRes.status}`);
+    if (invalidSecretRes.status === 401) {
+      console.log('  ✅ Correctly rejected invalid CRON_SECRET with 401 Unauthorized');
+    } else {
+      console.error(`  ❌ Expected 401, got ${invalidSecretRes.status}`);
+      process.exit(1);
+    }
+
+    // 5. Test Valid CRON_SECRET -> MUST be 200 OK
+    const cronSecret = process.env.CRON_SECRET || 'test_cron_secret_for_suite';
+    process.env.CRON_SECRET = cronSecret;
+    const validSecretRes = await fetch(`${baseUrl}/api/internships/refresh`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-cron-secret': cronSecret,
+      },
+    });
+    console.log(`[TEST 4] Valid CRON_SECRET POST /api/internships/refresh: Status ${validSecretRes.status}`);
+    if (validSecretRes.status === 200) {
+      console.log('  ✅ Valid CRON_SECRET successfully authorized');
+    } else {
+      console.error(`  ❌ Expected 200, got ${validSecretRes.status}`);
+      process.exit(1);
+    }
+
+    // 6. Test Admin Token Refresh -> MUST be 200 OK
+    const adminRefreshRes = await fetch(`${baseUrl}/api/internships/refresh`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${adminToken}`,
+      },
+    });
+    console.log(`[TEST 5] Admin POST /api/internships/refresh: Status ${adminRefreshRes.status}`);
+    if (adminRefreshRes.status === 200) {
+      console.log('  ✅ Admin token successfully authorized for manual sync');
+    } else {
+      console.error(`  ❌ Expected 200, got ${adminRefreshRes.status}`);
+      process.exit(1);
+    }
+
+    // 7. Test Public/Student GET /api/internships
     const listRes = await fetch(`${baseUrl}/api/internships?limit=5`);
     const listData = (await listRes.json()) as any;
-    console.log(`[TEST 3] GET /api/internships: Status ${listRes.status}, Count: ${listData.count}, OpenCount: ${listData.stats?.openCount}`);
+    console.log(`[TEST 6] GET /api/internships: Status ${listRes.status}, Count: ${listData.count}, OpenCount: ${listData.stats?.openCount}`);
     if (listRes.status === 200 && listData.success) {
       console.log('  ✅ List endpoint returned 200 with stats');
     } else {
@@ -91,14 +141,14 @@ async function runApiTests() {
       process.exit(1);
     }
 
-    // 5. Test Recommendations GET /api/internships/recommendations (Student authenticated)
+    // 8. Test Recommendations GET /api/internships/recommendations (Student authenticated)
     const recRes = await fetch(`${baseUrl}/api/internships/recommendations?limit=3`, {
       headers: {
         Authorization: `Bearer ${studentToken}`,
       },
     });
     const recData = (await recRes.json()) as any;
-    console.log(`[TEST 4] Student GET /api/internships/recommendations: Status ${recRes.status}, Rec count: ${recData.recommendations?.length}`);
+    console.log(`[TEST 7] Student GET /api/internships/recommendations: Status ${recRes.status}, Rec count: ${recData.recommendations?.length}`);
     if (recRes.status === 200 && recData.success) {
       console.log('  ✅ Recommendations returned 200 with matching suggestions');
     } else {

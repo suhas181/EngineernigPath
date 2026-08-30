@@ -57,13 +57,13 @@ interface UserProfile {
 interface AuthState {
   user: UserProfile | null;
   accessToken: string | null;
-  refreshToken: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  
-  setTokens: (accessToken: string, refreshToken: string) => void;
+
+  setAccessToken: (accessToken: string) => void;
+  setTokens: (accessToken: string) => void;
   setUser: (user: UserProfile) => void;
-  login: (user: UserProfile, accessToken: string, refreshToken: string) => void;
+  login: (user: UserProfile, accessToken: string) => void;
   logout: () => void;
   updateUser: (user: Partial<UserProfile>) => void;
   setLoading: (isLoading: boolean) => void;
@@ -72,19 +72,21 @@ interface AuthState {
 // Read initial state from localStorage
 const storedUser = localStorage.getItem('user');
 const storedAccessToken = localStorage.getItem('accessToken');
-const storedRefreshToken = localStorage.getItem('refreshToken');
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: storedUser ? JSON.parse(storedUser) : null,
   accessToken: storedAccessToken || null,
-  refreshToken: storedRefreshToken || null,
   isAuthenticated: !!storedAccessToken,
   isLoading: false,
 
-  setTokens: (accessToken, refreshToken) => {
+  setAccessToken: (accessToken) => {
     localStorage.setItem('accessToken', accessToken);
-    localStorage.setItem('refreshToken', refreshToken);
-    set({ accessToken, refreshToken, isAuthenticated: true });
+    set({ accessToken, isAuthenticated: true });
+  },
+
+  setTokens: (accessToken) => {
+    localStorage.setItem('accessToken', accessToken);
+    set({ accessToken, isAuthenticated: true });
   },
 
   setUser: (user) => {
@@ -92,18 +94,18 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ user });
   },
 
-  login: (user, accessToken, refreshToken) => {
+  login: (user, accessToken) => {
     localStorage.setItem('user', JSON.stringify(user));
     localStorage.setItem('accessToken', accessToken);
-    localStorage.setItem('refreshToken', refreshToken);
-    set({ user, accessToken, refreshToken, isAuthenticated: true });
+    localStorage.removeItem('refreshToken'); // Purge legacy key if present
+    set({ user, accessToken, isAuthenticated: true });
   },
 
   logout: () => {
     localStorage.removeItem('user');
     localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
-    set({ user: null, accessToken: null, refreshToken: null, isAuthenticated: false });
+    localStorage.removeItem('refreshToken'); // Purge legacy key if present
+    set({ user: null, accessToken: null, isAuthenticated: false });
   },
 
   updateUser: (updatedFields) => {

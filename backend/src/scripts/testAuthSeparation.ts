@@ -4,12 +4,25 @@ import path from 'path';
 
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
-const API_BASE = 'http://localhost:5001/api';
+import http from 'http';
+import mongoose from 'mongoose';
+import app from '../app';
+
+const PORT = 5096;
+const API_BASE = `http://127.0.0.1:${PORT}/api`;
 
 async function runAuthTests() {
   console.log('================================================================');
   console.log('🔐 ENGINEERPATH AUTHENTICATION & ROLE SEPARATION TEST SUITE');
   console.log('================================================================\n');
+
+  const mongoUri = process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/engineerpath';
+  if (mongoose.connection.readyState !== 1) {
+    await mongoose.connect(mongoUri);
+  }
+
+  const server = http.createServer(app);
+  await new Promise<void>((resolve) => server.listen(PORT, '127.0.0.1', resolve));
 
   let passedTests = 0;
   let totalTests = 10;
@@ -245,11 +258,104 @@ async function runAuthTests() {
     console.error('  [FAIL] TEST 7 failed:', err.message);
   }
 
+  // TEST 11: Refresh Token HttpOnly Cookie Flow & JSON payload omission
+  console.log('\n----------------------------------------------------------------');
+  console.log('TEST 11: Refresh token is transported exclusively via HttpOnly cookie (omitted from JSON)');
+  let cookieHeader = '';
+  try {
+    const loginRes = await axios.post(
+      `${API_BASE}/auth/login`,
+      {
+        email: testStudentEmail,
+        password: testStudentPassword,
+      },
+      { validateStatus: () => true }
+    );
+
+    const setCookieHeaders = loginRes.headers['set-cookie'] || [];
+    const refreshCookie = setCookieHeaders.find((c: string) => c.startsWith('refreshToken='));
+    const isHttpOnly = refreshCookie?.includes('HttpOnly');
+    const notInJson = loginRes.data.refreshToken === undefined;
+
+    if (refreshCookie && isHttpOnly && notInJson) {
+      cookieHeader = refreshCookie.split(';')[0];
+      console.log('  [PASS] Refresh token set in HttpOnly cookie and omitted from JSON body.');
+      passedTests++;
+    } else {
+      console.error('  [FAIL] Cookie or JSON payload assertion failed:', { refreshCookie, isHttpOnly, notInJson });
+    }
+  } catch (err: any) {
+    console.error('  [FAIL] TEST 11 failed:', err.message);
+  }
+
+  // TEST 12: Cookie-based Refresh Token Rotation & Logout Invalidation
+  console.log('\n----------------------------------------------------------------');
+  console.log('TEST 12: Cookie-based refresh rotation succeeds, and logout revokes token in DB & clears cookie');
+  try {
+    // 1. Refresh using Cookie
+    const refreshRes = await axios.post(
+      `${API_BASE}/auth/refresh-token`,
+      {},
+      {
+        headers: { Cookie: cookieHeader },
+        validateStatus: () => true,
+      }
+    );
+
+    const newAccessToken = refreshRes.data?.accessToken;
+    const newSetCookie = refreshRes.headers['set-cookie'] || [];
+    const newRefreshCookie = newSetCookie.find((c: string) => c.startsWith('refreshToken='));
+    const refreshNotInJson = refreshRes.data.refreshToken === undefined;
+
+    // 2. Logout using new Cookie
+    const updatedCookie = newRefreshCookie ? newRefreshCookie.split(';')[0] : cookieHeader;
+    const logoutRes = await axios.post(
+      `${API_BASE}/auth/logout`,
+      {},
+      {
+        headers: { Cookie: updatedCookie },
+        validateStatus: () => true,
+      }
+    );
+
+    // 3. Attempting refresh after logout must fail with 401
+    const postLogoutRefresh = await axios.post(
+      `${API_BASE}/auth/refresh-token`,
+      {},
+      {
+        headers: { Cookie: updatedCookie },
+        validateStatus: () => true,
+      }
+    );
+
+    if (
+      newAccessToken &&
+      refreshNotInJson &&
+      logoutRes.status === 200 &&
+      postLogoutRefresh.status === 401
+    ) {
+      console.log('  [PASS] Cookie refresh rotation succeeded, and logout successfully invalidated the session.');
+      passedTests++;
+    } else {
+      console.error('  [FAIL] Refresh/Logout flow failed:', {
+        newAccessToken: !!newAccessToken,
+        refreshNotInJson,
+        logoutStatus: logoutRes.status,
+        postLogoutStatus: postLogoutRefresh.status,
+      });
+    }
+  } catch (err: any) {
+    console.error('  [FAIL] TEST 12 failed:', err.message);
+  }
+
   console.log('\n================================================================');
-  console.log(`🏁 TEST RESULTS: ${passedTests} / ${totalTests} PASSED`);
+  console.log(`🏁 TEST RESULTS: ${passedTests} / ${totalTests + 2} PASSED`);
   console.log('================================================================\n');
 
-  if (passedTests === totalTests) {
+  server.close();
+  await mongoose.disconnect();
+
+  if (passedTests === totalTests + 2) {
     process.exit(0);
   } else {
     process.exit(1);

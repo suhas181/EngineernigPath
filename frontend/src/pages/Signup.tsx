@@ -49,9 +49,9 @@ export function Signup() {
         password: data.password,
       });
 
-      const { accessToken, refreshToken, user } = response.data;
+      const { accessToken, user } = response.data;
       
-      loginStore(user, accessToken, refreshToken);
+      loginStore(user, accessToken);
       toast.success(`Account created! Welcome, ${user.name}.`);
 
       if (!user.college || !user.graduationYear || !user.preferredCareer) {

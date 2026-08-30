@@ -12,8 +12,8 @@ function App() {
 
   useEffect(() => {
     const initializeAuth = async () => {
-      const { accessToken, refreshToken, isAuthenticated } = useAuthStore.getState();
-      if (isAuthenticated || accessToken || refreshToken) {
+      const { accessToken, isAuthenticated } = useAuthStore.getState();
+      if (isAuthenticated || accessToken) {
         try {
           // Verify access token validity and fetch latest profile details (recovering via refresh token if expired)
           const response = await api.get('/auth/me');

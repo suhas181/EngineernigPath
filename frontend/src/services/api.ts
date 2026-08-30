@@ -85,10 +85,10 @@ api.interceptors.response.use(
       !originalRequest._retry &&
       !isNonRefreshableAuthEndpoint(originalRequest.url)
     ) {
-      const refreshToken = useAuthStore.getState().refreshToken;
+      const { accessToken, isAuthenticated } = useAuthStore.getState();
 
-      // If no refresh token exists, immediately logout and reject
-      if (!refreshToken) {
+      // If user has no active session, immediately logout and reject
+      if (!accessToken && !isAuthenticated) {
         useAuthStore.getState().logout();
         return Promise.reject(error);
       }
@@ -119,17 +119,17 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        // Attempt to refresh access token
+        // Attempt to refresh access token using the HttpOnly cookie
         const response = await axios.post(
           `${API_URL}/auth/refresh-token`,
-          { refreshToken },
+          {},
           { withCredentials: true }
         );
 
-        const { accessToken: newAccessToken, refreshToken: newRefreshToken } = response.data;
+        const { accessToken: newAccessToken } = response.data;
 
-        // Update Zustand store with new tokens
-        useAuthStore.getState().setTokens(newAccessToken, newRefreshToken || refreshToken);
+        // Update Zustand store with new access token
+        useAuthStore.getState().setTokens(newAccessToken);
 
         // Process queued requests
         processQueue(null, newAccessToken);
