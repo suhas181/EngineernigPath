@@ -29,32 +29,41 @@ app.use(
 );
 
 // ── 2. CORS Configuration ───────────────────────────────────────────────────
-const parseAllowedOrigins = (): string[] => {
+const isAllowedOrigin = (origin: string): boolean => {
   const customOrigins = (process.env.ALLOWED_ORIGINS || '')
     .split(',')
-    .map((o) => o.trim())
+    .map((o) => o.trim().replace(/\/+$/, ''))
     .filter(Boolean);
 
-  const frontendUrl = (process.env.FRONTEND_URL || '').trim();
+  const frontendUrl = (process.env.FRONTEND_URL || '').trim().replace(/\/+$/, '');
   const configured = [...customOrigins];
   if (frontendUrl) {
     configured.push(frontendUrl);
-    // Strip trailing slash if present
-    configured.push(frontendUrl.replace(/\/+$/, ''));
   }
 
-  if (process.env.NODE_ENV !== 'production') {
-    configured.push(
-      'http://localhost:5173',
-      'http://127.0.0.1:5173',
-      'http://localhost:5174',
-      'http://127.0.0.1:5174',
-      'http://localhost:3000',
-      'http://127.0.0.1:3000'
-    );
+  const cleanOrigin = origin.trim().replace(/\/+$/, '');
+
+  // 1. Direct configured origin match (from FRONTEND_URL or ALLOWED_ORIGINS)
+  if (configured.includes(cleanOrigin)) {
+    return true;
   }
 
-  return Array.from(new Set(configured));
+  // 2. Localhost match (in non-production or for local development/testing)
+  const isLocalhost = /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(cleanOrigin);
+  if (process.env.NODE_ENV !== 'production' && isLocalhost) {
+    return true;
+  }
+
+  // 3. Vercel deployment domains (*.vercel.app for EngineerPath production & preview branches)
+  const isVercelDomain =
+    /^https:\/\/([a-zA-Z0-9_-]+\.)?vercel\.app$/.test(cleanOrigin) ||
+    /^https:\/\/engineernig-path.*\.vercel\.app$/.test(cleanOrigin) ||
+    /^https:\/\/engineerpath.*\.vercel\.app$/.test(cleanOrigin);
+  if (isVercelDomain) {
+    return true;
+  }
+
+  return false;
 };
 
 app.use(
@@ -63,20 +72,25 @@ app.use(
       // Allow requests with no origin (mobile apps, server-to-server, curl)
       if (!origin) return callback(null, true);
 
-      const allowedOrigins = parseAllowedOrigins();
-      const isLocalhost = /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
-
-      if (process.env.NODE_ENV !== 'production' && isLocalhost) {
-        return callback(null, origin);
+      if (isAllowedOrigin(origin)) {
+        return callback(null, true);
       }
 
-      if (allowedOrigins.includes(origin) || allowedOrigins.includes(origin.replace(/\/+$/, ''))) {
-        return callback(null, origin);
-      }
-
-      return callback(new Error(`Origin '${origin}' not allowed by CORS`));
+      console.warn(`[CORS] Rejected request from unauthorized origin: ${origin}`);
+      return callback(null, false);
     },
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS', 'HEAD'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'x-cron-secret',
+      'X-Requested-With',
+      'Accept',
+      'Origin',
+    ],
+    exposedHeaders: ['Set-Cookie'],
+    optionsSuccessStatus: 200,
   })
 );
 
