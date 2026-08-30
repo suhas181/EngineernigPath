@@ -108,7 +108,8 @@ export const uploadResume = async (
       fileBuffer = Buffer.from(rawText, 'utf-8');
       isTextFormat = true;
     } else if (req.file) {
-      fileBuffer = req.file.buffer;
+      const buffer = req.file.buffer;
+      fileBuffer = buffer;
       fileName = req.file.originalname;
       mimeType = req.file.mimetype;
 
@@ -120,33 +121,33 @@ export const uploadResume = async (
         mimeType.startsWith('text/')
       ) {
         isTextFormat = true;
-        rawText = fileBuffer.toString('utf-8');
+        rawText = buffer.toString('utf-8');
       } else if (mimeType === 'application/pdf' || lowerName.endsWith('.pdf')) {
         isTextFormat = false;
         try {
           let pdfModule: any = pdfParse;
           if (typeof pdfModule === 'function') {
-            const parsedPdf = await pdfModule(fileBuffer);
+            const parsedPdf = await pdfModule(buffer);
             rawText = parsedPdf.text || '';
           } else if (pdfModule && typeof pdfModule.default === 'function') {
-            const parsedPdf = await pdfModule.default(fileBuffer);
+            const parsedPdf = await pdfModule.default(buffer);
             rawText = parsedPdf.text || '';
           } else if (pdfModule && pdfModule.PDFParse) {
-            const parser = new pdfModule.PDFParse({ data: fileBuffer });
+            const parser = new pdfModule.PDFParse({ data: buffer });
             const parsedPdf = await parser.getText();
             rawText = parsedPdf.text || '';
           } else {
-            const bufferString = fileBuffer.toString('latin1');
+            const bufferString = buffer.toString('latin1');
             const matches = bufferString.match(/\(([^()]{3,})\)/g);
             if (matches && matches.length > 0) {
-              rawText = matches.map((m) => m.slice(1, -1)).join(' ');
+              rawText = matches.map((m: string) => m.slice(1, -1)).join(' ');
             }
           }
         } catch (parseErr) {
-          const bufferString = fileBuffer.toString('latin1');
+          const bufferString = buffer.toString('latin1');
           const matches = bufferString.match(/\(([^()]{3,})\)/g);
           if (matches && matches.length > 0) {
-            rawText = matches.map((m) => m.slice(1, -1)).join(' ');
+            rawText = matches.map((m: string) => m.slice(1, -1)).join(' ');
           }
         }
       } else if (
@@ -156,7 +157,7 @@ export const uploadResume = async (
       ) {
         isTextFormat = false;
         try {
-          const parsedDocx = await mammoth.extractRawText({ buffer: fileBuffer });
+          const parsedDocx = await mammoth.extractRawText({ buffer });
           rawText = parsedDocx.value || '';
         } catch (docxErr) {
           rawText = '';
