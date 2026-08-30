@@ -12,20 +12,27 @@ function App() {
 
   useEffect(() => {
     const initializeAuth = async () => {
-      const { accessToken, isAuthenticated } = useAuthStore.getState();
-      if (isAuthenticated || accessToken) {
-        try {
-          // Verify access token validity and fetch latest profile details (recovering via refresh token if expired)
-          const response = await api.get('/auth/me');
-          if (response.data && response.data.user) {
-            setUser(response.data.user);
+      try {
+        // Attempt session recovery using the secure HttpOnly cookie
+        const refreshResponse = await api.post('/auth/refresh-token');
+        if (refreshResponse.data && refreshResponse.data.accessToken) {
+          const newAccessToken = refreshResponse.data.accessToken;
+          useAuthStore.getState().setAccessToken(newAccessToken);
+
+          // Retrieve authenticated user profile with active access token
+          const userResponse = await api.get('/auth/me');
+          if (userResponse.data && userResponse.data.user) {
+            setUser(userResponse.data.user);
           }
-        } catch (error) {
-          console.warn('Session verification failed, resetting session:', error);
+        } else {
           logout();
         }
+      } catch {
+        // No active session cookie or invalid token -> user remains logged out cleanly
+        logout();
+      } finally {
+        setIsInitializing(false);
       }
-      setIsInitializing(false);
     };
 
     initializeAuth();

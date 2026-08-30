@@ -4,10 +4,17 @@ import { useAuthStore } from '../store/useAuthStore';
 const rawApiUrl = import.meta.env.VITE_API_URL;
 const isProd = import.meta.env.PROD;
 
-if (isProd && (!rawApiUrl || rawApiUrl.includes('localhost') || rawApiUrl.includes('127.0.0.1'))) {
-  console.error(
-    '[CONFIG WARNING] VITE_API_URL is missing or pointing to localhost in a production build. Please set VITE_API_URL to your production backend URL in your deployment dashboard.'
-  );
+if (isProd) {
+  if (!rawApiUrl || typeof rawApiUrl !== 'string' || rawApiUrl.trim() === '') {
+    throw new Error(
+      '[FATAL CONFIG ERROR] VITE_API_URL environment variable is mandatory in production builds.'
+    );
+  }
+  if (rawApiUrl.includes('localhost') || rawApiUrl.includes('127.0.0.1')) {
+    throw new Error(
+      `[FATAL CONFIG ERROR] VITE_API_URL cannot point to localhost/127.0.0.1 in production (got: "${rawApiUrl}").`
+    );
+  }
 }
 
 export const API_URL =

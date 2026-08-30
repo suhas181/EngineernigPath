@@ -69,42 +69,37 @@ interface AuthState {
   setLoading: (isLoading: boolean) => void;
 }
 
-// Read initial state from localStorage
-const storedUser = localStorage.getItem('user');
-const storedAccessToken = localStorage.getItem('accessToken');
-
 export const useAuthStore = create<AuthState>((set) => ({
-  user: storedUser ? JSON.parse(storedUser) : null,
-  accessToken: storedAccessToken || null,
-  isAuthenticated: !!storedAccessToken,
+  user: null,
+  accessToken: null,
+  isAuthenticated: false,
   isLoading: false,
 
   setAccessToken: (accessToken) => {
-    localStorage.setItem('accessToken', accessToken);
     set({ accessToken, isAuthenticated: true });
   },
 
   setTokens: (accessToken) => {
-    localStorage.setItem('accessToken', accessToken);
     set({ accessToken, isAuthenticated: true });
   },
 
   setUser: (user) => {
-    localStorage.setItem('user', JSON.stringify(user));
     set({ user });
   },
 
   login: (user, accessToken) => {
-    localStorage.setItem('user', JSON.stringify(user));
-    localStorage.setItem('accessToken', accessToken);
-    localStorage.removeItem('refreshToken'); // Purge legacy key if present
+    // Clean up any legacy localStorage entries
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('user');
     set({ user, accessToken, isAuthenticated: true });
   },
 
   logout: () => {
-    localStorage.removeItem('user');
+    // Clean up any legacy localStorage entries
     localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken'); // Purge legacy key if present
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('user');
     set({ user: null, accessToken: null, isAuthenticated: false });
   },
 
@@ -112,7 +107,6 @@ export const useAuthStore = create<AuthState>((set) => ({
     set((state) => {
       if (!state.user) return state;
       const newUser = { ...state.user, ...updatedFields };
-      localStorage.setItem('user', JSON.stringify(newUser));
       return { user: newUser };
     });
   },
