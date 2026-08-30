@@ -54,6 +54,8 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "axios": "^1.7.2",
+    "form-data": "^4.0.0",
     "ts-node-dev": "^2.0.0"
   }
 }
