@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { Navbar } from '../components/Navbar';
 import Sidebar from '../components/mosaic/Sidebar';
+import Footer from '../components/Footer';
 import { useAuthStore } from '../store/useAuthStore';
 import { useAuthModalStore } from '../store/useAuthModalStore';
 import internshipService, {
@@ -624,6 +625,9 @@ export function Internships() {
             )}
           </div>
         </main>
+        
+        {/* Shared Footer */}
+        <Footer />
       </div>
 
       {/* Internship Detail Modal */}

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Sidebar } from './Sidebar';
 import { Menu, GraduationCap } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import Footer from '../Footer';
 
 interface MosaicShellProps {
   children: React.ReactNode;
@@ -45,7 +46,7 @@ export function MosaicShell({ children }: MosaicShellProps) {
       />
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 transition-all duration-300">
+      <div className="flex-1 flex flex-col min-w-0 transition-all duration-300 min-h-screen">
         {/* Mobile Header Bar (Only Visible on Mobile <768px) */}
         <header className="md:hidden h-14 px-4 bg-slate-900 border-b border-slate-800 flex items-center justify-between sticky top-0 z-40 backdrop-blur-md">
           <button
@@ -71,6 +72,9 @@ export function MosaicShell({ children }: MosaicShellProps) {
         <main className="flex-1 p-4 sm:p-6 md:p-10 space-y-10 max-w-[1600px] w-full mx-auto text-left transition-all duration-300">
           {children}
         </main>
+
+        {/* Shared Application Footer */}
+        <Footer />
       </div>
     </div>
   );

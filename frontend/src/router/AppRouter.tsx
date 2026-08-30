@@ -22,6 +22,11 @@ import ResumeAnalyzer from '../pages/ResumeAnalyzer';
 import Planner from '../pages/Planner';
 import ProfileSettings from '../pages/ProfileSettings';
 import AdminDashboard from '../pages/AdminDashboard';
+import About from '../pages/About';
+import Contact from '../pages/Contact';
+import PrivacyPolicy from '../pages/PrivacyPolicy';
+import Terms from '../pages/Terms';
+import Disclaimer from '../pages/Disclaimer';
 import NotFound from '../pages/NotFound';
 
 // Wrapper for routes requiring authentication (available for restricted student / custom routes)
@@ -163,6 +168,13 @@ export function AppRouter() {
         <Route path="/settings" element={<ProfileSettings />} />
         <Route path="/profile-setup" element={<ProfileSetup />} />
         <Route path="/complete-profile" element={<CompleteProfile />} />
+
+        {/* Public Informational & Legal Pages */}
+        <Route path="/about" element={<About />} />
+        <Route path="/contact" element={<Contact />} />
+        <Route path="/privacy" element={<PrivacyPolicy />} />
+        <Route path="/terms" element={<Terms />} />
+        <Route path="/disclaimer" element={<Disclaimer />} />
 
         {/* Fallback Catch All */}
         <Route path="*" element={<NotFound />} />

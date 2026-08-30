@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Compass, FileText, Briefcase, MessageSquare, ArrowRight, Zap, Check, X, ShieldCheck } from 'lucide-react';
 import { useAuthStore } from '../store/useAuthStore';
 import { Badge } from '../components/mosaic/Badge';
+import Footer from '../components/Footer';
 
 export function LandingPage() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
@@ -256,10 +257,8 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="py-8 bg-[#0D131F] border-t border-white/10 text-center text-xs text-slate-400">
-        <p>© 2026 EngineerPath. MosaicMove Dashboard Visual Framework.</p>
-      </footer>
+      {/* Reusable Footer */}
+      <Footer />
     </div>
   );
 }
