@@ -4,6 +4,7 @@ import { Compass, FileText, Briefcase, MessageSquare, ArrowRight, Zap, Check, X,
 import { useAuthStore } from '../store/useAuthStore';
 import { Badge } from '../components/mosaic/Badge';
 import Footer from '../components/Footer';
+import ThemeToggle from '../components/ThemeToggle';
 
 export function LandingPage() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
@@ -45,7 +46,8 @@ export function LandingPage() {
           </span>
         </div>
 
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-3 sm:space-x-4">
+          <ThemeToggle />
           {isAuthenticated ? (
             <Link to="/dashboard" className="mosaic-btn-brand">
               Go to Dashboard

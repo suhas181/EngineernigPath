@@ -3,6 +3,7 @@ import { Sidebar } from './Sidebar';
 import { Menu, GraduationCap } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Footer from '../Footer';
+import ThemeToggle from '../ThemeToggle';
 
 interface MosaicShellProps {
   children: React.ReactNode;
@@ -36,7 +37,7 @@ export function MosaicShell({ children }: MosaicShellProps) {
   };
 
   return (
-    <div className="flex min-h-screen bg-[#F5F6F8] bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.06),rgba(255,255,255,0))] text-slate-900 font-sans antialiased selection:bg-blue-600 selection:text-white">
+    <div className="flex min-h-screen bg-[var(--page-bg)] text-[var(--ink-900)] font-sans antialiased selection:bg-teal-600 selection:text-white transition-colors duration-200">
       {/* Sidebar Component (Desktop Persistent + Mobile Drawer) */}
       <Sidebar
         isCollapsed={isCollapsed}
@@ -57,15 +58,17 @@ export function MosaicShell({ children }: MosaicShellProps) {
           </button>
 
           <Link to="/dashboard" className="flex items-center space-x-2">
-            <div className="p-1.5 rounded-lg bg-blue-600/20 text-blue-400 border border-blue-500/30">
+            <div className="p-1.5 rounded-lg bg-teal-500/20 text-teal-400 border border-teal-500/30">
               <GraduationCap className="h-4 w-4" />
             </div>
             <span className="font-bold text-sm text-white tracking-tight">
-              Engineer<span className="text-blue-400">Path</span>
+              Engineer<span className="text-teal-400">Path</span>
             </span>
           </Link>
 
-          <div className="w-8" />
+          <div className="flex items-center space-x-2">
+            <ThemeToggle className="!p-1.5 !rounded-lg" />
+          </div>
         </header>
 
         {/* Expanded Main Canvas */}

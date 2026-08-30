@@ -71,23 +71,23 @@ export function Footer() {
   return (
     <footer
       role="contentinfo"
-      className="bg-[#0B101B] border-t border-white/10 text-slate-400 text-sm mt-auto"
+      className="bg-white dark:bg-[#0B101B] border-t border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400 text-sm mt-auto transition-colors duration-200"
     >
       <div className="max-w-7xl mx-auto px-6 py-10 md:py-12 flex flex-col items-center text-center space-y-5">
         {/* Brand & Tagline */}
         <div className="space-y-1.5">
           <Link
             to="/"
-            className="inline-flex items-center space-x-2 text-white font-heading font-extrabold text-lg tracking-tight hover:text-teal-400 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 rounded-lg px-2 py-1"
+            className="inline-flex items-center space-x-2 text-slate-900 dark:text-white font-heading font-extrabold text-lg tracking-tight hover:text-teal-600 dark:hover:text-teal-400 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 rounded-lg px-2 py-1"
           >
-            <div className="p-1.5 rounded-lg bg-teal-500/20 text-teal-400 border border-teal-500/30">
+            <div className="p-1.5 rounded-lg bg-teal-500/10 dark:bg-teal-500/20 text-teal-600 dark:text-teal-400 border border-teal-500/20 dark:border-teal-500/30">
               <Zap className="h-4 w-4" aria-hidden="true" />
             </div>
             <span>
-              Engineer<span className="text-teal-400">Path</span>
+              Engineer<span className="text-teal-600 dark:text-teal-400">Path</span>
             </span>
           </Link>
-          <p className="text-xs text-slate-400 max-w-md mx-auto leading-relaxed">
+          <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto leading-relaxed">
             {siteConfig.tagline}
           </p>
         </div>
@@ -101,12 +101,12 @@ export function Footer() {
             <React.Fragment key={link.to}>
               <Link
                 to={link.to}
-                className="text-slate-300 hover:text-teal-400 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 rounded px-1.5 py-0.5"
+                className="text-slate-600 hover:text-teal-600 dark:text-slate-300 dark:hover:text-teal-400 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 rounded px-1.5 py-0.5"
               >
                 {link.label}
               </Link>
               {idx < legalLinks.length - 1 && (
-                <span className="text-slate-600 select-none hidden sm:inline" aria-hidden="true">
+                <span className="text-slate-300 dark:text-slate-600 select-none hidden sm:inline" aria-hidden="true">
                   ·
                 </span>
               )}
@@ -127,7 +127,7 @@ export function Footer() {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label={`Visit EngineerPath on ${social.name} (opens in new tab)`}
-                className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs text-slate-300 hover:text-white hover:bg-teal-500/10 hover:border-teal-500/30 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
+                className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-xs text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-teal-50 dark:hover:bg-teal-500/10 hover:border-teal-300 dark:hover:border-teal-500/30 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
               >
                 {social.icon}
                 <span>{social.name}</span>
@@ -137,20 +137,20 @@ export function Footer() {
         )}
 
         {/* Official Contact Info */}
-        <div className="pt-1 flex items-center justify-center space-x-1.5 text-xs text-slate-400">
-          <Mail className="h-3.5 w-3.5 text-teal-400" aria-hidden="true" />
+        <div className="pt-1 flex items-center justify-center space-x-1.5 text-xs text-slate-500 dark:text-slate-400">
+          <Mail className="h-3.5 w-3.5 text-teal-600 dark:text-teal-400" aria-hidden="true" />
           <span>Contact:</span>
           <a
             href={`mailto:${siteConfig.contactEmail}`}
-            className="text-teal-400 hover:text-teal-300 underline-offset-2 hover:underline transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-teal-400 rounded px-1"
+            className="text-teal-600 dark:text-teal-400 hover:text-teal-500 dark:hover:text-teal-300 underline-offset-2 hover:underline transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-teal-400 rounded px-1"
           >
             {siteConfig.contactEmail}
           </a>
         </div>
 
         {/* Copyright */}
-        <div className="pt-2 border-t border-white/5 w-full max-w-md">
-          <p className="text-xs text-slate-400">
+        <div className="pt-2 border-t border-slate-200 dark:border-white/5 w-full max-w-md">
+          <p className="text-xs text-slate-500 dark:text-slate-400">
             © {currentYear} EngineerPath. All rights reserved.
           </p>
         </div>

@@ -228,7 +228,7 @@ export function Internships() {
   }, [user, isAuthenticated, backendRecommendations, internships]);
 
   return (
-    <div className="flex h-screen bg-[#F8FAFC] overflow-hidden text-slate-900 font-sans">
+    <div className="flex h-screen bg-slate-50 dark:bg-[#0E1524] overflow-hidden text-slate-900 dark:text-white font-sans transition-colors duration-200">
       {/* Sidebar Navigation */}
       <Sidebar
         isCollapsed={sidebarCollapsed}
@@ -419,57 +419,57 @@ export function Internships() {
 
           {/* Top Summary Statistics Row (4 Compact Cards) */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="mosaic-card p-4 flex items-center space-x-4 bg-white border border-slate-200/80">
-              <div className="p-3 rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-100">
+            <div className="mosaic-card p-4 flex items-center space-x-4 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800">
+              <div className="p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/40">
                 <Briefcase className="h-6 w-6" />
               </div>
               <div className="text-left">
-                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                   🟢 Open Now
                 </p>
-                <p className="text-2xl font-black text-slate-900 mt-0.5">
+                <p className="text-2xl font-black text-slate-900 dark:text-white mt-0.5">
                   {stats ? stats.openCount : '—'}
                 </p>
               </div>
             </div>
 
-            <div className="mosaic-card p-4 flex items-center space-x-4 bg-white border border-slate-200/80">
-              <div className="p-3 rounded-2xl bg-indigo-50 text-indigo-600 border border-indigo-100">
+            <div className="mosaic-card p-4 flex items-center space-x-4 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800">
+              <div className="p-3 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/40">
                 <Filter className="h-6 w-6" />
               </div>
               <div className="text-left">
-                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                   💻 Software Roles
                 </p>
-                <p className="text-2xl font-black text-slate-900 mt-0.5">
+                <p className="text-2xl font-black text-slate-900 dark:text-white mt-0.5">
                   {stats ? stats.softwareCount : '—'}
                 </p>
               </div>
             </div>
 
-            <div className="mosaic-card p-4 flex items-center space-x-4 bg-white border border-slate-200/80">
-              <div className="p-3 rounded-2xl bg-purple-50 text-purple-600 border border-purple-100">
+            <div className="mosaic-card p-4 flex items-center space-x-4 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800">
+              <div className="p-3 rounded-2xl bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 border border-purple-100 dark:border-purple-900/40">
                 <Globe className="h-6 w-6" />
               </div>
               <div className="text-left">
-                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                   🌎 Remote
                 </p>
-                <p className="text-2xl font-black text-slate-900 mt-0.5">
+                <p className="text-2xl font-black text-slate-900 dark:text-white mt-0.5">
                   {stats ? stats.remoteCount : '—'}
                 </p>
               </div>
             </div>
 
-            <div className="mosaic-card p-4 flex items-center space-x-4 bg-white border border-slate-200/80">
-              <div className="p-3 rounded-2xl bg-amber-50 text-amber-600 border border-amber-100">
+            <div className="mosaic-card p-4 flex items-center space-x-4 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800">
+              <div className="p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-100 dark:border-amber-900/40">
                 <Building className="h-6 w-6" />
               </div>
               <div className="text-left">
-                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                   🏢 Companies
                 </p>
-                <p className="text-2xl font-black text-slate-900 mt-0.5">
+                <p className="text-2xl font-black text-slate-900 dark:text-white mt-0.5">
                   {stats ? stats.companyCount : '—'}
                 </p>
               </div>
@@ -481,10 +481,10 @@ export function Internships() {
             <div className="space-y-4 text-left">
               <div className="flex items-center space-x-2">
                 <Sparkles className="h-5 w-5 text-amber-500" />
-                <h2 className="text-xl font-bold font-heading text-slate-900 tracking-tight">
+                <h2 className="text-xl font-bold font-heading text-slate-900 dark:text-white tracking-tight">
                   Recommended Internships
                 </h2>
-                <span className="text-xs text-slate-500 font-medium">
+                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
                   Matched to your role ({user?.preferredCareer || 'Software Engineer'})
                 </span>
               </div>
@@ -508,10 +508,10 @@ export function Internships() {
           <div className="space-y-4 text-left">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-xl font-bold font-heading text-slate-900 tracking-tight">
+                <h2 className="text-xl font-bold font-heading text-slate-900 dark:text-white tracking-tight">
                   {bookmarkedOnly ? 'Saved Internships' : 'Available Internships'}
                 </h2>
-                <p className="text-xs text-slate-500 mt-0.5 font-medium">
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-medium">
                   Showing {totalCount} engineering opportunities
                 </p>
               </div>

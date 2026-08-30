@@ -52,30 +52,27 @@ export const InternshipCard: React.FC<InternshipCardProps> = ({
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
             <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
           </span>
-          <span className="text-[11px] font-bold text-slate-700">
+          <span className="text-[11px] font-bold text-slate-700 dark:text-slate-200">
             Active Opportunity
           </span>
         </div>
       );
     }
-
     if (internship.status === 'CLOSED') {
       return (
         <div className="flex items-center space-x-1.5">
-          <span className="inline-flex rounded-full h-2 w-2 bg-slate-400" />
-          <span className="text-[11px] font-semibold text-slate-500">
-            Closed
+          <span className="h-2 w-2 rounded-full bg-rose-500" />
+          <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+            Posting Concluded
           </span>
         </div>
       );
     }
-
-    // Default: UNKNOWN
     return (
       <div className="flex items-center space-x-1.5">
-        <span className="inline-flex rounded-full h-2 w-2 bg-amber-400" />
-        <span className="text-[11px] font-semibold text-slate-600">
-          Status Unknown
+        <span className="h-2 w-2 rounded-full bg-amber-400" />
+        <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+          Status Unverified
         </span>
       </div>
     );
@@ -84,7 +81,7 @@ export const InternshipCard: React.FC<InternshipCardProps> = ({
   return (
     <div
       onClick={() => onSelect(internship)}
-      className="group relative flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-purple-300 hover:shadow-xl hover:shadow-purple-500/5 cursor-pointer"
+      className="group relative flex flex-col justify-between rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-purple-300 dark:hover:border-purple-500/40 hover:shadow-xl cursor-pointer text-left"
     >
       {/* Top Row: Company Logo Avatar, Name, and Bookmark Toggle */}
       <div>
@@ -98,15 +95,15 @@ export const InternshipCard: React.FC<InternshipCardProps> = ({
             </div>
             <div className="min-w-0 text-left">
               <div className="flex items-center space-x-1.5">
-                <p className="text-xs font-bold uppercase tracking-wider text-purple-700 truncate">
+                <p className="text-xs font-bold uppercase tracking-wider text-purple-700 dark:text-purple-400 truncate">
                   {internship.company}
                 </p>
-                <span className="inline-block h-1 w-1 rounded-full bg-slate-300" />
-                <span className="text-[10px] font-semibold text-slate-400">
+                <span className="inline-block h-1 w-1 rounded-full bg-slate-300 dark:bg-slate-600" />
+                <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500">
                   {internship.source}
                 </span>
               </div>
-              <h3 className="text-base font-bold text-slate-900 group-hover:text-purple-600 transition-colors line-clamp-1 mt-0.5">
+              <h3 className="text-base font-bold text-slate-900 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors line-clamp-1 mt-0.5">
                 {internship.title}
               </h3>
             </div>
@@ -115,10 +112,11 @@ export const InternshipCard: React.FC<InternshipCardProps> = ({
           {/* Bookmark Heart Action */}
           <button
             onClick={(e) => onToggleBookmark(internship._id, e)}
-            className={`p-2 rounded-full border transition-all cursor-pointer ${isBookmarked
-                ? 'bg-rose-50 border-rose-200 text-rose-500 shadow-sm'
-                : 'bg-slate-50 border-slate-200 text-slate-400 hover:text-rose-500 hover:bg-rose-50/50 hover:border-rose-200'
-              }`}
+            className={`p-2 rounded-full border transition-all cursor-pointer ${
+              isBookmarked
+                ? 'bg-rose-50 dark:bg-rose-950/50 border-rose-200 dark:border-rose-800/60 text-rose-500 shadow-sm'
+                : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400 hover:text-rose-500 hover:bg-rose-50/50 dark:hover:bg-rose-950/30 hover:border-rose-200 dark:hover:border-rose-800/40'
+            }`}
             title={isBookmarked ? 'Remove Bookmark' : 'Save Internship'}
           >
             <Heart className={`h-4 w-4 ${isBookmarked ? 'fill-rose-500' : ''}`} />
@@ -127,8 +125,8 @@ export const InternshipCard: React.FC<InternshipCardProps> = ({
 
         {/* Recommendation Tag Banner (if matched with profile) */}
         {recommendationReason && (
-          <div className="mt-3 inline-flex items-center space-x-1.5 rounded-lg bg-emerald-50 border border-emerald-200/80 px-2.5 py-1 text-[11px] font-semibold text-emerald-800">
-            <Sparkles className="h-3.5 w-3.5 text-emerald-600 flex-shrink-0" />
+          <div className="mt-3 inline-flex items-center space-x-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-800/40 px-2.5 py-1 text-[11px] font-semibold text-emerald-800 dark:text-emerald-300">
+            <Sparkles className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
             <span className="truncate">{recommendationReason}</span>
           </div>
         )}
@@ -136,34 +134,34 @@ export const InternshipCard: React.FC<InternshipCardProps> = ({
         {/* Meta Info Badges: Location, Remote, Salary, Employment Type */}
         <div className="mt-3.5 flex flex-wrap items-center gap-2">
           {/* Location Badge */}
-          <span className="inline-flex items-center space-x-1 rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-700">
-            <MapPin className="h-3 w-3 text-slate-500" />
+          <span className="inline-flex items-center space-x-1 rounded-full bg-slate-100 dark:bg-slate-800 px-2.5 py-1 text-[11px] font-medium text-slate-700 dark:text-slate-300">
+            <MapPin className="h-3 w-3 text-slate-500 dark:text-slate-400" />
             <span className="truncate max-w-[140px]">{internship.location || 'India'}</span>
           </span>
 
           {/* Remote / Work Mode Badge */}
           {internship.remote ? (
-            <span className="inline-flex items-center space-x-1 rounded-full bg-indigo-50 border border-indigo-200/60 px-2.5 py-1 text-[11px] font-semibold text-indigo-700">
-              <Globe className="h-3 w-3 text-indigo-600" />
+            <span className="inline-flex items-center space-x-1 rounded-full bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200/60 dark:border-indigo-800/40 px-2.5 py-1 text-[11px] font-semibold text-indigo-700 dark:text-indigo-300">
+              <Globe className="h-3 w-3 text-indigo-600 dark:text-indigo-400" />
               <span>Remote</span>
             </span>
           ) : (
-            <span className="inline-flex items-center space-x-1 rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-600">
-              <Building2 className="h-3 w-3 text-slate-500" />
+            <span className="inline-flex items-center space-x-1 rounded-full bg-slate-100 dark:bg-slate-800 px-2.5 py-1 text-[11px] font-medium text-slate-600 dark:text-slate-300">
+              <Building2 className="h-3 w-3 text-slate-500 dark:text-slate-400" />
               <span>On-site / Hybrid</span>
             </span>
           )}
 
           {/* Employment Type if specified */}
           {internship.employmentType && internship.employmentType !== 'Internship' && (
-            <span className="inline-flex items-center rounded-full bg-blue-50 border border-blue-200/60 px-2.5 py-1 text-[11px] font-semibold text-blue-700">
+            <span className="inline-flex items-center rounded-full bg-blue-50 dark:bg-blue-950/40 border border-blue-200/60 dark:border-blue-800/40 px-2.5 py-1 text-[11px] font-semibold text-blue-700 dark:text-blue-300">
               {internship.employmentType}
             </span>
           )}
 
           {/* Salary Badge if available */}
           {internship.salary && (
-            <span className="inline-flex items-center rounded-full bg-amber-50 border border-amber-200/60 px-2.5 py-1 text-[11px] font-bold text-amber-800">
+            <span className="inline-flex items-center rounded-full bg-amber-50 dark:bg-amber-950/40 border border-amber-200/60 dark:border-amber-800/40 px-2.5 py-1 text-[11px] font-bold text-amber-800 dark:text-amber-300">
               {internship.salary}
             </span>
           )}
@@ -174,13 +172,13 @@ export const InternshipCard: React.FC<InternshipCardProps> = ({
           {internship.skills.slice(0, 4).map((skill, idx) => (
             <span
               key={idx}
-              className="rounded-md bg-purple-50/80 border border-purple-100 px-2 py-0.5 text-[10px] font-bold text-purple-700"
+              className="rounded-md bg-purple-50/80 dark:bg-purple-950/40 border border-purple-100 dark:border-purple-900/40 px-2 py-0.5 text-[10px] font-bold text-purple-700 dark:text-purple-300"
             >
               {skill}
             </span>
           ))}
           {internship.skills.length > 4 && (
-            <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-500">
+            <span className="rounded-md bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 text-[10px] font-semibold text-slate-500 dark:text-slate-400">
               +{internship.skills.length - 4} more
             </span>
           )}
@@ -188,11 +186,11 @@ export const InternshipCard: React.FC<InternshipCardProps> = ({
       </div>
 
       {/* Card Footer: Truthful Status, Posted Date, and Primary Apply Button */}
-      <div className="mt-5 pt-3.5 border-t border-slate-100 flex items-center justify-between">
+      <div className="mt-5 pt-3.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
         <div className="text-left">
           {renderStatusBadge()}
 
-          <div className="flex items-center space-x-2 mt-0.5 text-[10px] text-slate-400 font-medium">
+          <div className="flex items-center space-x-2 mt-0.5 text-[10px] text-slate-400 dark:text-slate-500 font-medium">
             <span>{formatPostedDate(internship.publishedAt)}</span>
             <span>•</span>
             <span className="flex items-center gap-0.5">

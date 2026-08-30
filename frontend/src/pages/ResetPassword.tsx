@@ -6,6 +6,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../services/api';
 import toast from 'react-hot-toast';
 import { Lock, Loader2, KeyRound } from 'lucide-react';
+import ThemeToggle from '../components/ThemeToggle';
 
 const resetPasswordSchema = z
   .object({
@@ -61,12 +62,16 @@ export function ResetPassword() {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--page-bg)] flex items-center justify-center p-6 text-left">
-      <div className="mosaic-card max-w-md w-full p-8 space-y-6 shadow-lg bg-white border border-[var(--card-border)]">
+    <div className="min-h-screen bg-[var(--page-bg)] flex items-center justify-center p-6 text-left relative transition-colors duration-200">
+      <div className="absolute top-6 right-6">
+        <ThemeToggle />
+      </div>
+
+      <div className="mosaic-card max-w-md w-full p-8 space-y-6 shadow-lg bg-[var(--card-bg)] border border-[var(--card-border)]">
         <div className="text-center space-y-2">
           <Link to="/" className="inline-flex items-center space-x-2">
             <span className="font-heading font-extrabold text-2xl text-[var(--ink-900)]">
-              Engineer<span className="text-teal-600">Path</span>
+              Engineer<span className="text-teal-600 dark:text-teal-400">Path</span>
             </span>
           </Link>
           <h2 className="text-lg font-bold text-[var(--ink-900)] font-heading">Set New Password</h2>
@@ -86,11 +91,11 @@ export function ResetPassword() {
                 type="password"
                 placeholder="••••••••"
                 {...register('password')}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-sm text-[var(--ink-900)] focus:outline-none focus:border-teal-600 focus:bg-white transition"
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-10 pr-4 py-2.5 text-sm text-[var(--ink-900)] placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-teal-500 transition"
               />
             </div>
             {errors.password && (
-              <p className="text-xs text-rose-600 font-medium">{errors.password.message}</p>
+              <p className="text-xs text-rose-600 dark:text-rose-400 font-medium">{errors.password.message}</p>
             )}
           </div>
 
@@ -104,18 +109,18 @@ export function ResetPassword() {
                 type="password"
                 placeholder="••••••••"
                 {...register('confirmPassword')}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-sm text-[var(--ink-900)] focus:outline-none focus:border-teal-600 focus:bg-white transition"
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-10 pr-4 py-2.5 text-sm text-[var(--ink-900)] placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-teal-500 transition"
               />
             </div>
             {errors.confirmPassword && (
-              <p className="text-xs text-rose-600 font-medium">{errors.confirmPassword.message}</p>
+              <p className="text-xs text-rose-600 dark:text-rose-400 font-medium">{errors.confirmPassword.message}</p>
             )}
           </div>
 
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full mosaic-btn-primary !py-3 !text-sm flex items-center justify-center space-x-2 mt-2"
+            className="w-full mosaic-btn-primary !py-3 !text-sm flex items-center justify-center space-x-2 mt-2 cursor-pointer"
           >
             {isLoading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -128,9 +133,9 @@ export function ResetPassword() {
           </button>
         </form>
 
-        <div className="pt-4 border-t border-slate-100 text-center text-xs text-[var(--ink-muted)]">
+        <div className="pt-4 border-t border-slate-100 dark:border-slate-800 text-center text-xs text-[var(--ink-muted)]">
           Remember password?{' '}
-          <Link to="/login" className="font-bold text-teal-700 hover:underline">
+          <Link to="/login" className="font-bold text-teal-700 dark:text-teal-400 hover:underline">
             Back to login
           </Link>
         </div>

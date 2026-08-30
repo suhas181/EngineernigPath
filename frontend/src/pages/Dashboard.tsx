@@ -130,43 +130,43 @@ export function Dashboard() {
 
         {/* ==================== 4 QUICK STATISTICS BADGES ==================== */}
         <section className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white/85 backdrop-blur-xl border border-slate-200/90 rounded-2xl p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-250 flex items-center space-x-4">
-            <div className="p-3 rounded-xl bg-blue-50 text-blue-600 font-bold">
+          <div className="bg-white/85 dark:bg-slate-900/85 backdrop-blur-xl border border-slate-200/90 dark:border-slate-800 rounded-2xl p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-250 flex items-center space-x-4">
+            <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 font-bold border border-blue-100 dark:border-blue-900/40">
               <BookMarked className="w-6 h-6" />
             </div>
             <div>
-              <div className="text-2xl font-extrabold text-slate-900">80+</div>
-              <div className="text-xs font-semibold text-slate-500">Structured Topics</div>
+              <div className="text-2xl font-extrabold text-slate-900 dark:text-white">80+</div>
+              <div className="text-xs font-semibold text-slate-500 dark:text-slate-400">Structured Topics</div>
             </div>
           </div>
 
-          <div className="bg-white/85 backdrop-blur-xl border border-slate-200/90 rounded-2xl p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-250 flex items-center space-x-4">
-            <div className="p-3 rounded-xl bg-purple-50 text-purple-600 font-bold">
+          <div className="bg-white/85 dark:bg-slate-900/85 backdrop-blur-xl border border-slate-200/90 dark:border-slate-800 rounded-2xl p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-250 flex items-center space-x-4">
+            <div className="p-3 rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 font-bold border border-purple-100 dark:border-purple-900/40">
               <Target className="w-6 h-6" />
             </div>
             <div>
-              <div className="text-2xl font-extrabold text-slate-900">1200+</div>
-              <div className="text-xs font-semibold text-slate-500">Practice Problems</div>
+              <div className="text-2xl font-extrabold text-slate-900 dark:text-white">1200+</div>
+              <div className="text-xs font-semibold text-slate-500 dark:text-slate-400">Practice Problems</div>
             </div>
           </div>
 
-          <div className="bg-white/85 backdrop-blur-xl border border-slate-200/90 rounded-2xl p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-250 flex items-center space-x-4">
-            <div className="p-3 rounded-xl bg-emerald-50 text-emerald-600 font-bold">
+          <div className="bg-white/85 dark:bg-slate-900/85 backdrop-blur-xl border border-slate-200/90 dark:border-slate-800 rounded-2xl p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-250 flex items-center space-x-4">
+            <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 font-bold border border-emerald-100 dark:border-emerald-900/40">
               <Layers className="w-6 h-6" />
             </div>
             <div>
-              <div className="text-2xl font-extrabold text-slate-900">500+</div>
-              <div className="text-xs font-semibold text-slate-500">Curated Resources</div>
+              <div className="text-2xl font-extrabold text-slate-900 dark:text-white">500+</div>
+              <div className="text-xs font-semibold text-slate-500 dark:text-slate-400">Curated Resources</div>
             </div>
           </div>
 
-          <div className="bg-white/85 backdrop-blur-xl border border-slate-200/90 rounded-2xl p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-250 flex items-center space-x-4">
-            <div className="p-3 rounded-xl bg-amber-50 text-amber-600 font-bold">
+          <div className="bg-white/85 dark:bg-slate-900/85 backdrop-blur-xl border border-slate-200/90 dark:border-slate-800 rounded-2xl p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-250 flex items-center space-x-4">
+            <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 font-bold border border-amber-100 dark:border-amber-900/40">
               <Award className="w-6 h-6" />
             </div>
             <div>
-              <div className="text-2xl font-extrabold text-slate-900">8</div>
-              <div className="text-xs font-semibold text-slate-500">Career Paths</div>
+              <div className="text-2xl font-extrabold text-slate-900 dark:text-white">8</div>
+              <div className="text-xs font-semibold text-slate-500 dark:text-slate-400">Career Paths</div>
             </div>
           </div>
         </section>
@@ -175,16 +175,16 @@ export function Dashboard() {
         <section className="space-y-6">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">
+              <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
                 {isAuthenticated ? 'Based on Your Career Goal' : 'Popular Career Paths'}
               </h2>
-              <p className="text-sm text-slate-500 mt-1 font-normal">
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 font-normal">
                 Select a role to unlock its structured category curriculum, practice sheets, and projects.
               </p>
             </div>
             <Link
               to="/roadmaps"
-              className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center transition-colors"
+              className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 flex items-center transition-colors"
             >
               View All Paths
               <ArrowRight className="w-3.5 h-3.5 ml-1" />
@@ -198,23 +198,23 @@ export function Dashboard() {
                 <div
                   key={role.id}
                   onClick={() => handleStartRole(role.categoryName)}
-                  className="group relative rounded-2xl border border-slate-200/90 bg-white/85 backdrop-blur-xl p-6 flex flex-col justify-between shadow-sm hover:shadow-xl hover:border-blue-500/40 hover:-translate-y-1 transition-all duration-250 cursor-pointer text-left"
+                  className="group relative rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white/85 dark:bg-slate-900/85 backdrop-blur-xl p-6 flex flex-col justify-between shadow-sm hover:shadow-xl hover:border-blue-500/40 hover:-translate-y-1 transition-all duration-250 cursor-pointer text-left"
                 >
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <div className={`w-12 h-12 rounded-2xl flex items-center justify-center bg-gradient-to-tr ${role.gradient} text-white shadow-md group-hover:scale-105 transition-transform`}>
                         <RoleIcon className="w-6 h-6" />
                       </div>
-                      <span className="text-[11px] font-mono font-bold text-slate-500 px-2.5 py-1 rounded-lg bg-slate-100 border border-slate-200">
+                      <span className="text-[11px] font-mono font-bold text-slate-500 dark:text-slate-400 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
                         {role.duration}
                       </span>
                     </div>
 
                     <div>
-                      <h3 className="text-lg font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
+                      <h3 className="text-lg font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                         {role.name}
                       </h3>
-                      <p className="text-xs text-slate-500 mt-1.5 line-clamp-2 leading-relaxed font-normal">
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5 line-clamp-2 leading-relaxed font-normal">
                         {role.description}
                       </p>
                     </div>
@@ -223,22 +223,22 @@ export function Dashboard() {
                       {role.skills.slice(0, 4).map((sk) => (
                         <span
                           key={sk}
-                          className="px-2.5 py-1 rounded-md text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200/80"
+                          className="px-2.5 py-1 rounded-md text-[11px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700"
                         >
                           {sk}
                         </span>
                       ))}
                       {role.skills.length > 4 && (
-                        <span className="px-2 py-1 rounded-md text-[11px] font-semibold bg-slate-50 text-slate-400">
+                        <span className="px-2 py-1 rounded-md text-[11px] font-semibold bg-slate-50 dark:bg-slate-800 text-slate-400">
                           +{role.skills.length - 4}
                         </span>
                       )}
                     </div>
                   </div>
 
-                  <div className="pt-4 mt-5 border-t border-slate-100 flex items-center justify-between text-xs">
-                    <span className="text-slate-500 font-semibold">Est. {role.duration}</span>
-                    <span className="text-blue-600 font-extrabold group-hover:translate-x-1 transition-transform flex items-center">
+                  <div className="pt-4 mt-5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
+                    <span className="text-slate-500 dark:text-slate-400 font-semibold">Est. {role.duration}</span>
+                    <span className="text-blue-600 dark:text-blue-400 font-extrabold group-hover:translate-x-1 transition-transform flex items-center">
                       Start Path
                       <ArrowRight className="w-3.5 h-3.5 ml-1" />
                     </span>
@@ -251,19 +251,19 @@ export function Dashboard() {
 
         {/* ==================== SECTION 3: CONTINUE LEARNING / PERSONALIZE CTA ==================== */}
         <section className="space-y-4">
-          <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">
+          <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
             {isAuthenticated ? 'Continue Learning' : 'Explore Learning Pathways'}
           </h2>
 
           {isAuthenticated && activeTopicInfo ? (
-            <div className="relative rounded-2xl border border-blue-200/90 bg-white/90 backdrop-blur-xl p-6 md:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-sm hover:shadow-md transition-all duration-250">
+            <div className="relative rounded-2xl border border-blue-200/90 dark:border-blue-900/50 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl p-6 md:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-sm hover:shadow-md transition-all duration-250">
               <div className="space-y-3">
                 <div className="flex items-center space-x-2">
-                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-blue-100/80 text-blue-700 border border-blue-200">
+                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-blue-100/80 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
                     ACTIVE STEP
                   </span>
-                  <span className="text-xs text-slate-500 font-semibold">
-                    Role: <strong className="text-slate-800">{activeTopicInfo.role}</strong>
+                  <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold">
+                    Role: <strong className="text-slate-800 dark:text-slate-200">{activeTopicInfo.role}</strong>
                   </span>
                 </div>
 
@@ -271,13 +271,13 @@ export function Dashboard() {
                   <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">
                     {activeTopicInfo.category} &bull; {activeTopicInfo.module}
                   </div>
-                  <h3 className="text-2xl font-extrabold text-slate-900 mt-1">
+                  <h3 className="text-2xl font-extrabold text-slate-900 dark:text-white mt-1">
                     {activeTopicInfo.topic}
                   </h3>
                 </div>
 
-                <p className="text-xs text-slate-600 font-medium flex items-center">
-                  <CheckCircle2 className="w-4 h-4 mr-1.5 text-emerald-600" />
+                <p className="text-xs text-slate-600 dark:text-slate-300 font-medium flex items-center">
+                  <CheckCircle2 className="w-4 h-4 mr-1.5 text-emerald-600 dark:text-emerald-400" />
                   Follow the 8-step guided learning flow to complete this topic.
                 </p>
               </div>
@@ -291,7 +291,7 @@ export function Dashboard() {
               </button>
             </div>
           ) : !isAuthenticated ? (
-            <div className="relative rounded-2xl border border-purple-200/90 bg-gradient-to-r from-slate-900 via-indigo-950 to-purple-950 p-6 md:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-xl text-white">
+            <div className="relative rounded-2xl border border-purple-200/90 dark:border-purple-900/50 bg-gradient-to-r from-slate-900 via-indigo-950 to-purple-950 p-6 md:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-xl text-white">
               <div className="space-y-2">
                 <div className="inline-flex items-center space-x-2 rounded-full bg-purple-500/20 border border-purple-400/30 px-3 py-1 text-xs font-bold text-purple-300">
                   <Sparkles className="h-3.5 w-3.5 text-purple-400" />
@@ -314,11 +314,11 @@ export function Dashboard() {
               </button>
             </div>
           ) : (
-            <div className="rounded-2xl border border-slate-200/90 bg-white/85 backdrop-blur-xl p-8 text-center space-y-4 shadow-sm hover:shadow-md transition-all duration-250">
-              <Compass className="w-12 h-12 text-blue-600 mx-auto" />
+            <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white/85 dark:bg-slate-900/85 backdrop-blur-xl p-8 text-center space-y-4 shadow-sm hover:shadow-md transition-all duration-250">
+              <Compass className="w-12 h-12 text-blue-600 dark:text-blue-400 mx-auto" />
               <div className="max-w-md mx-auto space-y-1">
-                <h3 className="text-lg font-bold text-slate-900">Choose Your First Learning Path</h3>
-                <p className="text-xs text-slate-500">
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">Choose Your First Learning Path</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
                   Select a career role above to start your guided 8-step engineering journey.
                 </p>
               </div>
@@ -336,36 +336,36 @@ export function Dashboard() {
         {/* ==================== SECTION 4: RECENTLY OPENED RESOURCES ==================== */}
         <section className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">Recently Opened Resources</h2>
-            <span className="text-xs text-slate-500 font-semibold">Direct Access</span>
+            <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">Recently Opened Resources</h2>
+            <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold">Direct Access</span>
           </div>
 
           {isLoadingRecent ? (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               {[1, 2, 3].map((n) => (
-                <div key={n} className="rounded-2xl border border-slate-200 bg-white/80 p-6 animate-pulse space-y-4">
+                <div key={n} className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 p-6 animate-pulse space-y-4">
                   <div className="flex justify-between items-center">
-                    <div className="w-10 h-10 bg-slate-200 rounded-xl" />
-                    <div className="w-20 h-5 bg-slate-200 rounded-md" />
+                    <div className="w-10 h-10 bg-slate-200 dark:bg-slate-800 rounded-xl" />
+                    <div className="w-20 h-5 bg-slate-200 dark:bg-slate-800 rounded-md" />
                   </div>
-                  <div className="h-4 bg-slate-200 rounded w-3/4" />
-                  <div className="h-4 bg-slate-200 rounded w-1/2" />
-                  <div className="pt-4 border-t border-slate-100 flex justify-between">
-                    <div className="w-20 h-4 bg-slate-200 rounded" />
-                    <div className="w-16 h-4 bg-slate-200 rounded" />
+                  <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-3/4" />
+                  <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-1/2" />
+                  <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-between">
+                    <div className="w-20 h-4 bg-slate-200 dark:bg-slate-800 rounded" />
+                    <div className="w-16 h-4 bg-slate-200 dark:bg-slate-800 rounded" />
                   </div>
                 </div>
               ))}
             </div>
           ) : recentResources.length === 0 ? (
             /* Clean Empty State: No Fake Resources */
-            <div className="rounded-2xl border border-slate-200/90 bg-white/85 backdrop-blur-xl p-8 sm:p-10 text-center space-y-4 shadow-sm">
-              <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto border border-blue-100 shadow-sm">
+            <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white/85 dark:bg-slate-900/85 backdrop-blur-xl p-8 sm:p-10 text-center space-y-4 shadow-sm">
+              <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 flex items-center justify-center mx-auto border border-blue-100 dark:border-blue-900/40 shadow-sm">
                 <BookOpen className="w-6 h-6" />
               </div>
               <div className="max-w-md mx-auto space-y-1.5">
-                <h3 className="text-base font-bold text-slate-900">No resources opened yet</h3>
-                <p className="text-xs text-slate-500 leading-relaxed">
+                <h3 className="text-base font-bold text-slate-900 dark:text-white">No resources opened yet</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
                   Explore the Learning Hub or your curriculum topics to start building your personal direct access history.
                 </p>
               </div>
@@ -386,30 +386,30 @@ export function Dashboard() {
                 return (
                   <div
                     key={res.id || res.resourceId || res.url}
-                    className="rounded-2xl border border-slate-200/90 bg-white/85 backdrop-blur-xl p-6 flex flex-col justify-between shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-250 text-left"
+                    className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white/85 dark:bg-slate-900/85 backdrop-blur-xl p-6 flex flex-col justify-between shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-250 text-left"
                   >
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
-                        <span className="p-2.5 rounded-xl bg-blue-50 text-blue-600 border border-blue-100">
+                        <span className="p-2.5 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-900/40">
                           <ResourceIcon className="w-5 h-5" />
                         </span>
-                        <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider px-2.5 py-1 rounded-md bg-slate-100/90 border border-slate-200">
+                        <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider px-2.5 py-1 rounded-md bg-slate-100/90 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
                           {res.provider || 'Resource'}
                         </span>
                       </div>
 
-                      <h4 className="text-sm font-bold text-slate-900 line-clamp-2 leading-snug">
+                      <h4 className="text-sm font-bold text-slate-900 dark:text-white line-clamp-2 leading-snug">
                         {res.title}
                       </h4>
                     </div>
 
-                    <div className="pt-4 mt-4 border-t border-slate-100 flex flex-col space-y-3">
+                    <div className="pt-4 mt-4 border-t border-slate-100 dark:border-slate-800 flex flex-col space-y-3">
                       <div className="flex items-center justify-between text-xs">
-                        <span className="text-slate-400 font-medium flex items-center space-x-1">
-                          <Clock className="w-3 h-3 text-slate-400" />
+                        <span className="text-slate-400 dark:text-slate-500 font-medium flex items-center space-x-1">
+                          <Clock className="w-3 h-3 text-slate-400 dark:text-slate-500" />
                           <span>Opened {relativeTimeLabel.toLowerCase()}</span>
                         </span>
-                        <span className="text-slate-500 font-medium capitalize text-[11px] px-2 py-0.5 rounded bg-slate-50 border border-slate-100">
+                        <span className="text-slate-500 dark:text-slate-400 font-medium capitalize text-[11px] px-2 py-0.5 rounded bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700">
                           {res.type}
                         </span>
                       </div>
@@ -419,7 +419,7 @@ export function Dashboard() {
                         target="_blank"
                         rel="noopener noreferrer"
                         onClick={() => handleOpenAgain(res)}
-                        className="w-full py-2 px-3 rounded-xl bg-blue-50 hover:bg-blue-600 text-blue-700 hover:text-white text-xs font-bold transition-all duration-200 flex items-center justify-center space-x-1.5 group cursor-pointer"
+                        className="w-full py-2 px-3 rounded-xl bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-600 dark:hover:bg-blue-600 text-blue-700 dark:text-blue-300 hover:text-white text-xs font-bold transition-all duration-200 flex items-center justify-center space-x-1.5 group cursor-pointer border border-blue-100 dark:border-blue-900/40"
                       >
                         <span>Open Again</span>
                         <ExternalLink className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />

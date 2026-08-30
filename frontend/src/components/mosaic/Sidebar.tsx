@@ -20,6 +20,7 @@ import {
   User,
   LogIn,
 } from 'lucide-react';
+import ThemeToggle from '../ThemeToggle';
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -270,26 +271,34 @@ export function Sidebar({
             )}
           </div>
 
-          {!isCollapsed && (
-            isAuthenticated ? (
-              <button
-                onClick={handleLogout}
-                className="p-2 rounded-xl text-slate-400 hover:text-rose-400 hover:bg-slate-900 transition-colors cursor-pointer"
-                title="Logout"
-              >
-                <LogOut className="h-4 w-4" />
-              </button>
-            ) : (
-              <Link
-                to="/login"
-                className="p-2 rounded-xl text-purple-400 hover:text-white hover:bg-slate-900 transition-colors cursor-pointer flex items-center space-x-1"
-                title="Sign In"
-              >
-                <LogIn className="h-4 w-4" />
-              </Link>
-            )
+          {isCollapsed ? null : (
+            <div className="flex items-center space-x-1">
+              <ThemeToggle className="!p-1.5 !rounded-lg !border-slate-800 !bg-slate-900" />
+              {isAuthenticated ? (
+                <button
+                  onClick={handleLogout}
+                  className="p-2 rounded-xl text-slate-400 hover:text-rose-400 hover:bg-slate-900 transition-colors cursor-pointer"
+                  title="Logout"
+                >
+                  <LogOut className="h-4 w-4" />
+                </button>
+              ) : (
+                <Link
+                  to="/login"
+                  className="p-2 rounded-xl text-purple-400 hover:text-white hover:bg-slate-900 transition-colors cursor-pointer flex items-center space-x-1"
+                  title="Sign In"
+                >
+                  <LogIn className="h-4 w-4" />
+                </Link>
+              )}
+            </div>
           )}
         </div>
+        {isCollapsed && (
+          <div className="mt-2.5 flex justify-center">
+            <ThemeToggle className="!p-1.5 !rounded-lg !border-slate-800 !bg-slate-900" />
+          </div>
+        )}
       </div>
     </div>
   );
