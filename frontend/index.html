@@ -1,32 +1,44 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>EngineerPath - AI Career guidance for Engineering Students</title>
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <!-- Pre-hydration theme initializer to prevent visual flash -->
-    <script>
-      (function() {
-        try {
-          var stored = localStorage.getItem('engineerpath-theme');
-          var systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-          if (stored === 'dark' || (!stored && systemDark)) {
-            document.documentElement.classList.add('dark');
-            document.documentElement.style.colorScheme = 'dark';
-          } else {
-            document.documentElement.classList.remove('dark');
-            document.documentElement.style.colorScheme = 'light';
-          }
-        } catch (e) {}
-      })();
-    </script>
-  </head>
-  <body class="bg-background text-foreground antialiased selection:bg-primary selection:text-primary-foreground">
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EngineerPath - AI Career guidance for Engineering Students</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <!-- Pre-hydration theme initializer to prevent visual flash -->
+  <script>
+    (function () {
+      try {
+        var stored = localStorage.getItem('engineerpath-theme');
+        var systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (stored === 'dark' || (!stored && systemDark)) {
+          document.documentElement.classList.add('dark');
+          document.documentElement.style.colorScheme = 'dark';
+        } else {
+          document.documentElement.classList.remove('dark');
+          document.documentElement.style.colorScheme = 'light';
+        }
+      } catch (e) { }
+    })();
+  </script>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-03B76G2H54"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
+
+    gtag('config', 'G-03B76G2H54');
+  </script>
+</head>
+
+<body class="bg-background text-foreground antialiased selection:bg-primary selection:text-primary-foreground">
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+
 </html>

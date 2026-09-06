@@ -19,6 +19,7 @@ EngineerPath is architected on a type-safe, resilient **MERN Stack (MongoDB, Exp
 - **Routing & Deep Linking**: React Router DOM with public student login (`/login`), separated admin route (`/admin/login`), query parameter synchronization (`/roadmaps?role=...`), and role-based route guards
 - **Icons**: Lucide React icons
 - **HTTP Client**: Axios with interceptors for dual-token JWT authentication and error boundaries
+- **Analytics & Telemetry**: Google Analytics 4 (`gtag.js`) integrated into client header for privacy-conscious engagement and learning pathway analytics
 
 ### Backend
 - **Framework**: Express with TypeScript on Node.js
