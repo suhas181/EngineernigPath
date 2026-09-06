@@ -1,7 +1,5 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
-import { Navbar } from '../components/Navbar';
-import Sidebar from '../components/mosaic/Sidebar';
-import Footer from '../components/Footer';
+import { MosaicShell } from '../components/mosaic/MosaicShell';
 import { useAuthStore } from '../store/useAuthStore';
 import { useAuthModalStore } from '../store/useAuthModalStore';
 import internshipService, {
@@ -65,8 +63,7 @@ const POPULAR_SKILLS = [
 export function Internships() {
   const { user, isAuthenticated } = useAuthStore();
   const { openModal } = useAuthModalStore();
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+
 
   // Data states
   const [internships, setInternships] = useState<InternshipItem[]>([]);
@@ -228,20 +225,8 @@ export function Internships() {
   }, [user, isAuthenticated, backendRecommendations, internships]);
 
   return (
-    <div className="flex h-screen bg-slate-50 dark:bg-[#0E1524] overflow-hidden text-slate-900 dark:text-white font-sans transition-colors duration-200">
-      {/* Sidebar Navigation */}
-      <Sidebar
-        isCollapsed={sidebarCollapsed}
-        onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
-        isMobileOpen={mobileSidebarOpen}
-        onCloseMobile={() => setMobileSidebarOpen(false)}
-      />
-
-      {/* Main Workspace Area */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-y-auto custom-scrollbar">
-        <Navbar />
-
-        <main className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full space-y-8">
+    <MosaicShell>
+      <div className="space-y-8">
           {/* Header Banner */}
           <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 via-indigo-950 to-purple-950 p-6 sm:p-10 text-white shadow-xl shadow-indigo-950/10 border border-slate-800">
             <div className="absolute top-0 right-0 -mt-12 -mr-12 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
@@ -624,10 +609,6 @@ export function Internships() {
               </div>
             )}
           </div>
-        </main>
-        
-        {/* Shared Footer */}
-        <Footer />
       </div>
 
       {/* Internship Detail Modal */}
@@ -637,7 +618,7 @@ export function Internships() {
         onClose={() => setSelectedInternship(null)}
         onToggleBookmark={(id) => handleToggleBookmark(id)}
       />
-    </div>
+    </MosaicShell>
   );
 }
 

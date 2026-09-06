@@ -55,9 +55,10 @@ EngineerPath/
 │   │   │   ├── dashboard/          # DashboardHero.tsx, Metrics, Statistics
 │   │   │   ├── internships/        # InternshipCard.tsx, FilterBar.tsx, InternshipDetailModal.tsx
 │   │   │   ├── learning/           # TopicLearningView.tsx (7-step guided flow)
-│   │   │   ├── mosaic/             # Responsive Sidebar.tsx & MosaicShell.tsx
+│   │   │   ├── mosaic/             # MosaicShell.tsx (Unified Layout with Top Navbar), TopHeader.tsx
+│   │   │   ├── planner/            # CalendarPlannerSection.tsx (Event Scheduling & Checklists)
 │   │   │   └── roadmap/            # Roadmap cards, practice sheets, and timeline modules
-│   │   ├── pages/                  # Views (Dashboard, Internships, Roadmaps, Resources, ResumeAnalyzer, Login, AdminLogin)
+│   │   ├── pages/                  # Views (Dashboard, Internships, Roadmaps, Resources, Planner, ResumeAnalyzer, Login, AdminLogin)
 │   │   ├── store/                  # Zustand authentication & UI modal stores
 │   │   ├── services/               # Axios API clients (internshipService, recentResourceService, api)
 │   │   ├── utils/                  # Date & relative time formatters
@@ -117,6 +118,15 @@ Full end-to-end curriculum modules across 8 high-demand engineering specializati
 - **Step 5 — Real-World Capstone Projects**: Practical portfolio projects.
 - **Step 6 — High-Yield Interview Questions**: Top conceptual interview questions with solutions.
 - **Step 7 — Revision Notes & Cheat Sheets**: Concise key takeaways and trap warnings.
+
+### 7. 📅 Calendar Planner & Task Hub (`/planner`)
+- **Interactive Calendar Scheduling**: Direct date & time-blocked event management with categories, priority flags, and completion states.
+- **Daily & Weekly Checklists**: Real-time task tracking with XP rewards and instant streak updates.
+- **First-Class Guest Experience**: Gracefully handles unauthenticated visitors by bypassing protected `/productivity/*` API requests, presenting a high-conversion onboarding prompt with Sign In / Get Started CTAs and feature previews.
+
+### 8. 🧭 Unified Top Navigation & Full-Width Canvas Architecture
+- **Global Pill Navbar**: Modern, glassmorphic top navigation bar with active state pill indicators, role-aware routing (Admin / Student), notification bells, level badges, and instant theme toggles.
+- **Full-Width Canvas (`MosaicShell`)**: Replaced fragmented sidebar layouts with a unified, responsive top-navbar shell spanning full display width with ergonomic padding across all viewports.
 
 ---
 

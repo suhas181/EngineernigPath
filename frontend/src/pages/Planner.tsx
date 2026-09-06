@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 import {
@@ -10,7 +11,11 @@ import {
   Award,
   Flame,
   LayoutGrid,
+  Sparkles,
+  LogIn,
+  UserPlus,
 } from 'lucide-react';
+import { useAuthStore } from '../store/useAuthStore';
 import { CalendarPlannerSection } from '../components/planner/CalendarPlannerSection';
 import { MosaicShell } from '../components/mosaic/MosaicShell';
 import { TopHeader } from '../components/mosaic/TopHeader';
@@ -54,6 +59,7 @@ interface AnalyticsData {
 }
 
 export function Planner() {
+  const { isAuthenticated } = useAuthStore();
   const [tasks, setTasks] = useState<TaskItem[]>([]);
   const [events, setEvents] = useState<PlannerEventItem[]>([]);
   const [stats, setStats] = useState<UserStatsData | null>(null);
@@ -66,6 +72,10 @@ export function Planner() {
   const [taskDueDate, setTaskDueDate] = useState('');
 
   const initData = async () => {
+    if (!isAuthenticated) {
+      setIsLoading(false);
+      return;
+    }
     try {
       const [tasksRes, eventsRes, statsRes, analyticsRes] = await Promise.all([
         api.get('/productivity/tasks'),
@@ -87,8 +97,12 @@ export function Planner() {
   };
 
   useEffect(() => {
+    if (!isAuthenticated) {
+      setIsLoading(false);
+      return;
+    }
     initData();
-  }, []);
+  }, [isAuthenticated]);
 
   const handleAddTask = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -204,6 +218,88 @@ export function Planner() {
           <p className="text-[var(--ink-muted)] text-sm font-medium">Loading Calendar Planner...</p>
         </div>
       </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <MosaicShell pendingTaskCount={0}>
+        <TopHeader
+          title="Calendar Planner & Task Hub"
+          subtitle="Schedule milestones, manage target checklists, and track streak analytics"
+        />
+
+        {/* Guest Mode Call-to-Action Card */}
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 via-indigo-950 to-purple-950 p-6 sm:p-10 text-white shadow-xl shadow-indigo-950/10 border border-slate-800 text-center sm:text-left">
+          <div className="absolute top-0 right-0 -mt-12 -mr-12 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute bottom-0 left-1/3 -mb-12 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+
+          <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
+            <div className="space-y-3 max-w-2xl">
+              <div className="inline-flex items-center space-x-2 rounded-full bg-purple-500/20 border border-purple-400/30 px-3.5 py-1 text-xs font-bold text-purple-300">
+                <Sparkles className="h-3.5 w-3.5 text-purple-400" />
+                <span>Productivity & Task Tracker</span>
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-extrabold font-heading tracking-tight text-white">
+                Sign in to track your planner and productivity stats
+              </h2>
+              <p className="text-slate-300 text-xs sm:text-sm leading-relaxed max-w-xl">
+                Create a free account or sign in to schedule daily engineering tasks, organize project milestones on your interactive calendar, maintain your streak, and earn XP.
+              </p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto shrink-0">
+              <Link
+                to="/signup"
+                className="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-extrabold text-sm shadow-lg shadow-purple-600/30 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center space-x-2 cursor-pointer"
+              >
+                <UserPlus className="h-4 w-4" />
+                <span>Get Started</span>
+              </Link>
+              <Link
+                to="/login"
+                className="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-white/10 hover:bg-white/15 border border-white/20 text-white font-bold text-sm backdrop-blur-sm hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center space-x-2 cursor-pointer"
+              >
+                <LogIn className="h-4 w-4" />
+                <span>Sign In</span>
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        {/* Feature Preview Highlights */}
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 text-left">
+          <div className="mosaic-card p-6 space-y-3">
+            <div className="p-3 w-fit rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 border border-purple-100 dark:border-purple-900/40">
+              <CalendarIcon className="w-5 h-5" />
+            </div>
+            <h3 className="font-bold text-sm text-[var(--ink-900)]">Interactive Calendar View</h3>
+            <p className="text-xs text-[var(--ink-muted)] leading-relaxed">
+              Schedule time blocks, interview preps, coding sessions, and college deadlines with custom tags and priority levels.
+            </p>
+          </div>
+
+          <div className="mosaic-card p-6 space-y-3">
+            <div className="p-3 w-fit rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/40">
+              <CheckCircle2 className="w-5 h-5" />
+            </div>
+            <h3 className="font-bold text-sm text-[var(--ink-900)]">Daily & Weekly Checklists</h3>
+            <p className="text-xs text-[var(--ink-muted)] leading-relaxed">
+              Organize day-to-day study routines, track task completion percentages, and stay focused on targeted goals.
+            </p>
+          </div>
+
+          <div className="mosaic-card p-6 space-y-3">
+            <div className="p-3 w-fit rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-100 dark:border-amber-900/40">
+              <Flame className="w-5 h-5" />
+            </div>
+            <h3 className="font-bold text-sm text-[var(--ink-900)]">Streak Analytics & XP</h3>
+            <p className="text-xs text-[var(--ink-muted)] leading-relaxed">
+              Earn XP for every completed milestone, level up your profile, and build unbroken learning streaks.
+            </p>
+          </div>
+        </div>
+      </MosaicShell>
     );
   }
 

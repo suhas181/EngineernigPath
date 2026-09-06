@@ -195,6 +195,14 @@ app.use('/api/resume', resumeRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/internships', internshipRoutes);
 
+// 404 Catch-All Handler
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    message: `API endpoint '${req.method} ${req.originalUrl}' not found.`,
+  });
+});
+
 // Global Error Handler
 app.use(errorHandler);
 
