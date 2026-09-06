@@ -1,7 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import {
-  Github,
   Linkedin,
   Instagram,
   Twitter,
@@ -25,12 +24,6 @@ export function Footer() {
 
   // Map of supported official social channels with their respective icons and config URLs
   const socialChannels = [
-    {
-      id: 'github',
-      name: 'GitHub',
-      url: siteConfig.socialLinks.github,
-      icon: <Github className="h-4 w-4" aria-hidden="true" />,
-    },
     {
       id: 'linkedin',
       name: 'LinkedIn',
