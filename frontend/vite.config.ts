@@ -5,7 +5,7 @@ import path from 'path';
 // https://vitejs.dev/config/
 export default defineConfig(({ mode, command }) => {
   const env = loadEnv(mode, process.cwd(), '');
-  const apiUrl = env.VITE_API_URL || process.env.VITE_API_URL;
+  const apiUrl = (process.env.VITE_API_URL || env.VITE_API_URL || '').trim();
 
   if (command === 'build' || mode === 'production') {
     if (!apiUrl || apiUrl.trim() === '') {

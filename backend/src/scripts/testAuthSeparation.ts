@@ -6,7 +6,9 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 import http from 'http';
 import mongoose from 'mongoose';
+import bcrypt from 'bcryptjs';
 import app from '../app';
+import { User } from '../models/User';
 
 const PORT = 5096;
 const API_BASE = `http://127.0.0.1:${PORT}/api`;
@@ -21,14 +23,32 @@ async function runAuthTests() {
     await mongoose.connect(mongoUri);
   }
 
+  const adminEmail = (process.env.ADMIN_EMAIL || 'admin@engineerpath.com').toLowerCase().trim();
+  const adminPassword = process.env.ADMIN_PASSWORD || 'Admin@12345';
+
+  // Ensure default test admin exists in database so TEST 10 succeeds even on fresh DBs (such as CI)
+  const existingAdmin = await User.findOne({ email: adminEmail });
+  if (!existingAdmin) {
+    const hashedPassword = await bcrypt.hash(adminPassword, 10);
+    await User.create({
+      name: 'System Admin',
+      email: adminEmail,
+      password: hashedPassword,
+      role: 'admin',
+      isVerified: true,
+      college: 'EngineerPath Headquarter',
+      branch: 'Administration',
+      preferredCareer: 'System Admin',
+    });
+    console.log(`[SETUP] Seeded test admin account (${adminEmail}) for test suite.\n`);
+  }
+
   const server = http.createServer(app);
   await new Promise<void>((resolve) => server.listen(PORT, '127.0.0.1', resolve));
 
   let passedTests = 0;
   let totalTests = 10;
 
-  const adminEmail = (process.env.ADMIN_EMAIL || 'admin@engineerpath.com').toLowerCase().trim();
-  const adminPassword = process.env.ADMIN_PASSWORD || 'Admin@12345';
   const testStudentEmail = `test.student.${Date.now()}@university.edu`;
   const testStudentPassword = 'Password@12345';
   let studentToken = '';
