@@ -11,14 +11,9 @@ import {
   Video,
   BookOpen,
   Github,
-  FileText,
-  GraduationCap,
   ExternalLink,
   Search,
   X,
-  Rocket,
-  Target,
-  Layers,
   Play,
   Bookmark,
   ShieldCheck,
@@ -49,6 +44,7 @@ export interface LearningHubResource {
 const CATEGORIES = [
   'All',
   'Recommended',
+  'Career Roadmaps',
   'Programming Languages',
   'Data Structures & Algorithms',
   'Web Development',
@@ -58,19 +54,11 @@ const CATEGORIES = [
   'Aptitude',
   'Interview Preparation',
   'Projects',
+  'Internships',
+  'Jobs',
 ];
 
-const TYPES = [
-  { id: 'all', label: 'All Types' },
-  { id: 'video', label: 'Videos', icon: Video },
-  { id: 'playlist', label: 'Playlists', icon: Layers },
-  { id: 'github', label: 'GitHub', icon: Github },
-  { id: 'documentation', label: 'Docs', icon: BookOpen },
-  { id: 'article', label: 'Articles', icon: FileText },
-  { id: 'course', label: 'Courses', icon: GraduationCap },
-  { id: 'practice', label: 'Practice', icon: Target },
-  { id: 'open-source', label: 'Open Source', icon: Rocket },
-];
+
 
 export function Resources() {
   const { isAuthenticated } = useAuthStore();
@@ -83,7 +71,6 @@ export function Resources() {
   // Filter States
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
-  const [selectedType, setSelectedType] = useState<string>('all');
   const [selectedLanguage, setSelectedLanguage] = useState<string>('all');
   const [bookmarkedOnly, setBookmarkedOnly] = useState(false);
   const [imageErrorMap, setImageErrorMap] = useState<Record<string, boolean>>({});
@@ -92,7 +79,6 @@ export function Resources() {
     try {
       const params: any = {};
       if (selectedCategory !== 'All') params.category = selectedCategory;
-      if (selectedType !== 'all') params.type = selectedType;
       if (selectedLanguage !== 'all') params.language = selectedLanguage;
       if (search.trim() !== '') params.search = search;
       if (bookmarkedOnly) params.bookmarkedOnly = 'true';
@@ -129,7 +115,7 @@ export function Resources() {
 
   useEffect(() => {
     fetchResources();
-  }, [selectedCategory, selectedType, selectedLanguage, search, bookmarkedOnly]);
+  }, [selectedCategory, selectedLanguage, search, bookmarkedOnly]);
 
   const handleToggleState = async (
     resourceId: string,
@@ -200,7 +186,12 @@ export function Resources() {
     return map;
   }, [resources]);
 
-  const hasActiveFilters = search.trim() !== '' || selectedCategory !== 'All' || selectedType !== 'all' || selectedLanguage !== 'all' || bookmarkedOnly;
+  // Curated external resources from ResuMax
+  const resumaxResources = useMemo(() => {
+    return resources.filter((r) => r.provider === 'ResuMax');
+  }, [resources]);
+
+  const hasActiveFilters = search.trim() !== '' || selectedCategory !== 'All' || selectedLanguage !== 'all' || bookmarkedOnly;
 
   return (
     <MosaicShell>
@@ -252,71 +243,49 @@ export function Resources() {
         </div>
 
         {/* ==========================================
-            TYPE FILTERS & CATEGORIES BAR
+            CATEGORIES FILTER BAR
            ========================================== */}
-        <div className="space-y-4">
-          {/* Resource Type Filters */}
-          <div className="flex items-center space-x-2 overflow-x-auto pb-2 scrollbar-none">
-            {TYPES.map((typeObj) => {
-              const IconComp = typeObj.icon;
-              const isActive = selectedType === typeObj.id;
-              return (
-                <button
-                  key={typeObj.id}
-                  onClick={() => setSelectedType(typeObj.id)}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 flex items-center space-x-2 shrink-0 border ${
-                    isActive
-                      ? 'bg-purple-600 text-white border-purple-500 shadow-md shadow-purple-500/20'
-                      : 'bg-white/80 border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300'
-                  }`}
-                >
-                  {IconComp && <IconComp className="w-3.5 h-3.5" />}
-                  <span>{typeObj.label}</span>
-                </button>
-              );
-            })}
+        <div className="flex items-center space-x-2 overflow-x-auto pb-2 scrollbar-none">
+          {CATEGORIES.map((cat) => {
+            const isActive = selectedCategory === cat && !bookmarkedOnly;
+            return (
+              <button
+                key={cat}
+                onClick={() => {
+                  setSelectedCategory(cat);
+                  setBookmarkedOnly(false);
+                }}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 shrink-0 border ${
+                  isActive
+                    ? 'bg-purple-600 text-white border-purple-500 shadow-md shadow-purple-500/20'
+                    : 'bg-white/80 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/10'
+                }`}
+              >
+                {cat}
+              </button>
+            );
+          })}
 
-            <button
-              onClick={() => {
-                if (!isAuthenticated) {
-                  openModal({
-                    title: 'Save Learning Resources',
-                    description: 'Create a free account to view your bookmarked resources.',
-                  });
-                  return;
-                }
-                setBookmarkedOnly(!bookmarkedOnly);
-              }}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 flex items-center space-x-2 shrink-0 border ${
-                bookmarkedOnly
-                  ? 'bg-amber-500 text-white border-amber-400 shadow-md'
-                  : 'bg-white/80 border-slate-200 text-slate-700 hover:bg-slate-50'
-              }`}
-            >
-              <Bookmark className={`w-3.5 h-3.5 ${bookmarkedOnly ? 'fill-current' : ''}`} />
-              <span>Bookmarked</span>
-            </button>
-          </div>
-
-          {/* Category Selector Pills */}
-          <div className="flex items-center space-x-2 overflow-x-auto pb-2 scrollbar-none">
-            {CATEGORIES.map((cat) => {
-              const isActive = selectedCategory === cat;
-              return (
-                <button
-                  key={cat}
-                  onClick={() => setSelectedCategory(cat)}
-                  className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 shrink-0 border ${
-                    isActive
-                      ? 'bg-slate-900 text-white border-slate-800'
-                      : 'bg-slate-100/80 border-slate-200/80 text-slate-600 hover:bg-slate-200/80 hover:text-slate-900'
-                  }`}
-                >
-                  {cat}
-                </button>
-              );
-            })}
-          </div>
+          <button
+            onClick={() => {
+              if (!isAuthenticated) {
+                openModal({
+                  title: 'Save Learning Resources',
+                  description: 'Create a free account to view your bookmarked resources.',
+                });
+                return;
+              }
+              setBookmarkedOnly(!bookmarkedOnly);
+            }}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 flex items-center space-x-2 shrink-0 border ${
+              bookmarkedOnly
+                ? 'bg-amber-500 text-white border-amber-400 shadow-md'
+                : 'bg-white/80 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/10'
+            }`}
+          >
+            <Bookmark className={`w-3.5 h-3.5 ${bookmarkedOnly ? 'fill-current' : ''}`} />
+            <span>Bookmarked</span>
+          </button>
         </div>
 
         {/* ==========================================
@@ -345,9 +314,15 @@ export function Resources() {
             {hasActiveFilters ? (
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-bold text-slate-900 flex items-center space-x-2">
-                    <span>Search & Filter Results</span>
-                    <span className="px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-700 text-xs font-extrabold">
+                  <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center space-x-2">
+                    <span>
+                      {bookmarkedOnly
+                        ? 'Bookmarked Resources'
+                        : search.trim()
+                        ? 'Search Results'
+                        : selectedCategory}
+                    </span>
+                    <span className="px-2.5 py-0.5 rounded-full bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 text-xs font-extrabold border border-purple-200 dark:border-purple-800/40">
                       {resources.length}
                     </span>
                   </h2>
@@ -355,11 +330,10 @@ export function Resources() {
                     onClick={() => {
                       setSearch('');
                       setSelectedCategory('All');
-                      setSelectedType('all');
                       setSelectedLanguage('all');
                       setBookmarkedOnly(false);
                     }}
-                    className="text-xs font-semibold text-purple-600 hover:text-purple-700 hover:underline"
+                    className="text-xs font-semibold text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300 hover:underline"
                   >
                     Clear All Filters
                   </button>
@@ -389,6 +363,42 @@ export function Resources() {
                   DEFAULT CURATED SECTIONS VIEW
                  ========================================== */
               <div className="space-y-12">
+                {/* SECTION 0: CURATED EXTERNAL RESOURCES (RESUMAX) */}
+                {resumaxResources.length > 0 && (
+                  <SectionBlock
+                    title="⭐ Curated Resources"
+                    subtitle={
+                      <span>
+                        Curated career roadmaps, coding projects, tech internships, and new-grad job trackers from{' '}
+                        <a
+                          href="https://github.com/resumax"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-bold text-purple-600 dark:text-purple-400 hover:underline inline-flex items-center space-x-0.5"
+                        >
+                          <span>ResuMax</span>
+                          <ExternalLink className="w-3 h-3 inline ml-0.5" />
+                        </a>
+                        . Open directly in original GitHub repositories.
+                      </span>
+                    }
+                    badge="EXTERNAL"
+                    badgeColor="bg-purple-100 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300 border-purple-200 dark:border-purple-800/40"
+                  >
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-6">
+                      {resumaxResources.map((res) => (
+                        <ResourceCard
+                          key={res.id}
+                          resource={res}
+                          onToggleState={handleToggleState}
+                          hasError={Boolean(imageErrorMap[res.id])}
+                          onImageError={() => setImageErrorMap((prev) => ({ ...prev, [res.id]: true }))}
+                        />
+                      ))}
+                    </div>
+                  </SectionBlock>
+                )}
+
                 {/* SECTION 1: RECOMMENDED / FEATURED RESOURCES */}
                 {recommendations.length > 0 && (
                   <SectionBlock
@@ -632,7 +642,7 @@ function SectionBlock({
   children,
 }: {
   title: string;
-  subtitle: string;
+  subtitle: React.ReactNode;
   badge?: string;
   badgeColor?: string;
   children: React.ReactNode;
@@ -649,7 +659,7 @@ function SectionBlock({
               </span>
             )}
           </div>
-          <p className="text-xs font-medium text-slate-500 mt-1">{subtitle}</p>
+          <div className="text-xs font-medium text-slate-500 mt-1">{subtitle}</div>
         </div>
       </div>
       {children}
@@ -771,7 +781,7 @@ function ResourceCard({
       <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
         <div className="space-y-1.5">
           <div className="flex items-center justify-between text-[11px] font-bold text-purple-600 uppercase tracking-wider">
-            <span>{resource.topic}</span>
+            <span>{resource.category || resource.topic}</span>
             {resource.verified && (
               <span className="inline-flex items-center space-x-1 text-[10px] text-emerald-600 font-extrabold">
                 <ShieldCheck className="w-3 h-3" />
@@ -787,6 +797,32 @@ function ResourceCard({
           <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">
             {resource.description}
           </p>
+
+          {/* Attribution & External Resource Badge */}
+          <div className="flex items-center justify-between text-[11px] pt-1.5 border-t border-slate-100">
+            <span className="text-slate-500 font-medium">
+              Source:{' '}
+              {resource.provider === 'ResuMax' ? (
+                <a
+                  href="https://github.com/resumax"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="text-purple-600 hover:text-purple-700 font-bold hover:underline inline-flex items-center space-x-0.5"
+                >
+                  <span>ResuMax</span>
+                  <ExternalLink className="w-2.5 h-2.5 ml-0.5 inline" />
+                </a>
+              ) : (
+                <span className="font-semibold text-slate-700">{resource.provider}</span>
+              )}
+            </span>
+            {resource.provider === 'ResuMax' && (
+              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200">
+                External Resource
+              </span>
+            )}
+          </div>
         </div>
 
         {/* TAGS & CTA BUTTON */}
@@ -821,7 +857,7 @@ function ResourceCard({
             }}
             className="w-full py-2.5 px-4 rounded-xl bg-slate-900 hover:bg-purple-600 text-white text-xs font-bold transition-all duration-200 flex items-center justify-center space-x-2 shadow-sm group-hover:shadow-md"
           >
-            <span>{isVideo ? 'Watch Now' : isGithub ? 'Explore Repo' : 'Open Resource'}</span>
+            <span>{resource.provider === 'ResuMax' ? 'Explore' : isVideo ? 'Watch Now' : isGithub ? 'Explore Repo' : 'Open Resource'}</span>
             <ExternalLink className="w-3.5 h-3.5" />
           </a>
         </div>

@@ -16,6 +16,7 @@ export type ResourceType =
 
 export type ResourceCategory =
   | 'Recommended'
+  | 'Career Roadmaps'
   | 'Programming Languages'
   | 'Data Structures & Algorithms'
   | 'Web Development'
@@ -25,6 +26,8 @@ export type ResourceCategory =
   | 'Aptitude'
   | 'Interview Preparation'
   | 'Projects'
+  | 'Internships'
+  | 'Jobs'
   | string;
 
 export type ResourceLevel = 'Beginner' | 'Intermediate' | 'Advanced' | 'beginner' | 'intermediate' | 'advanced';
