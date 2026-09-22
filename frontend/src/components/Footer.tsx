@@ -16,7 +16,6 @@ export function Footer() {
 
   const legalLinks = [
     { label: 'About', to: '/about' },
-    { label: 'Contact', to: '/contact' },
     { label: 'Privacy Policy', to: '/privacy' },
     { label: 'Terms & Conditions', to: '/terms' },
     { label: 'Disclaimer', to: '/disclaimer' },

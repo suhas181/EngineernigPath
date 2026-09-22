@@ -23,7 +23,6 @@ import Planner from '../pages/Planner';
 import ProfileSettings from '../pages/ProfileSettings';
 import AdminDashboard from '../pages/AdminDashboard';
 import About from '../pages/About';
-import Contact from '../pages/Contact';
 import PrivacyPolicy from '../pages/PrivacyPolicy';
 import Terms from '../pages/Terms';
 import Disclaimer from '../pages/Disclaimer';
@@ -171,7 +170,6 @@ export function AppRouter() {
 
         {/* Public Informational & Legal Pages */}
         <Route path="/about" element={<About />} />
-        <Route path="/contact" element={<Contact />} />
         <Route path="/privacy" element={<PrivacyPolicy />} />
         <Route path="/terms" element={<Terms />} />
         <Route path="/disclaimer" element={<Disclaimer />} />
