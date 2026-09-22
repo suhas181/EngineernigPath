@@ -86,22 +86,6 @@ export function Contact() {
               </div>
             </div>
 
-            <div className="p-6 rounded-2xl bg-white dark:bg-[#0D131F] border border-slate-200 dark:border-white/10 shadow-sm space-y-3">
-              <h3 className="text-sm font-bold text-slate-900 dark:text-white">Project Information</h3>
-              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                EngineerPath is an open-source technical education framework. You can also file issues and feature suggestions on our official repository.
-              </p>
-              {siteConfig.socialLinks.github && (
-                <a
-                  href={siteConfig.socialLinks.github}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs text-teal-600 dark:text-teal-400 hover:underline inline-block pt-1 font-medium"
-                >
-                  View GitHub Repository →
-                </a>
-              )}
-            </div>
           </div>
 
           {/* Contact Message Form */}
