@@ -28,6 +28,7 @@ export type ResourceCategory =
   | 'Projects'
   | 'Internships'
   | 'Jobs'
+  | 'DevOps'
   | string;
 
 export type ResourceLevel = 'Beginner' | 'Intermediate' | 'Advanced' | 'beginner' | 'intermediate' | 'advanced';

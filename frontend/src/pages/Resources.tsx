@@ -54,6 +54,7 @@ const CATEGORIES = [
   'Aptitude',
   'Interview Preparation',
   'Projects',
+  'DevOps',
   'Internships',
   'Jobs',
 ];
@@ -517,7 +518,7 @@ export function Resources() {
                 {resourcesByCategory['CS Fundamentals']?.length > 0 && (
                   <SectionBlock
                     title="⚙️ CS Fundamentals"
-                    subtitle="Operating Systems, DBMS, Computer Networks, and System Design Primer for placement exams & interviews."
+                    subtitle="Complete one-shot placement revision for Computer Networks, Operating Systems, DBMS, and OOPs in Java."
                     badge="CORE THEORY"
                     badgeColor="bg-indigo-100 text-indigo-700 border-indigo-200"
                   >
@@ -611,6 +612,28 @@ export function Resources() {
                   >
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                       {resourcesByCategory['Projects'].map((res) => (
+                        <ResourceCard
+                          key={res.id}
+                          resource={res}
+                          onToggleState={handleToggleState}
+                          hasError={Boolean(imageErrorMap[res.id])}
+                          onImageError={() => setImageErrorMap((prev) => ({ ...prev, [res.id]: true }))}
+                        />
+                      ))}
+                    </div>
+                  </SectionBlock>
+                )}
+
+                {/* SECTION 11: DEVOPS & CLOUD */}
+                {resourcesByCategory['DevOps']?.length > 0 && (
+                  <SectionBlock
+                    title="☁️ DevOps & Cloud Computing"
+                    subtitle="Foundational DevOps, Docker containers, Kubernetes orchestration, and CI/CD pipelines by Abhishek Veeramalla."
+                    badge="DEVOPS"
+                    badgeColor="bg-sky-100 text-sky-700 border-sky-200"
+                  >
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                      {resourcesByCategory['DevOps'].map((res) => (
                         <ResourceCard
                           key={res.id}
                           resource={res}
