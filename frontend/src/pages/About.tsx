@@ -1,10 +1,103 @@
+import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Compass, FileText, Briefcase, Zap, CheckCircle2, Shield } from 'lucide-react';
+import { ArrowLeft, Compass, FileText, Briefcase, Zap, CheckCircle2, Shield, Linkedin } from 'lucide-react';
 import Footer from '../components/Footer';
 import ThemeToggle from '../components/ThemeToggle';
 import { siteConfig } from '../config/siteConfig';
 
 export function About() {
+  useEffect(() => {
+    const prevTitle = document.title;
+    document.title = 'About EngineerPath | Founded by Suhas H S';
+
+    // Meta description
+    let metaDescription = document.querySelector('meta[name="description"]');
+    const prevDesc = metaDescription ? metaDescription.getAttribute('content') : null;
+    if (!metaDescription) {
+      metaDescription = document.createElement('meta');
+      metaDescription.setAttribute('name', 'description');
+      document.head.appendChild(metaDescription);
+    }
+    metaDescription.setAttribute(
+      'content',
+      'Learn about EngineerPath, an AI-powered career guidance platform for engineering students, founded by Suhas H S.'
+    );
+
+    // Canonical link
+    let canonical = document.querySelector('link[rel="canonical"]');
+    const prevCanonical = canonical ? canonical.getAttribute('href') : null;
+    if (!canonical) {
+      canonical = document.createElement('link');
+      canonical.setAttribute('rel', 'canonical');
+      document.head.appendChild(canonical);
+    }
+    canonical.setAttribute('href', 'https://engineerpath.me/about');
+
+    // Open Graph & Twitter meta tags
+    const metaTagsConfig = [
+      { attr: 'property', name: 'og:title', content: 'About EngineerPath | Founded by Suhas H S' },
+      {
+        attr: 'property',
+        name: 'og:description',
+        content:
+          'Learn about EngineerPath, an AI-powered career guidance platform for engineering students, founded by Suhas H S.',
+      },
+      { attr: 'property', name: 'og:url', content: 'https://engineerpath.me/about' },
+      { attr: 'name', name: 'twitter:title', content: 'About EngineerPath | Founded by Suhas H S' },
+      {
+        attr: 'name',
+        name: 'twitter:description',
+        content:
+          'Learn about EngineerPath, an AI-powered career guidance platform for engineering students, founded by Suhas H S.',
+      },
+    ];
+
+    const elementsToCleanup: { element: Element; prevContent: string | null; isNew: boolean }[] = [];
+
+    metaTagsConfig.forEach(({ attr, name, content }) => {
+      const tag = document.querySelector(`meta[${attr}="${name}"]`);
+      if (tag) {
+        elementsToCleanup.push({
+          element: tag,
+          prevContent: tag.getAttribute('content'),
+          isNew: false,
+        });
+        tag.setAttribute('content', content);
+      } else {
+        const newTag = document.createElement('meta');
+        newTag.setAttribute(attr, name);
+        newTag.setAttribute('content', content);
+        document.head.appendChild(newTag);
+        elementsToCleanup.push({
+          element: newTag,
+          prevContent: null,
+          isNew: true,
+        });
+      }
+    });
+
+    return () => {
+      document.title = prevTitle;
+      if (prevDesc !== null) {
+        metaDescription?.setAttribute('content', prevDesc);
+      } else {
+        metaDescription?.remove();
+      }
+      if (prevCanonical !== null) {
+        canonical?.setAttribute('href', prevCanonical);
+      } else {
+        canonical?.remove();
+      }
+      elementsToCleanup.forEach(({ element, prevContent, isNew }) => {
+        if (isNew) {
+          element.remove();
+        } else if (prevContent !== null) {
+          element.setAttribute('content', prevContent);
+        }
+      });
+    };
+  }, []);
+
   const pillars = [
     {
       icon: <Compass className="h-6 w-6 text-teal-600 dark:text-teal-400" />,
@@ -76,6 +169,41 @@ export function About() {
           <h2 className="text-xl font-bold text-slate-900 dark:text-white font-heading">Our Purpose</h2>
           <p className="text-slate-600 dark:text-slate-300 text-sm md:text-base leading-relaxed">
             Engineering curricula often leave students uncertain about how theoretical coursework translates to modern industry requirements. EngineerPath bridges this gap by offering a cohesive suite of tools that help students track skill progression, validate resume readiness, schedule study goals, and identify relevant entry-level opportunities.
+          </p>
+        </section>
+
+        {/* Meet the Founder */}
+        <section
+          id="suhas-h-s"
+          className="p-6 md:p-8 rounded-2xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 shadow-sm space-y-5"
+        >
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-white/5 pb-4">
+            <div>
+              <div className="inline-flex items-center space-x-2 px-2.5 py-0.5 rounded-full bg-teal-500/10 border border-teal-500/20 text-teal-600 dark:text-teal-400 text-xs font-semibold mb-2">
+                <span>Meet the Founder</span>
+              </div>
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-white font-heading">
+                Suhas H S
+              </h2>
+              <p className="text-sm font-semibold text-teal-600 dark:text-teal-400 mt-0.5">
+                Founder &amp; Developer, EngineerPath
+              </p>
+            </div>
+            <div>
+              <a
+                href="https://www.linkedin.com/in/suhas-h-s-78a34b296/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-[#0A66C2] hover:bg-[#004182] text-white text-xs md:text-sm font-medium transition shadow-sm hover:shadow"
+              >
+                <Linkedin className="h-4 w-4 fill-current" />
+                <span>Connect with Suhas on LinkedIn</span>
+              </a>
+            </div>
+          </div>
+
+          <p className="text-slate-600 dark:text-slate-300 text-sm md:text-base leading-relaxed">
+            EngineerPath was founded by Suhas H S to help engineering students navigate the journey from college to their first career opportunity. The platform focuses on practical skill development, career roadmaps, internships, projects, resume preparation, and placement readiness.
           </p>
         </section>
 

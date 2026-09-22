@@ -9,7 +9,7 @@ export const siteConfig = {
   name: 'EngineerPath',
   tagline: 'AI-powered career learning platform for engineering students.',
   description:
-    'EngineerPath is a platform designed to help engineering students learn relevant technical skills, follow career roadmaps, practice, build projects, discover internships, analyze resumes, and prepare for interviews.',
+    'EngineerPath is an AI-powered career guidance platform for engineering students, founded by Suhas H S. It helps students build technical skills, follow career roadmaps, discover internships, analyze resumes, build projects, and prepare for placements.',
   // Official contact email
   contactEmail: 'hssuhas661@gmail.com',
   // Official social and community links
