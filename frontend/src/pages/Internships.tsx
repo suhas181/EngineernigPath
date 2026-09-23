@@ -106,10 +106,14 @@ export function Internships() {
       });
 
       if (response && response.success) {
-        setInternships(response.internships || []);
+        // Enforce 100% direct official portals only (Greenhouse, Lever, etc.) and exclude any legacy Adzuna redirect links
+        const directListings = (response.internships || []).filter(
+          (item) => !item.source?.toLowerCase().includes('adzuna') && !item.applicationUrl?.toLowerCase().includes('adzuna.in')
+        );
+        setInternships(directListings);
         setSavedIds(response.savedInternshipIds || []);
         setStats(response.stats || null);
-        setTotalCount(response.total || 0);
+        setTotalCount(directListings.length);
         setTotalPages(response.pages || 1);
         setCurrentPage(response.page || 1);
       } else {

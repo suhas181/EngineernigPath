@@ -859,7 +859,11 @@ export interface GetInternshipsParams {
  * Queries MongoDB for filtered internship listings and computes summary stats
  */
 export async function getInternshipsList(params: GetInternshipsParams, userId?: string) {
-  const query: any = {};
+  // Strictly filter out any legacy Adzuna or aggregator redirect links
+  const query: any = {
+    source: { $not: /adzuna/i },
+    applicationUrl: { $not: /adzuna\.in/i },
+  };
 
   // 1. Filter by Role
   if (params.role && params.role !== 'All') {
@@ -940,12 +944,13 @@ export async function getInternshipsList(params: GetInternshipsParams, userId?: 
     Internship.countDocuments(query),
   ]);
 
-  // Global aggregate stats: "Open Now" ONLY counts status: "OPEN"
+  // Global aggregate stats: "Open Now" ONLY counts status: "OPEN" excluding Adzuna
+  const baseFilter = { source: { $not: /adzuna/i }, applicationUrl: { $not: /adzuna\.in/i } };
   const [openCount, softwareCount, remoteCount, distinctCompanies, lastSuccessLog] = await Promise.all([
-    Internship.countDocuments({ status: 'OPEN' }),
-    Internship.countDocuments({ role: { $in: ['Software Engineer', 'Frontend Engineer', 'Backend Engineer'] } }),
-    Internship.countDocuments({ remote: true }),
-    Internship.distinct('company'),
+    Internship.countDocuments({ ...baseFilter, status: 'OPEN' }),
+    Internship.countDocuments({ ...baseFilter, role: { $in: ['Software Engineer', 'Frontend Engineer', 'Backend Engineer'] } }),
+    Internship.countDocuments({ ...baseFilter, remote: true }),
+    Internship.distinct('company', baseFilter),
     InternshipSyncLog.findOne({ status: 'SUCCESS' }).sort({ completedAt: -1 }).lean(),
   ]);
 
@@ -1006,15 +1011,16 @@ export async function getRecommendedInternships(userId: string, limit: number = 
   const preferredLang = (user.preferredProgrammingLanguage || '').trim().toLowerCase();
   const userSkills = (user.skills || []).map((s: string) => s.trim().toLowerCase()).filter(Boolean);
 
-  // Query up to 100 OPEN opportunities to score from the database
-  let candidatePool = await Internship.find({ status: 'OPEN' })
+  // Query up to 100 OPEN opportunities to score from the database (excluding legacy Adzuna)
+  const directFilter = { source: { $not: /adzuna/i }, applicationUrl: { $not: /adzuna\.in/i } };
+  let candidatePool = await Internship.find({ ...directFilter, status: 'OPEN' })
     .sort({ publishedAt: -1, createdAt: -1 })
     .limit(100)
     .lean();
 
-  // If no OPEN listings exist in current DB, fallback to any available listings
+  // If no OPEN listings exist in current DB, fallback to any available direct listings
   if (candidatePool.length === 0) {
-    candidatePool = await Internship.find()
+    candidatePool = await Internship.find(directFilter)
       .sort({ publishedAt: -1, createdAt: -1 })
       .limit(100)
       .lean();

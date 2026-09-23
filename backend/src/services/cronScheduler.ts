@@ -59,11 +59,26 @@ export function initializeCronScheduler() {
       const { Internship } = await import('../models/Internship');
       const { refreshInternships, reEvaluateInternshipStatuses } = await import('./internshipService');
 
+      // 1. Purge legacy Adzuna listings so production DB contains only direct official company portals
+      try {
+        const adzunaPurge = await Internship.deleteMany({
+          $or: [
+            { source: { $regex: /adzuna/i } },
+            { applicationUrl: { $regex: /adzuna/i } },
+          ],
+        });
+        if (adzunaPurge.deletedCount > 0) {
+          console.log(`[STARTUP] Purged ${adzunaPurge.deletedCount} legacy Adzuna listings.`);
+        }
+      } catch (purgeErr) {
+        console.error('[CRON] Could not purge legacy Adzuna listings:', purgeErr);
+      }
+
       const count = await Internship.countDocuments();
 
-      // If database is completely empty, trigger an automated initial sync
+      // If database is completely empty or had only legacy listings, trigger an automated initial sync
       if (count === 0) {
-        console.log('[CRON] Internship database is empty. Triggering automated initial sync...');
+        console.log('[CRON] Direct internship database is empty. Triggering automated initial Direct ATS sync...');
         await refreshInternships('BOOTSTRAP', 'SYSTEM_BOOTSTRAP');
       } else {
         // Safely re-evaluate existing listings
