@@ -4294,10 +4294,27 @@ export const getCurriculumForRole = (
             videoTitle: 'Striver (takeUforward): Arrays, Two Pointers & Sliding Window Series',
             videoProvider: 'Striver (takeUforward)',
             videoUrl: 'https://www.youtube.com/watch?v=37E9ckMDdTk&list=PLgUwDviBIf0oF6QL8m22w1hIDC1vJ_BHz',
+            videoByLanguage: {
+              Java: {
+                title: 'Kunal Kushwaha: Arrays & ArrayList in Java - Complete Tutorial',
+                provider: 'Kunal Kushwaha',
+                url: 'https://www.youtube.com/watch?v=n60Dn0UsbEk',
+              },
+              'C++': {
+                title: 'Striver (takeUforward): Arrays & Two Pointers Complete Series (C++)',
+                provider: 'Striver (takeUforward)',
+                url: 'https://www.youtube.com/watch?v=37E9ckMDdTk&list=PLgUwDviBIf0oF6QL8m22w1hIDC1vJ_BHz',
+              },
+              Python: {
+                title: 'NeetCode: Arrays & Hashing Interview Patterns in Python',
+                provider: 'NeetCode',
+                url: 'https://www.youtube.com/watch?v=KLlXCFG5TnA',
+              },
+            },
             docTitle: 'takeUforward: Striver A2Z Arrays & Sliding Window Tutorials',
             docProvider: 'takeUforward',
             docUrl: 'https://takeuforward.org/data-structure/striver-a2z-dsa-course-sheet-2/',
-            practiceSheetName: '⭐ Striver A2Z Sheet (Arrays & Two Pointers)',
+            practiceSheetName: '⭐ Striver A2Z DSA Sheet: Step 3 (Arrays)',
             practiceSheetUrl: 'https://takeuforward.org/strivers-a2z-dsa-course/strivers-a2z-dsa-course-sheet-2/',
             practiceSheetBadge: 'Recommended for Arrays',
             practiceProblems: [
@@ -4344,10 +4361,27 @@ export const getCurriculumForRole = (
             videoTitle: 'Kunal Kushwaha: Strings, StringBuilder & String Manipulation in Java',
             videoProvider: 'Kunal Kushwaha',
             videoUrl: 'https://www.youtube.com/watch?v=zL1DPZ0Ovlo',
-            docTitle: 'GeeksforGeeks: String Data Structure & Algorithms Guide',
-            docProvider: 'GeeksforGeeks',
-            docUrl: 'https://www.geeksforgeeks.org/string-data-structure/',
-            practiceSheetName: '⭐ Striver A2Z Strings & Hashing Sheet',
+            videoByLanguage: {
+              Java: {
+                title: 'Kunal Kushwaha: Strings & StringBuilder in Java',
+                provider: 'Kunal Kushwaha',
+                url: 'https://www.youtube.com/watch?v=zL1DPZ0Ovlo',
+              },
+              'C++': {
+                title: 'Striver (takeUforward): Strings & Hashing Series (C++)',
+                provider: 'Striver (takeUforward)',
+                url: 'https://www.youtube.com/watch?v=Wcxj46x1vfs&list=PLgUwDviBIf0oF6QL8m22w1hIDC1vJ_BHz',
+              },
+              Python: {
+                title: 'NeetCode: String Manipulation & Hashing Patterns in Python',
+                provider: 'NeetCode',
+                url: 'https://www.youtube.com/watch?v=73r3KqzpUmg',
+              },
+            },
+            docTitle: 'takeUforward / GeeksforGeeks: Strings & Hashing Reference',
+            docProvider: 'takeUforward',
+            docUrl: 'https://takeuforward.org/data-structure/striver-a2z-dsa-course-sheet-2/',
+            practiceSheetName: '⭐ Striver A2Z DSA Sheet: Step 5 (Strings)',
             practiceSheetUrl: 'https://takeuforward.org/strivers-a2z-dsa-course/strivers-a2z-dsa-course-sheet-2/',
             practiceSheetBadge: 'Recommended for Strings',
             practiceProblems: [
@@ -4390,15 +4424,32 @@ export const getCurriculumForRole = (
             ]
           },
           'top-sde-dsa-sorting-search': {
-            videoTitle: 'Kunal Kushwaha: Binary Search Algorithm - Theory + Code Masterclass',
-            videoProvider: 'Kunal Kushwaha',
-            videoUrl: 'https://www.youtube.com/watch?v=f6UU7V3szVw',
+            videoTitle: 'Abdul Bari: Analysis of Algorithms, Time Complexity & Divide-and-Conquer',
+            videoProvider: 'Abdul Bari',
+            videoUrl: 'https://www.youtube.com/playlist?list=PLDN4rrl48XKpZkf03iYFl-O29szjTrs_O',
+            videoByLanguage: {
+              Java: {
+                title: 'Kunal Kushwaha: Binary Search & Sorting in Java - Complete Guide',
+                provider: 'Kunal Kushwaha',
+                url: 'https://www.youtube.com/watch?v=f6UU7V3szVw',
+              },
+              'C++': {
+                title: 'Striver (takeUforward): Binary Search Complete Playlist (C++)',
+                provider: 'Striver (takeUforward)',
+                url: 'https://www.youtube.com/watch?v=j_b_fpmr5eI&list=PLgUwDviBIf0pMFMWuuvDNMAkoQFi-h0ZF',
+              },
+              Python: {
+                title: 'NeetCode: Binary Search & Search Space Reduction in Python',
+                provider: 'NeetCode',
+                url: 'https://www.youtube.com/watch?v=s4DPM8ct1pI',
+              },
+            },
             docTitle: 'takeUforward: Binary Search Boundary & Search Space Guide',
             docProvider: 'takeUforward',
             docUrl: 'https://takeuforward.org/binary-search/binary-search-explained/',
-            practiceSheetName: '⭐ Striver Binary Search Top 25 Problems',
+            practiceSheetName: '⭐ Striver A2Z DSA Sheet: Step 4 (Binary Search)',
             practiceSheetUrl: 'https://takeuforward.org/strivers-a2z-dsa-course/strivers-a2z-dsa-course-sheet-2/',
-            practiceSheetBadge: 'Recommended for Binary Search',
+            practiceSheetBadge: 'Recommended for Binary Search & Algorithms',
             practiceProblems: [
               { title: 'Binary Search (Standard Template)', provider: 'LeetCode', url: 'https://leetcode.com/problems/binary-search/', difficulty: 'easy' },
               { title: 'Search in Rotated Sorted Array (Pivot Partitioning)', provider: 'LeetCode', url: 'https://leetcode.com/problems/search-in-rotated-sorted-array/', difficulty: 'medium' },
@@ -4444,10 +4495,27 @@ export const getCurriculumForRole = (
             videoTitle: 'Striver (takeUforward): Linked List Complete Master Series',
             videoProvider: 'Striver (takeUforward)',
             videoUrl: 'https://www.youtube.com/watch?v=Nq7ok-OyEpg&list=PLgUwDviBIf0oF6QL8m22w1hIDC1vJ_BHz',
-            docTitle: 'GeeksforGeeks: Linked List Data Structures Reference',
-            docProvider: 'GeeksforGeeks',
-            docUrl: 'https://www.geeksforgeeks.org/data-structures/linked-list/',
-            practiceSheetName: '⭐ Striver A2Z Linked List Sheet',
+            videoByLanguage: {
+              Java: {
+                title: 'Kunal Kushwaha: Linked List in Java (Singly, Doubly, Circular, Fast/Slow)',
+                provider: 'Kunal Kushwaha',
+                url: 'https://www.youtube.com/watch?v=58YbpRDc4yw',
+              },
+              'C++': {
+                title: 'Striver (takeUforward): Linked List Complete Master Series (C++)',
+                provider: 'Striver (takeUforward)',
+                url: 'https://www.youtube.com/watch?v=Nq7ok-OyEpg&list=PLgUwDviBIf0p4ozDR_kJJkONnb1wdx2Ma',
+              },
+              Python: {
+                title: 'NeetCode: Linked List Problems & Patterns in Python',
+                provider: 'NeetCode',
+                url: 'https://www.youtube.com/watch?v=G0_I-ZF0S38',
+              },
+            },
+            docTitle: 'takeUforward / GeeksforGeeks: Linked List Data Structures Reference',
+            docProvider: 'takeUforward',
+            docUrl: 'https://takeuforward.org/data-structure/striver-a2z-dsa-course-sheet-2/',
+            practiceSheetName: '⭐ Striver A2Z DSA Sheet: Step 6 (Linked Lists)',
             practiceSheetUrl: 'https://takeuforward.org/strivers-a2z-dsa-course/strivers-a2z-dsa-course-sheet-2/',
             practiceSheetBadge: 'Recommended for Linked List',
             practiceProblems: [
@@ -4490,14 +4558,31 @@ export const getCurriculumForRole = (
             ]
           },
           'top-sde-dsa-stacks-queues': {
-            videoTitle: 'freeCodeCamp: Data Structures - Implementation of Stacks & Queues',
-            videoProvider: 'freeCodeCamp.org',
-            videoUrl: 'https://www.youtube.com/watch?v=GYptUgnIM_I',
+            videoTitle: 'Aditya Verma: Stack Complete Playlist & Monotonic Stack Patterns',
+            videoProvider: 'Aditya Verma',
+            videoUrl: 'https://www.youtube.com/playlist?list=PL_z_8CaSLPWdeOezg68SKkeQI4-Z_j2hP',
+            videoByLanguage: {
+              Java: {
+                title: 'Aditya Verma: Stack Complete Playlist (Nearest Greater, Stock Span, Histogram)',
+                provider: 'Aditya Verma',
+                url: 'https://www.youtube.com/playlist?list=PL_z_8CaSLPWdeOezg68SKkeQI4-Z_j2hP',
+              },
+              'C++': {
+                title: 'Striver (takeUforward): Stacks and Queues Complete Learning Series (C++)',
+                provider: 'Striver (takeUforward)',
+                url: 'https://www.youtube.com/watch?v=GYptUgnIM_I&list=PLgUwDviBIf0oF6QL8m22w1hIDC1vJ_BHz',
+              },
+              Python: {
+                title: 'NeetCode: Stacks and Queues Interview Solutions in Python',
+                provider: 'NeetCode',
+                url: 'https://www.youtube.com/watch?v=WTzjTskDFMg',
+              },
+            },
             docTitle: 'takeUforward: Stacks and Queues Learning Sheet',
             docProvider: 'takeUforward',
             docUrl: 'https://takeuforward.org/data-structure/stacks-and-queues-strivers-a2z-dsa-course-sheet/',
-            practiceSheetName: '⭐ NeetCode & Striver Stack Practice Sheet',
-            practiceSheetUrl: 'https://neetcode.io/practice',
+            practiceSheetName: '⭐ Striver A2Z DSA Sheet: Step 9 (Stacks & Queues)',
+            practiceSheetUrl: 'https://takeuforward.org/strivers-a2z-dsa-course/strivers-a2z-dsa-course-sheet-2/',
             practiceSheetBadge: 'Recommended for Stacks & Queues',
             practiceProblems: [
               { title: 'Valid Parentheses (Matching Bracket Stack)', provider: 'LeetCode', url: 'https://leetcode.com/problems/valid-parentheses/', difficulty: 'easy' },
@@ -4542,10 +4627,27 @@ export const getCurriculumForRole = (
             videoTitle: 'Striver (takeUforward): Binary Trees & BST Complete Master Series',
             videoProvider: 'Striver (takeUforward)',
             videoUrl: 'https://www.youtube.com/watch?v=_ANrF3FJm7I&list=PLgUwDviBIf0oF6QL8m22w1hIDC1vJ_BHz',
+            videoByLanguage: {
+              Java: {
+                title: 'Kunal Kushwaha: Binary Trees, BST & Tree Traversals in Java',
+                provider: 'Kunal Kushwaha',
+                url: 'https://www.youtube.com/watch?v=4s13crphgHY',
+              },
+              'C++': {
+                title: 'Striver (takeUforward): Complete Tree Series - Binary Tree & BST (C++)',
+                provider: 'Striver (takeUforward)',
+                url: 'https://www.youtube.com/watch?v=_ANrF3FJm7I&list=PLgUwDviBIf0q8Hkd7bK2Bpryj2xVJk8Vk',
+              },
+              Python: {
+                title: 'NeetCode: Trees & Binary Search Tree Patterns in Python',
+                provider: 'NeetCode',
+                url: 'https://www.youtube.com/watch?v=OnSn2XEQ4MY',
+              },
+            },
             docTitle: 'takeUforward: Tree Traversals & BST Construction Tutorials',
             docProvider: 'takeUforward',
             docUrl: 'https://takeuforward.org/binary-tree/binary-tree-traversal-in-order-pre-order-post-order/',
-            practiceSheetName: '⭐ Striver A2Z Binary Trees & BST Sheet',
+            practiceSheetName: '⭐ Striver A2Z DSA Sheet: Step 13 & 14 (Binary Trees & BST)',
             practiceSheetUrl: 'https://takeuforward.org/strivers-a2z-dsa-course/strivers-a2z-dsa-course-sheet-2/',
             practiceSheetBadge: 'Recommended for Trees',
             practiceProblems: [
@@ -4590,14 +4692,31 @@ export const getCurriculumForRole = (
             ]
           },
           'top-sde-dsa-heaps-greedy': {
-            videoTitle: 'Striver (takeUforward): Greedy Algorithms & Heaps / Priority Queues',
-            videoProvider: 'Striver (takeUforward)',
-            videoUrl: 'https://www.youtube.com/playlist?list=PLgUwDviBIf0p4ozDR_kJJkONnb1wdx2Ma',
-            docTitle: 'GeeksforGeeks: Heap Data Structure & Priority Queue Guide',
-            docProvider: 'GeeksforGeeks',
-            docUrl: 'https://www.geeksforgeeks.org/heap-data-structure/',
-            practiceSheetName: '⭐ NeetCode Heap & Greedy Problem Set',
-            practiceSheetUrl: 'https://neetcode.io/practice',
+            videoTitle: 'Abdul Bari: Greedy Method & Knapsack, Job Sequencing, Huffman Coding',
+            videoProvider: 'Abdul Bari',
+            videoUrl: 'https://www.youtube.com/watch?v=ARvQcqJ_-NY',
+            videoByLanguage: {
+              Java: {
+                title: 'Kunal Kushwaha: Heaps & Priority Queues Complete Tutorial in Java',
+                provider: 'Kunal Kushwaha',
+                url: 'https://www.youtube.com/watch?v=ywx-O-62e9U',
+              },
+              'C++': {
+                title: 'Striver (takeUforward): Greedy Algorithms & Heaps Series (C++)',
+                provider: 'Striver (takeUforward)',
+                url: 'https://www.youtube.com/playlist?list=PLgUwDviBIf0p4ozDR_kJJkONnb1wdx2Ma',
+              },
+              Python: {
+                title: 'NeetCode: Heap / Priority Queue & Intervals in Python',
+                provider: 'NeetCode',
+                url: 'https://www.youtube.com/watch?v=t0Cq6tVNRBA',
+              },
+            },
+            docTitle: 'takeUforward / GeeksforGeeks: Heap & Greedy Reference',
+            docProvider: 'takeUforward',
+            docUrl: 'https://takeuforward.org/data-structure/striver-a2z-dsa-course-sheet-2/',
+            practiceSheetName: '⭐ Striver A2Z DSA Sheet: Step 10 & 11 (Heaps & Greedy)',
+            practiceSheetUrl: 'https://takeuforward.org/strivers-a2z-dsa-course/strivers-a2z-dsa-course-sheet-2/',
             practiceSheetBadge: 'Recommended for Heaps & Greedy',
             practiceProblems: [
               { title: 'Kth Largest Element in an Array (Min-Heap vs QuickSelect)', provider: 'LeetCode', url: 'https://leetcode.com/problems/kth-largest-element-in-an-array/', difficulty: 'medium' },
@@ -4639,13 +4758,30 @@ export const getCurriculumForRole = (
             ]
           },
           'top-sde-dsa-recursion-backtracking': {
-            videoTitle: 'Kunal Kushwaha: Introduction to Recursion & Backtracking Complete Course',
-            videoProvider: 'Kunal Kushwaha',
+            videoTitle: 'Kunal Kushwaha / Abdul Bari: Recursion & Backtracking Complete Course',
+            videoProvider: 'Kunal Kushwaha & Abdul Bari',
             videoUrl: 'https://www.youtube.com/watch?v=M2uO2nMT0Bk',
+            videoByLanguage: {
+              Java: {
+                title: 'Kunal Kushwaha: Recursion & Backtracking Masterclass in Java',
+                provider: 'Kunal Kushwaha',
+                url: 'https://www.youtube.com/watch?v=M2uO2nMT0Bk',
+              },
+              'C++': {
+                title: 'Striver (takeUforward): Recursion Pattern Series (C++)',
+                provider: 'Striver (takeUforward)',
+                url: 'https://www.youtube.com/watch?v=yVdKa8dnKiE&list=PLgUwDviBIf0rGlzIn_7rsaR2FQ5e6ZOL9',
+              },
+              Python: {
+                title: 'NeetCode: Backtracking, Subsets & Permutations in Python',
+                provider: 'NeetCode',
+                url: 'https://www.youtube.com/watch?v=REOH22Xwdkk',
+              },
+            },
             docTitle: 'takeUforward: Recursion & Backtracking Deep Dive Series',
             docProvider: 'takeUforward',
             docUrl: 'https://takeuforward.org/recursion/strivers-a2z-recursion-series-introduction/',
-            practiceSheetName: '⭐ Striver Recursion & Backtracking Sheet',
+            practiceSheetName: '⭐ Striver A2Z DSA Sheet: Step 7 & 12 (Recursion & Backtracking)',
             practiceSheetUrl: 'https://takeuforward.org/strivers-a2z-dsa-course/strivers-a2z-dsa-course-sheet-2/',
             practiceSheetBadge: 'Recommended for Backtracking',
             practiceProblems: [
@@ -4688,13 +4824,30 @@ export const getCurriculumForRole = (
             ]
           },
           'top-sde-dsa-graphs': {
-            videoTitle: 'freeCodeCamp: Graph Algorithms for Technical Interviews - Full Course',
-            videoProvider: 'freeCodeCamp.org',
-            videoUrl: 'https://www.youtube.com/watch?v=tWVWeAqZ0WU',
+            videoTitle: 'Abdul Bari: Graph Algorithms - BFS, DFS, Dijkstra, Kruskal, Prim, Floyd-Warshall',
+            videoProvider: 'Abdul Bari',
+            videoUrl: 'https://www.youtube.com/watch?v=pcKY4hjDrxk',
+            videoByLanguage: {
+              Java: {
+                title: 'Abdul Bari / Kunal Kushwaha: Graph Algorithms & Traversals in Java',
+                provider: 'Abdul Bari & Kunal Kushwaha',
+                url: 'https://www.youtube.com/watch?v=pcKY4hjDrxk',
+              },
+              'C++': {
+                title: 'Striver (takeUforward): Complete Graph Series (C++)',
+                provider: 'Striver (takeUforward)',
+                url: 'https://www.youtube.com/watch?v=M3_pLsDdeuU&list=PLgUwDviBIf0oE3gA41TKO2H5bHpPd7fzn',
+              },
+              Python: {
+                title: 'NeetCode: Graph BFS, DFS, Dijkstra & Topological Sort in Python',
+                provider: 'NeetCode',
+                url: 'https://www.youtube.com/watch?v=EGJcGoiVw-I',
+              },
+            },
             docTitle: 'takeUforward: Graph BFS, DFS, Dijkstra & DSU Master Guide',
             docProvider: 'takeUforward',
             docUrl: 'https://takeuforward.org/graph/graph-representation-in-c/',
-            practiceSheetName: '⭐ Striver A2Z Graph Master Sheet',
+            practiceSheetName: '⭐ Striver A2Z DSA Sheet: Step 15 (Graphs)',
             practiceSheetUrl: 'https://takeuforward.org/strivers-a2z-dsa-course/strivers-a2z-dsa-course-sheet-2/',
             practiceSheetBadge: 'Recommended for Graphs',
             practiceProblems: [
@@ -4739,15 +4892,32 @@ export const getCurriculumForRole = (
             ]
           },
           'top-sde-dsa-dp': {
-            videoTitle: 'freeCodeCamp: Dynamic Programming - Learn to Solve Algorithmic Problems & Coding Challenges',
-            videoProvider: 'freeCodeCamp.org',
-            videoUrl: 'https://www.youtube.com/watch?v=oBt53YbR9Kk',
+            videoTitle: 'Aditya Verma: Dynamic Programming Masterclass & Pattern Analysis',
+            videoProvider: 'Aditya Verma',
+            videoUrl: 'https://www.youtube.com/playlist?list=PL_z_8CaSLPWekqhdCPmFohncHwz8TY2Go',
+            videoByLanguage: {
+              Java: {
+                title: 'Aditya Verma: Dynamic Programming Masterclass (0/1 Knapsack, LCS, MCM in Java)',
+                provider: 'Aditya Verma',
+                url: 'https://www.youtube.com/playlist?list=PL_z_8CaSLPWekqhdCPmFohncHwz8TY2Go',
+              },
+              'C++': {
+                title: 'Striver (takeUforward): Complete Dynamic Programming Series (C++)',
+                provider: 'Striver (takeUforward)',
+                url: 'https://www.youtube.com/playlist?list=PLgUwDviBIf0qUlt5y6ysfCcnPxTP_GFLu',
+              },
+              Python: {
+                title: 'NeetCode: 1-D & 2-D Dynamic Programming Interview Patterns in Python',
+                provider: 'NeetCode',
+                url: 'https://www.youtube.com/playlist?list=PLot-Xpze53lcvx_774883un2520ifwnSC',
+              },
+            },
             docTitle: 'takeUforward: Complete Dynamic Programming Tutorial Series',
             docProvider: 'takeUforward',
             docUrl: 'https://takeuforward.org/dynamic-programming/striver-dp-series-dynamic-programming-tutorial/',
-            practiceSheetName: '⭐ Striver A2Z Dynamic Programming Sheet',
+            practiceSheetName: '⭐ Striver A2Z DSA Sheet: Step 16 (Dynamic Programming)',
             practiceSheetUrl: 'https://takeuforward.org/strivers-a2z-dsa-course/strivers-a2z-dsa-course-sheet-2/',
-            practiceSheetBadge: 'Recommended for DP',
+            practiceSheetBadge: 'Recommended for DP (Striver A2Z Step 16)',
             practiceProblems: [
               { title: 'Climbing Stairs (Fibonacci 1D DP State)', provider: 'LeetCode', url: 'https://leetcode.com/problems/climbing-stairs/', difficulty: 'easy' },
               { title: 'House Robber (Non-Adjacent 1D DP)', provider: 'LeetCode', url: 'https://leetcode.com/problems/house-robber/', difficulty: 'medium' },
@@ -4793,12 +4963,29 @@ export const getCurriculumForRole = (
             videoTitle: 'Kunal Kushwaha: Bitwise Operators & Bit Manipulation in Java',
             videoProvider: 'Kunal Kushwaha',
             videoUrl: 'https://www.youtube.com/watch?v=fzip9Aml6og',
-            docTitle: 'GeeksforGeeks: Trie Data Structure & Bitwise Operators Reference',
-            docProvider: 'GeeksforGeeks',
-            docUrl: 'https://www.geeksforgeeks.org/trie-insert-and-search/',
-            practiceSheetName: '⭐ NeetCode Advanced DSA & Bit Manipulation',
-            practiceSheetUrl: 'https://neetcode.io/practice',
-            practiceSheetBadge: 'Recommended for Advanced DSA',
+            videoByLanguage: {
+              Java: {
+                title: 'Kunal Kushwaha: Bitwise Operators & Bit Manipulation in Java',
+                provider: 'Kunal Kushwaha',
+                url: 'https://www.youtube.com/watch?v=fzip9Aml6og',
+              },
+              'C++': {
+                title: 'Striver (takeUforward): Bit Manipulation & Trie Complete Tutorial (C++)',
+                provider: 'Striver (takeUforward)',
+                url: 'https://www.youtube.com/watch?v=5rT88j8mP5g&list=PLgUwDviBIf0pcIDCZnEl5CMj742qHowKy',
+              },
+              Python: {
+                title: 'NeetCode: Bit Manipulation & Trie Prefix Trees in Python',
+                provider: 'NeetCode',
+                url: 'https://www.youtube.com/watch?v=o69h36U64BE',
+              },
+            },
+            docTitle: 'takeUforward / GeeksforGeeks: Trie Data Structure & Bitwise Operators Reference',
+            docProvider: 'takeUforward',
+            docUrl: 'https://takeuforward.org/data-structure/striver-a2z-dsa-course-sheet-2/',
+            practiceSheetName: '⭐ Striver A2Z DSA Sheet: Step 8 & 17 (Bit Manipulation & Tries)',
+            practiceSheetUrl: 'https://takeuforward.org/strivers-a2z-dsa-course/strivers-a2z-dsa-course-sheet-2/',
+            practiceSheetBadge: 'Recommended for Bitwise & Tries',
             practiceProblems: [
               { title: 'Single Number (XOR Cancellation Property)', provider: 'LeetCode', url: 'https://leetcode.com/problems/single-number/', difficulty: 'easy' },
               { title: 'Number of 1 Bits (Bitwise n & (n - 1) Clearing)', provider: 'LeetCode', url: 'https://leetcode.com/problems/number-of-1-bits/', difficulty: 'easy' },
@@ -19994,25 +20181,80 @@ export const getCurriculumForRole = (
           );
         }
 
-        // GAP-FILLER 1: SDE Track (DSA section) — Add NeetCode 150 & NeetCode Roadmap
+        // GAP-FILLER 1: SDE Track (DSA section) — Add Striver A2Z, NeetCode, Aditya Verma & Abdul Bari
         if (top.id.startsWith('top-sde-dsa') || top.id === 'top-sde-lang-syntax' || top.id === 'top-fs-dsa-core') {
-          altSheets.unshift({
-            name: '⭐ NeetCode 150 & NeetCode Roadmap (Video Walkthroughs)',
-            url: 'https://neetcode.io/practice',
-          });
-          altVideos.push({
-            id: `vid-neetcode-${top.id}`,
-            title: 'NeetCode 150: Algorithms & Problem Walkthroughs (Free)',
-            provider: 'NeetCode (YouTube / neetcode.io)',
-            url: 'https://www.youtube.com/watch?v=8ext9G7xspg',
-            type: 'video',
-            difficulty: top.difficulty,
-          });
+          altSheets.unshift(
+            {
+              name: '⭐ Striver’s A2Z DSA Course Sheet (takeUforward)',
+              url: 'https://takeuforward.org/strivers-a2z-dsa-course/strivers-a2z-dsa-course-sheet-2/',
+            },
+            {
+              name: '⭐ NeetCode 150 & NeetCode Roadmap (Video Walkthroughs)',
+              url: 'https://neetcode.io/practice',
+            }
+          );
+
+          if (top.id === 'top-sde-dsa-dp') {
+            altVideos.unshift(
+              {
+                id: `vid-aditya-verma-dp-${top.id}`,
+                title: 'Aditya Verma: Dynamic Programming Masterclass (0/1 Knapsack, LCS, MCM)',
+                provider: 'Aditya Verma (YouTube)',
+                url: 'https://www.youtube.com/playlist?list=PL_z_8CaSLPWekqhdCPmFohncHwz8TY2Go',
+                type: 'video',
+                difficulty: top.difficulty,
+              },
+              {
+                id: `vid-striver-dp-${top.id}`,
+                title: 'Striver (takeUforward): Complete Dynamic Programming Series (C++ / Java)',
+                provider: 'Striver (takeUforward)',
+                url: 'https://www.youtube.com/playlist?list=PLgUwDviBIf0qUlt5y6ysfCcnPxTP_GFLu',
+                type: 'video',
+                difficulty: top.difficulty,
+              },
+              {
+                id: `vid-abdul-bari-dp-${top.id}`,
+                title: 'Abdul Bari: Dynamic Programming Concept & Matrix Chain Multiplication',
+                provider: 'Abdul Bari (YouTube)',
+                url: 'https://www.youtube.com/watch?v=5dRgrtZSO1w',
+                type: 'video',
+                difficulty: top.difficulty,
+              }
+            );
+          } else if (top.id === 'top-sde-dsa-sorting-search' || top.id === 'top-sde-dsa-heaps-greedy' || top.id === 'top-sde-dsa-graphs') {
+            altVideos.unshift({
+              id: `vid-abdul-bari-algo-${top.id}`,
+              title: 'Abdul Bari: Analysis of Algorithms & Problem Solving Masterclass',
+              provider: 'Abdul Bari (YouTube)',
+              url: 'https://www.youtube.com/playlist?list=PLDN4rrl48XKpZkf03iYFl-O29szjTrs_O',
+              type: 'video',
+              difficulty: top.difficulty,
+            });
+          }
+
+          altVideos.push(
+            {
+              id: `vid-kunal-dsa-${top.id}`,
+              title: 'Kunal Kushwaha: Complete Java + DSA Bootcamp (Community Favorite)',
+              provider: 'Kunal Kushwaha (YouTube)',
+              url: 'https://www.youtube.com/playlist?list=PL9gnSGHSqcnr_DxHsP7mUQTvyCX4vzv85',
+              type: 'video',
+              difficulty: top.difficulty,
+            },
+            {
+              id: `vid-neetcode-${top.id}`,
+              title: 'NeetCode 150: Algorithms & Problem Walkthroughs (Free)',
+              provider: 'NeetCode (YouTube / neetcode.io)',
+              url: 'https://www.youtube.com/watch?v=8ext9G7xspg',
+              type: 'video',
+              difficulty: top.difficulty,
+            }
+          );
           altNotes.push({
             id: `note-neetcode-${top.id}`,
-            title: 'NeetCode 150 Practice Guide (Video-walkthrough complement to Striver A2Z)',
-            provider: 'NeetCode.io (Free)',
-            url: 'https://neetcode.io/roadmap',
+            title: 'NeetCode 150 & Striver A2Z Practice Guide (Video-walkthrough complement)',
+            provider: 'NeetCode.io & takeUforward',
+            url: 'https://takeuforward.org/strivers-a2z-dsa-course/strivers-a2z-dsa-course-sheet-2/',
             type: 'article',
           });
         }
