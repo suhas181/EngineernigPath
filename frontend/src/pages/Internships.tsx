@@ -22,6 +22,7 @@ import {
   Sparkles,
   AlertCircle,
   X,
+  ExternalLink,
 } from 'lucide-react';
 
 const ROLES = [
@@ -58,6 +59,66 @@ const POPULAR_SKILLS = [
   'SQL',
   'AWS',
   'Docker',
+];
+
+interface ExternalPlatform {
+  name: string;
+  tag: string;
+  tagColor: string;
+  description: string;
+  bestFor: string;
+  url: string;
+}
+
+const EXTERNAL_PLATFORMS: ExternalPlatform[] = [
+  {
+    name: 'Unstop (formerly Dare2Compete)',
+    tag: '🏆 Hackathons & Challenges',
+    tagColor: 'bg-amber-50 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border-amber-200 dark:border-amber-800',
+    description: 'Premier Indian platform for student hiring challenges, national hackathons, and fresher hiring by Amazon, Flipkart, Tata, and Walmart.',
+    bestFor: 'Contest-based hiring & campus challenges',
+    url: 'https://unstop.com/internships',
+  },
+  {
+    name: 'Wellfound (AngelList)',
+    tag: '🦄 High-Growth Tech Startups',
+    tagColor: 'bg-emerald-50 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800',
+    description: 'Direct contact with founders and engineering leaders at high-growth Bangalore, India, and global remote startups without recruiter spam.',
+    bestFor: 'High-ownership startup engineering roles',
+    url: 'https://wellfound.com/jobs',
+  },
+  {
+    name: 'Cuvette Tech',
+    tag: '💻 Student Tech Roles',
+    tagColor: 'bg-blue-50 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300 border-blue-200 dark:border-blue-800',
+    description: 'Built specifically for Indian college students. 1-click applications with guaranteed stipends for Frontend, Backend, Fullstack, and AI developers.',
+    bestFor: '2nd / 3rd / 4th year college tech internships',
+    url: 'https://cuvette.tech',
+  },
+  {
+    name: 'Hirist',
+    tag: '⚡ Premium Tech Only',
+    tagColor: 'bg-purple-50 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300 border-purple-200 dark:border-purple-800',
+    description: 'India\'s dedicated tech-only hiring portal. Vetted engineering, software, and product roles at top Bangalore product firms and MNCs.',
+    bestFor: 'Direct product engineering listings',
+    url: 'https://www.hirist.tech',
+  },
+  {
+    name: 'Internshala',
+    tag: '🎓 College Internship Hub',
+    tagColor: 'bg-sky-50 text-sky-800 dark:bg-sky-950/60 dark:text-sky-300 border-sky-200 dark:border-sky-800',
+    description: 'India\'s largest student internship platform. Filter by programming skill, Bangalore on-site, and work-from-home summer/winter breaks.',
+    bestFor: 'Summer & winter break internships',
+    url: 'https://internshala.com/internships/computer-science-internship',
+  },
+  {
+    name: 'LinkedIn Jobs (India)',
+    tag: '🌐 Direct Recruiter Outreach',
+    tagColor: 'bg-indigo-50 text-indigo-800 dark:bg-indigo-950/60 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800',
+    description: 'The industry benchmark for setting up daily internship alerts, finding university alumni, and requesting direct employee referrals.',
+    bestFor: 'Networking & employee referrals',
+    url: 'https://www.linkedin.com/jobs/software-engineer-intern-jobs/?location=India',
+  },
 ];
 
 export function Internships() {
@@ -612,6 +673,73 @@ export function Internships() {
                 </div>
               </div>
             )}
+
+            {/* Curated External Opportunities Hub */}
+            <div className="mt-14 pt-10 border-t border-slate-200 dark:border-slate-800 text-left">
+              <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
+                <div>
+                  <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-purple-100 dark:bg-purple-950/60 border border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300 text-xs font-bold mb-3">
+                    <Sparkles className="h-3.5 w-3.5" />
+                    <span>Expand Your Search</span>
+                  </div>
+                  <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+                    Top Verified Platforms for Indian Tech Students
+                  </h2>
+                  <p className="text-slate-500 dark:text-slate-400 text-xs md:text-sm mt-1 max-w-2xl">
+                    Looking for more openings, national hackathons, or seed-stage startup roles? Explore these handpicked, trusted platforms with direct access to hiring managers.
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                {EXTERNAL_PLATFORMS.map((platform) => (
+                  <div
+                    key={platform.name}
+                    className="group relative flex flex-col justify-between rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/80 p-5 shadow-sm hover:shadow-md hover:border-purple-400 dark:hover:border-purple-600 transition-all duration-200"
+                  >
+                    <div>
+                      {/* Top Header: Badge & Arrow */}
+                      <div className="flex items-start justify-between gap-3 mb-3">
+                        <span
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${platform.tagColor}`}
+                        >
+                          {platform.tag}
+                        </span>
+                        <div className="h-8 w-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 group-hover:text-purple-600 dark:group-hover:text-purple-400 group-hover:bg-purple-50 dark:group-hover:bg-purple-950/50 transition-colors">
+                          <ExternalLink className="h-4 w-4" />
+                        </div>
+                      </div>
+
+                      {/* Platform Title */}
+                      <h3 className="text-base font-bold text-slate-900 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
+                        {platform.name}
+                      </h3>
+
+                      {/* Description */}
+                      <p className="text-xs text-slate-600 dark:text-slate-400 mt-2 leading-relaxed">
+                        {platform.description}
+                      </p>
+                    </div>
+
+                    {/* Footer Info & Action */}
+                    <div className="mt-5 pt-3.5 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between gap-2">
+                      <span className="text-[11px] font-medium text-slate-400 dark:text-slate-500 truncate">
+                        {platform.bestFor}
+                      </span>
+                      <a
+                        href={platform.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center space-x-1 text-xs font-bold text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 flex-shrink-0"
+                      >
+                        <span>Explore</span>
+                        <ChevronRight className="h-3.5 w-3.5" />
+                      </a>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
       </div>
 
