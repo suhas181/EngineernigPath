@@ -5930,18 +5930,36 @@ export const getCurriculumForRole = (
             ]
           },
           'top-sde-res-portfolio': {
-            videoTitle: 'Jeff Su: Write an Incredible Resume: 5 Golden Rules & Tech Portfolio',
-            videoProvider: 'Jeff Su',
-            videoUrl: 'https://www.youtube.com/watch?v=Tt08KmFfIYQ',
-            docTitle: 'Harvard University: Career Services Resume Engineering Guide',
-            docProvider: 'Harvard Career Services',
-            docUrl: 'https://careerservices.fas.harvard.edu/resources/create-a-strong-resume/',
-            practiceSheetName: '⭐ Overleaf LaTeX ATS Resume Templates (Jake’s Resume)',
-            practiceSheetUrl: 'https://www.overleaf.com/gallery/tagged/cv',
-            practiceSheetBadge: 'Recommended for Resume & Portfolio',
+            videoTitle: 'Kunal Kushwaha: How to Build a Great Resume to Get Hired in Tech (One-Page ATS Guide for Freshers)',
+            videoProvider: 'Kunal Kushwaha',
+            videoUrl: 'https://www.youtube.com/watch?v=e8kVKeh2jmg',
+            videoByLanguage: {
+              Java: {
+                title: 'Kunal Kushwaha: How to Build a Great Resume to Get Hired in Tech (One-Page ATS Guide)',
+                provider: 'Kunal Kushwaha',
+                url: 'https://www.youtube.com/watch?v=e8kVKeh2jmg',
+              },
+              'C++': {
+                title: 'Kunal Kushwaha: How to Build a Great Resume to Get Hired in Tech (One-Page ATS Guide)',
+                provider: 'Kunal Kushwaha',
+                url: 'https://www.youtube.com/watch?v=e8kVKeh2jmg',
+              },
+              Python: {
+                title: 'Kunal Kushwaha: How to Build a Great Resume to Get Hired in Tech (One-Page ATS Guide)',
+                provider: 'Kunal Kushwaha',
+                url: 'https://www.youtube.com/watch?v=e8kVKeh2jmg',
+              },
+            },
+            docTitle: 'Harvard University & takeUforward: ATS Resume Engineering & Fresher Guidelines',
+            docProvider: 'Harvard Career Services & takeUforward',
+            docUrl: 'https://takeuforward.org/interviews/the-ultimate-resume-building-guide-for-coding-interviews/',
+            practiceSheetName: '⭐ Overleaf LaTeX One-Page ATS Resume Template for Freshers (Jake’s Resume - No Experience Section Needed)',
+            practiceSheetUrl: 'https://www.overleaf.com/latex/templates/jakes-resume/syzfjbzpstnn',
+            practiceSheetBadge: 'Recommended for Freshers & Students',
             practiceProblems: [
+              { title: 'Single-Page ATS Resume Setup for Freshers: Replace Experience section with 2-3 High-Impact Technical Projects & Open-Source', provider: 'EngineerPath Placement Guide', url: 'https://www.overleaf.com/latex/templates/jakes-resume/syzfjbzpstnn', difficulty: 'easy' },
               { title: 'Format Resume Bullet Points using Google XYZ Formula: Accomplished [X] as measured by [Y], by doing [Z]', provider: 'Harvard Career Services', url: 'https://careerservices.fas.harvard.edu/resources/create-a-strong-resume/', difficulty: 'easy' },
-              { title: 'Format Single-Page ATS-Optimized Resume using Overleaf LaTeX (Jake’s Resume)', provider: 'Overleaf', url: 'https://www.overleaf.com/gallery/tagged/cv', difficulty: 'easy' },
+              { title: 'Format Single-Page ATS-Optimized Resume using Overleaf LaTeX (Jake’s Resume)', provider: 'Overleaf', url: 'https://www.overleaf.com/latex/templates/jakes-resume/syzfjbzpstnn', difficulty: 'easy' },
               { title: 'Audit GitHub Repository README: Architecture Diagram, Tech Stack Badges, Setup Instructions & Live Demo', provider: 'GitHub Skills', url: 'https://skills.github.com/', difficulty: 'easy' },
               { title: 'Prepare 2-Minute Technical Project Elevator Pitch & Architecture Deep-Dive', provider: 'Exponent Resume Guide', url: 'https://www.tryexponent.com/', difficulty: 'medium' }
             ],
@@ -5957,6 +5975,7 @@ export const getCurriculumForRole = (
               }
             ],
             interviewQuestions: [
+              'How should a fresher or college student structure a 1-page resume without corporate work experience? (Replace the Experience section with 2-3 deep Technical Projects, Hackathons, and Open-Source contributions).',
               'Walk me through your resume: What is the single most technically challenging problem you solved, and what was its quantified business/engineering impact?',
               'Explain how you formatted your project bullet points using the Google XYZ formula: Accomplished [X], as measured by [Y] (percentage/latency/throughput), by doing [Z] (tech stack).',
               'Why did you choose PostgreSQL over MongoDB for your core project, and what technical trade-offs did you accept?',
@@ -5966,8 +5985,10 @@ export const getCurriculumForRole = (
               'How do you explain a project failure or technical debt in your portfolio when an interviewer asks "What would you do differently if you rewrote this system today?"'
             ],
             revisionNotes: [
+              { title: 'Fresher Resume Rule: Strictly 1 Page (No Experience Section Required!)', text: 'As a fresher or college student, your resume must strictly fit on ONE single page. You do NOT need a prior Work Experience section if you haven’t worked full-time. Recruiters do not expect it! Replace it completely with 2-3 High-Impact Technical Projects (full-stack apps, open source, CLI tools) with live links, GitHub repos, and quantified metrics.' },
+              { title: 'Optimal Section Hierarchy for Freshers', text: '1. Header (Name, Phone, Email, GitHub, LinkedIn, Portfolio) -> 2. Education (Degree, Branch, CGPA, Grad Year) -> 3. Technical Skills (Languages, Frameworks, Developer Tools, Core CS) -> 4. Technical Projects (2-3 detailed projects with metrics) -> 5. Coding Profiles & Achievements (LeetCode/Codeforces rating, Hackathons, Open Source).' },
               { title: 'Google XYZ Resume Formula', text: 'Every bullet point must read: "Accomplished [X] (action & feature), as measured by [Y] (e.g. reduced latency by 35% / 10k QPS), by doing [Z] (tech stack & architecture)".' },
-              { title: 'ATS Formatting Commandments', text: '1 single page. Single-column layout. No tables, icons, progress bars, or headshots. Standard headings: Education, Skills, Experience, Projects. Export as clean PDF.' },
+              { title: 'ATS Formatting Commandments', text: '1 single page. Single-column layout. No tables, icons, progress bars, or headshots. Standard headings: Education, Skills, Projects, Achievements. Export as clean PDF.' },
               { title: 'GitHub Repository Best Practices', text: 'Include: 1. System architecture diagram (Mermaid/PNG). 2. Tech stack badges. 3. 3-step local setup (docker-compose up). 4. Live demo URL. 5. Code test badge.' },
               { title: 'Technical Elevator Pitch', text: '90 seconds: 1. Problem statement (15s). 2. Solution & architecture (30s). 3. Key engineering challenge solved (30s). 4. Quantified outcome (15s).' },
               { title: 'Skills Section Optimization', text: 'Categorize into Languages (Java, TypeScript, SQL), Core/Frameworks (Spring Boot, Node.js, Express), Databases/Tools (PostgreSQL, Redis, Docker, Git, Jest).' },
@@ -20363,6 +20384,45 @@ export const getCurriculumForRole = (
               }
             );
           }
+        }
+
+        // GAP-FILLER RESUME: Resume & Portfolio — Add Kannada guide & English Top guides + Fresher Templates
+        if (top.id === 'top-sde-res-portfolio') {
+          altVideos.unshift(
+            {
+              id: `vid-res-kannada-${top.id}`,
+              title: 'Varshan CR: (ಕನ್ನಡ) Resume That Got Me a 24 LPA Offer | Resume Guide for Placements (2026)',
+              provider: 'Varshan CR (Kannada / YouTube)',
+              url: 'https://www.youtube.com/watch?v=pCB7sdoCtVA',
+              type: 'video',
+              difficulty: top.difficulty,
+            },
+            {
+              id: `vid-res-kunal-${top.id}`,
+              title: 'Kunal Kushwaha: How to Build a Great Resume to Get Hired in Tech (One-Page ATS Guide)',
+              provider: 'Kunal Kushwaha (English / YouTube)',
+              url: 'https://www.youtube.com/watch?v=e8kVKeh2jmg',
+              type: 'video',
+              difficulty: top.difficulty,
+            }
+          );
+          altSheets.unshift(
+            {
+              name: '⭐ Overleaf LaTeX One-Page ATS Resume Template for Freshers (No Experience Section Needed)',
+              url: 'https://www.overleaf.com/latex/templates/jakes-resume/syzfjbzpstnn',
+            },
+            {
+              name: '⭐ takeUforward: Ultimate SDE Resume Building Guide for Coding Interviews',
+              url: 'https://takeuforward.org/interviews/the-ultimate-resume-building-guide-for-coding-interviews/',
+            }
+          );
+          altNotes.unshift({
+            id: `note-fresher-resume-${top.id}`,
+            title: '📄 Freshers 1-Page Resume Golden Rule: No Experience Section Needed! (Replace with 2-3 High-Impact Projects & Open-Source)',
+            provider: 'EngineerPath Placement Guide',
+            url: 'https://www.overleaf.com/latex/templates/jakes-resume/syzfjbzpstnn',
+            type: 'article',
+          });
         }
 
         // GAP-FILLER 2: AI/ML Track — Add Andrew Ng Machine Learning Specialization

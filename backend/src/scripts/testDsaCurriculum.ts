@@ -50,6 +50,16 @@ async function test() {
       }
     }
   }
+
+  console.log('\n\n=== TESTING RESUME TOPIC ===');
+  const interviewMod = javaCurriculum.categories.flatMap((c: any) => c.modules).find((m: any) => m.id === 'mod-sde-int-mastery');
+  const resumeTopic = interviewMod?.topics.find((t: any) => t.id === 'top-sde-res-portfolio');
+  console.log(`[RESUME] Topic: ${resumeTopic?.title}`);
+  console.log(`  Step 1 (Video): ${resumeTopic?.guidedFlow.step1PrimaryPlaylist?.title} [${resumeTopic?.guidedFlow.step1PrimaryPlaylist?.url}]`);
+  console.log(`  Step 3 (Sheet): ${resumeTopic?.guidedFlow.step3PracticeSheet?.title} [${resumeTopic?.guidedFlow.step3PracticeSheet?.url}]`);
+  console.log(`  Alternative Videos:`, resumeTopic?.guidedFlow.alternativeResources?.videos?.slice(0, 3).map((v: any) => `${v.provider}: ${v.title}`));
+  console.log(`  Alternative Sheets:`, resumeTopic?.guidedFlow.alternativeResources?.sheets?.slice(0, 2).map((s: any) => `${s.name}`));
+  console.log(`  Revision Notes (Top 2):`, resumeTopic?.guidedFlow.step7RevisionNotes?.slice(0, 2).map((r: any) => `${r.title} -> ${r.text.slice(0, 80)}...`));
 }
 
 test().catch(console.error);
