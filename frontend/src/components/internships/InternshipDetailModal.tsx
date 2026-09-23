@@ -124,9 +124,15 @@ export const InternshipDetailModal: React.FC<InternshipDetailModalProps> = ({
                 <span className="text-xs font-bold uppercase tracking-wider text-purple-700">
                   {internship.company}
                 </span>
-                <span className="text-[10px] font-semibold text-slate-400">
-                  via {internship.source}
-                </span>
+                {internship.source?.toLowerCase().includes('direct') || internship.source?.toLowerCase().includes('greenhouse') || internship.source?.toLowerCase().includes('lever') ? (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                    🏢 Direct Official ATS
+                  </span>
+                ) : (
+                  <span className="text-[10px] font-semibold text-slate-400">
+                    via {internship.source}
+                  </span>
+                )}
               </div>
               <h2 className="text-xl font-extrabold text-slate-900 line-clamp-1 mt-0.5">
                 {internship.title}
@@ -244,7 +250,11 @@ export const InternshipDetailModal: React.FC<InternshipDetailModalProps> = ({
             rel="noopener noreferrer"
             className="flex-1 inline-flex items-center justify-center space-x-2 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 px-6 py-3 text-xs font-bold text-white shadow-lg shadow-purple-500/20 hover:from-purple-700 hover:to-indigo-700 transition-all text-center"
           >
-            <span>View Original Listing & Apply</span>
+            <span>
+              {internship.source?.toLowerCase().includes('direct') || internship.source?.toLowerCase().includes('greenhouse') || internship.source?.toLowerCase().includes('lever')
+                ? 'Apply Directly on Official Career Portal'
+                : 'View Original Listing & Apply'}
+            </span>
             <ExternalLink className="h-4 w-4" />
           </a>
         </div>

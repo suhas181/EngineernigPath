@@ -354,6 +354,251 @@ export class AdzunaSource implements JobSource {
   }
 }
 
+/**
+ * Curated list of high-reputation tech companies that publish open Greenhouse job boards
+ */
+export const GREENHOUSE_COMPANIES: { key: string; name: string }[] = [
+  { key: 'cloudflare', name: 'Cloudflare' },
+  { key: 'datadog', name: 'Datadog' },
+  { key: 'mongodb', name: 'MongoDB' },
+  { key: 'figma', name: 'Figma' },
+  { key: 'gitlab', name: 'GitLab' },
+  { key: 'stripe', name: 'Stripe' },
+  { key: 'scaleai', name: 'Scale AI' },
+  { key: 'anthropic', name: 'Anthropic' },
+  { key: 'vercel', name: 'Vercel' },
+  { key: 'coinbase', name: 'Coinbase' },
+  { key: 'duolingo', name: 'Duolingo' },
+  { key: 'robinhood', name: 'Robinhood' },
+  { key: 'brex', name: 'Brex' },
+  { key: 'toast', name: 'Toast' },
+  { key: 'coursera', name: 'Coursera' },
+  { key: 'chime', name: 'Chime' },
+  { key: 'inmobi', name: 'InMobi' },
+  { key: 'elastic', name: 'Elastic' },
+  { key: 'affirm', name: 'Affirm' },
+  { key: 'reddit', name: 'Reddit' },
+  { key: 'dropbox', name: 'Dropbox' },
+  { key: 'pinterest', name: 'Pinterest' },
+  { key: 'instacart', name: 'Instacart' },
+  { key: 'groww', name: 'Groww' },
+  { key: 'airtable', name: 'Airtable' },
+  { key: 'hashicorp', name: 'HashiCorp' },
+];
+
+/**
+ * Greenhouse Direct ATS Job Source Implementation
+ * Directly pulls official company job boards and routes users directly to the company's application form.
+ */
+export class GreenhouseSource implements JobSource {
+  name = 'Greenhouse (Direct Company ATS)';
+
+  async fetchInternships(query: string): Promise<FetchResult> {
+    const validListings: RawInternship[] = [];
+    let totalFetched = 0;
+    let rejectedCount = 0;
+
+    const queryKeywords = query
+      .toLowerCase()
+      .split(/\s+/)
+      .filter((w) => !['intern', 'internship', 'developer', 'engineer', 'sde'].includes(w));
+
+    for (const company of GREENHOUSE_COMPANIES) {
+      try {
+        const url = `https://boards-api.greenhouse.io/v1/boards/${company.key}/jobs`;
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 6000);
+
+        const response = await fetch(url, { signal: controller.signal });
+        clearTimeout(timeoutId);
+
+        if (!response.ok) continue;
+
+        const data: any = await response.json();
+        if (!data || !Array.isArray(data.jobs)) continue;
+
+        totalFetched += data.jobs.length;
+
+        for (const job of data.jobs) {
+          const title = cleanSnippet(job.title || '');
+          if (!title) continue;
+
+          // Check if it's an internship, co-op, or trainee role
+          const isInternship = isValidInternshipOpportunity({ title });
+          if (!isInternship) {
+            rejectedCount++;
+            continue;
+          }
+
+          // If query has a specific role filter (e.g. backend, frontend, ai), ensure relevance
+          if (queryKeywords.length > 0) {
+            const matchesQuery = queryKeywords.some((kw) => title.toLowerCase().includes(kw));
+            if (!matchesQuery && !title.toLowerCase().includes('software') && !title.toLowerCase().includes('engineer')) {
+              continue;
+            }
+          }
+
+          const location = job.location?.name ? cleanSnippet(job.location.name) : 'Remote / Hybrid';
+          const isRemote = /remote|wfh|anywhere/i.test(`${title} ${location}`);
+          const role = classifyRole(title, '');
+          const skills = extractSkills(title, '');
+          const applicationUrl = job.absolute_url; // 100% Direct Official Company Application Link!
+
+          validListings.push({
+            externalId: `gh-${company.key}-${job.id}`,
+            source: 'Direct Official ATS',
+            title,
+            company: company.name,
+            description: `${title} opportunity directly posted on ${company.name}'s official career board. Fast-track direct company application.`,
+            location,
+            country: location.toLowerCase().includes('india') ? 'in' : 'global',
+            remote: isRemote,
+            employmentType: 'Internship',
+            skills,
+            applicationUrl,
+            companyUrl: `https://${company.key}.com`,
+            sourceUrl: applicationUrl,
+            publishedAt: job.updated_at ? new Date(job.updated_at) : new Date(),
+            status: 'OPEN',
+            role,
+          });
+        }
+      } catch (err: any) {
+        // Individual company fetch failures shouldn't break whole sync
+      }
+    }
+
+    return {
+      listings: validListings,
+      totalFetched,
+      rejectedCount,
+    };
+  }
+}
+
+/**
+ * Curated list of tech companies publishing open Lever job boards
+ */
+export const LEVER_COMPANIES: { key: string; name: string }[] = [
+  { key: 'spotify', name: 'Spotify' },
+  { key: 'palantir', name: 'Palantir' },
+  { key: 'canva', name: 'Canva' },
+  { key: 'eventbrite', name: 'Eventbrite' },
+];
+
+/**
+ * Lever Direct ATS Job Source Implementation
+ */
+export class LeverSource implements JobSource {
+  name = 'Lever (Direct Company ATS)';
+
+  async fetchInternships(query: string): Promise<FetchResult> {
+    const validListings: RawInternship[] = [];
+    let totalFetched = 0;
+    let rejectedCount = 0;
+
+    for (const company of LEVER_COMPANIES) {
+      try {
+        const url = `https://api.lever.co/v0/postings/${company.key}`;
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 6000);
+
+        const response = await fetch(url, { signal: controller.signal });
+        clearTimeout(timeoutId);
+
+        if (!response.ok) continue;
+
+        const jobs: any = await response.json();
+        if (!Array.isArray(jobs)) continue;
+
+        totalFetched += jobs.length;
+
+        for (const job of jobs) {
+          const title = cleanSnippet(job.text || '');
+          if (!title) continue;
+
+          const isInternship = isValidInternshipOpportunity({ title });
+          if (!isInternship) {
+            rejectedCount++;
+            continue;
+          }
+
+          const location = job.categories?.location ? cleanSnippet(job.categories.location) : 'Remote / Hybrid';
+          const isRemote = /remote/i.test(`${title} ${location}`) || job.workplaceType === 'remote';
+          const role = classifyRole(title, job.descriptionPlain || '');
+          const skills = extractSkills(title, job.descriptionPlain || '');
+          const applicationUrl = job.hostedUrl || job.applyUrl;
+
+          validListings.push({
+            externalId: `lever-${company.key}-${job.id}`,
+            source: 'Direct Official ATS',
+            title,
+            company: company.name,
+            description: `${title} opportunity directly posted on ${company.name}'s official career board. Fast-track direct company application.`,
+            location,
+            country: location.toLowerCase().includes('india') ? 'in' : 'global',
+            remote: isRemote,
+            employmentType: 'Internship',
+            skills,
+            applicationUrl,
+            companyUrl: `https://${company.key}.com`,
+            sourceUrl: applicationUrl,
+            publishedAt: job.createdAt ? new Date(job.createdAt) : new Date(),
+            status: 'OPEN',
+            role,
+          });
+        }
+      } catch (err: any) {}
+    }
+
+    return {
+      listings: validListings,
+      totalFetched,
+      rejectedCount,
+    };
+  }
+}
+
+/**
+ * Composite Multi-Source Job Provider:
+ * Aggregates Direct ATS sources (Greenhouse, Lever) + Adzuna
+ */
+export class CompositeJobSource implements JobSource {
+  name = 'Multi-Source (Direct Official ATS + Adzuna)';
+  private sources: JobSource[];
+
+  constructor() {
+    this.sources = [
+      new GreenhouseSource(),
+      new LeverSource(),
+      new AdzunaSource(),
+    ];
+  }
+
+  async fetchInternships(query: string): Promise<FetchResult> {
+    const combinedListings: RawInternship[] = [];
+    let totalFetched = 0;
+    let rejectedCount = 0;
+
+    for (const src of this.sources) {
+      try {
+        const res = await src.fetchInternships(query);
+        combinedListings.push(...res.listings);
+        totalFetched += res.totalFetched;
+        rejectedCount += res.rejectedCount;
+      } catch (err: any) {
+        console.warn(`[MULTI-SOURCE] Source "${src.name}" error:`, err.message || err);
+      }
+    }
+
+    return {
+      listings: combinedListings,
+      totalFetched,
+      rejectedCount,
+    };
+  }
+}
+
 const SEARCH_QUERIES = [
   'Software Engineer Intern',
   'Software Developer Intern',
@@ -420,7 +665,7 @@ export async function refreshInternships(
     console.error('[Internship Sync] Could not record initial sync log:', logErr.message);
   }
 
-  const source = customSource || new AdzunaSource();
+  const source = customSource || new CompositeJobSource();
   const queries = customQueries || SEARCH_QUERIES;
   let addedCount = 0;
   let updatedCount = 0;

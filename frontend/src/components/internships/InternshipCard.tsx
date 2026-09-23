@@ -99,9 +99,15 @@ export const InternshipCard: React.FC<InternshipCardProps> = ({
                   {internship.company}
                 </p>
                 <span className="inline-block h-1 w-1 rounded-full bg-slate-300 dark:bg-slate-600" />
-                <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500">
-                  {internship.source}
-                </span>
+                {internship.source?.toLowerCase().includes('direct') || internship.source?.toLowerCase().includes('greenhouse') || internship.source?.toLowerCase().includes('lever') ? (
+                  <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-300/80 dark:border-emerald-700/60">
+                    🏢 Direct ATS
+                  </span>
+                ) : (
+                  <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500">
+                    {internship.source}
+                  </span>
+                )}
               </div>
               <h3 className="text-base font-bold text-slate-900 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors line-clamp-1 mt-0.5">
                 {internship.title}
@@ -208,7 +214,11 @@ export const InternshipCard: React.FC<InternshipCardProps> = ({
           onClick={(e) => e.stopPropagation()}
           className="inline-flex items-center space-x-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 px-3.5 py-2 text-xs font-bold text-white shadow-md shadow-purple-500/20 hover:from-purple-700 hover:to-indigo-700 hover:shadow-lg transition-all"
         >
-          <span>View & Apply</span>
+          <span>
+            {internship.source?.toLowerCase().includes('direct') || internship.source?.toLowerCase().includes('greenhouse') || internship.source?.toLowerCase().includes('lever')
+              ? 'Apply on Official Site'
+              : 'View & Apply'}
+          </span>
           <ExternalLink className="h-3.5 w-3.5" />
         </a>
       </div>
