@@ -140,10 +140,17 @@ export const InternshipCard: React.FC<InternshipCardProps> = ({
         {/* Meta Info Badges: Location, Remote, Salary, Employment Type */}
         <div className="mt-3.5 flex flex-wrap items-center gap-2">
           {/* Location Badge */}
-          <span className="inline-flex items-center space-x-1 rounded-full bg-slate-100 dark:bg-slate-800 px-2.5 py-1 text-[11px] font-medium text-slate-700 dark:text-slate-300">
-            <MapPin className="h-3 w-3 text-slate-500 dark:text-slate-400" />
-            <span className="truncate max-w-[140px]">{internship.location || 'India'}</span>
-          </span>
+          {internship.location?.toLowerCase().includes('bangalore') || internship.location?.toLowerCase().includes('bengaluru') ? (
+            <span className="inline-flex items-center space-x-1 rounded-full bg-amber-50 dark:bg-amber-950/60 border border-amber-300/80 dark:border-amber-700/60 px-2.5 py-1 text-[11px] font-bold text-amber-900 dark:text-amber-200 shadow-xs">
+              <MapPin className="h-3 w-3 text-amber-600 dark:text-amber-400" />
+              <span className="truncate max-w-[140px]">📍 Bangalore</span>
+            </span>
+          ) : (
+            <span className="inline-flex items-center space-x-1 rounded-full bg-slate-100 dark:bg-slate-800 px-2.5 py-1 text-[11px] font-medium text-slate-700 dark:text-slate-300">
+              <MapPin className="h-3 w-3 text-slate-500 dark:text-slate-400" />
+              <span className="truncate max-w-[140px]">{internship.location || 'India'}</span>
+            </span>
+          )}
 
           {/* Remote / Work Mode Badge */}
           {internship.remote ? (

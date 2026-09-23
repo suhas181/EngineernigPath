@@ -111,6 +111,73 @@ export function isValidInternshipOpportunity(item: {
 }
 
 /**
+ * Evaluates whether an opportunity is located in India or is 100% Worldwide Remote.
+ * Strictly rejects overseas on-site roles (US, UK, Europe, etc.).
+ * Prioritizes and cleans Bangalore / Bengaluru locations.
+ */
+export function isValidLocationForIndiaOrRemote(
+  location: string,
+  isRemote: boolean,
+  title: string = '',
+  description: string = ''
+): {
+  isValid: boolean;
+  isBangalore: boolean;
+  cleanLocation: string;
+} {
+  const locLower = (location || '').toLowerCase();
+  const textLower = `${title} ${locLower} ${description}`.toLowerCase();
+
+  const isBangalore = /\b(bangalore|bengaluru)\b/i.test(locLower) || /\b(bangalore|bengaluru)\b/i.test(textLower);
+
+  const indiaCities = [
+    'bangalore', 'bengaluru', 'hyderabad', 'pune', 'gurgaon', 'gurugram',
+    'noida', 'mumbai', 'delhi', 'chennai', 'kolkata', 'ahmedabad',
+    'kochi', 'cochin', 'chandigarh', 'indore', 'jaipur', 'trivandrum', 'thiruvananthapuram'
+  ];
+  const isIndiaCity = indiaCities.some((city) => new RegExp(`\\b${city}\\b`, 'i').test(locLower));
+  const hasIndiaExplicit = /\b(india|in)\b/i.test(locLower) || /\bindia\b/i.test(textLower);
+  const isIndia = isBangalore || isIndiaCity || hasIndiaExplicit;
+
+  const isActuallyRemote =
+    isRemote ||
+    /\b(remote|work from home|wfh|anywhere|virtual|global remote)\b/i.test(locLower) ||
+    /\b(remote role|fully remote|work from anywhere|100% remote)\b/i.test(textLower);
+
+  const overseasExclusions = [
+    'united states', 'usa', 'san francisco', 'new york', 'seattle', 'austin',
+    'los angeles', 'boston', 'chicago', 'london', 'united kingdom', 'uk',
+    'germany', 'berlin', 'munich', 'france', 'paris', 'canada', 'toronto',
+    'vancouver', 'australia', 'sydney', 'melbourne', 'singapore', 'japan', 'tokyo'
+  ];
+  const hasOverseasCity = overseasExclusions.some((city) => new RegExp(`\\b${city}\\b`, 'i').test(locLower));
+
+  // If overseas on-site/hybrid with no India presence and not global remote, reject
+  if (hasOverseasCity && !isIndia && !isActuallyRemote) {
+    return { isValid: false, isBangalore: false, cleanLocation: location };
+  }
+
+  // Reject strictly US/UK only roles
+  if (/\b(us only|usa only|must be based in the us|us citizens? only|north america only)\b/i.test(textLower) && !isIndia) {
+    return { isValid: false, isBangalore: false, cleanLocation: location };
+  }
+
+  if (isIndia || isActuallyRemote) {
+    let cleanLocation = location || (isActuallyRemote ? 'Remote' : 'India');
+    if (isBangalore) {
+      cleanLocation = cleanLocation.toLowerCase().includes('bengaluru') || cleanLocation.toLowerCase().includes('bangalore')
+        ? cleanLocation
+        : `Bangalore, India (${cleanLocation})`;
+    } else if (isIndia && !cleanLocation.toLowerCase().includes('india')) {
+      cleanLocation = `${cleanLocation}, India`;
+    }
+    return { isValid: true, isBangalore, cleanLocation };
+  }
+
+  return { isValid: false, isBangalore: false, cleanLocation: location };
+}
+
+/**
  * Determines employment type from source data without blindly hard-coding "Internship"
  */
 function determineEmploymentType(item: any, title: string, description: string): string {
@@ -358,30 +425,30 @@ export class AdzunaSource implements JobSource {
  * Curated list of high-reputation tech companies that publish open Greenhouse job boards
  */
 export const GREENHOUSE_COMPANIES: { key: string; name: string }[] = [
-  { key: 'cloudflare', name: 'Cloudflare' },
+  // Top India Tech Unicorns & Bangalore R&D Centers
+  { key: 'groww', name: 'Groww' },
+  { key: 'inmobi', name: 'InMobi' },
+  { key: 'glance', name: 'Glance' },
+  { key: 'rubrik', name: 'Rubrik' },
+  { key: 'toast', name: 'Toast' },
+  // Global Tech with major India/Bangalore presence & Remote
+  { key: 'stripe', name: 'Stripe' },
   { key: 'datadog', name: 'Datadog' },
   { key: 'mongodb', name: 'MongoDB' },
-  { key: 'figma', name: 'Figma' },
-  { key: 'gitlab', name: 'GitLab' },
-  { key: 'stripe', name: 'Stripe' },
-  { key: 'scaleai', name: 'Scale AI' },
-  { key: 'anthropic', name: 'Anthropic' },
-  { key: 'vercel', name: 'Vercel' },
-  { key: 'coinbase', name: 'Coinbase' },
-  { key: 'duolingo', name: 'Duolingo' },
-  { key: 'robinhood', name: 'Robinhood' },
-  { key: 'brex', name: 'Brex' },
-  { key: 'toast', name: 'Toast' },
-  { key: 'coursera', name: 'Coursera' },
-  { key: 'chime', name: 'Chime' },
-  { key: 'inmobi', name: 'InMobi' },
   { key: 'elastic', name: 'Elastic' },
-  { key: 'affirm', name: 'Affirm' },
+  { key: 'cloudflare', name: 'Cloudflare' },
+  { key: 'coinbase', name: 'Coinbase' },
+  { key: 'gitlab', name: 'GitLab' },
+  { key: 'figma', name: 'Figma' },
   { key: 'reddit', name: 'Reddit' },
+  { key: 'affirm', name: 'Affirm' },
+  { key: 'anthropic', name: 'Anthropic' },
+  { key: 'scaleai', name: 'Scale AI' },
+  { key: 'vercel', name: 'Vercel' },
   { key: 'dropbox', name: 'Dropbox' },
   { key: 'pinterest', name: 'Pinterest' },
   { key: 'instacart', name: 'Instacart' },
-  { key: 'groww', name: 'Groww' },
+  { key: 'duolingo', name: 'Duolingo' },
   { key: 'airtable', name: 'Airtable' },
   { key: 'hashicorp', name: 'HashiCorp' },
 ];
@@ -438,8 +505,17 @@ export class GreenhouseSource implements JobSource {
             }
           }
 
-          const location = job.location?.name ? cleanSnippet(job.location.name) : 'Remote / Hybrid';
-          const isRemote = /remote|wfh|anywhere/i.test(`${title} ${location}`);
+          const rawLocation = job.location?.name ? cleanSnippet(job.location.name) : 'Remote / Hybrid';
+          const isRemote = /remote|wfh|anywhere/i.test(`${title} ${rawLocation}`);
+          const locCheck = isValidLocationForIndiaOrRemote(rawLocation, isRemote, title, '');
+
+          // Strictly allow only India (Bangalore prioritized) or Worldwide Remote
+          if (!locCheck.isValid) {
+            rejectedCount++;
+            continue;
+          }
+
+          const location = locCheck.cleanLocation;
           const role = classifyRole(title, '');
           const skills = extractSkills(title, '');
           const applicationUrl = job.absolute_url; // 100% Direct Official Company Application Link!
@@ -480,10 +556,12 @@ export class GreenhouseSource implements JobSource {
  * Curated list of tech companies publishing open Lever job boards
  */
 export const LEVER_COMPANIES: { key: string; name: string }[] = [
+  { key: 'meesho', name: 'Meesho' },
+  { key: 'cred', name: 'CRED' },
+  { key: 'paytm', name: 'Paytm' },
+  { key: 'canva', name: 'Canva' },
   { key: 'spotify', name: 'Spotify' },
   { key: 'palantir', name: 'Palantir' },
-  { key: 'canva', name: 'Canva' },
-  { key: 'eventbrite', name: 'Eventbrite' },
 ];
 
 /**
@@ -523,8 +601,17 @@ export class LeverSource implements JobSource {
             continue;
           }
 
-          const location = job.categories?.location ? cleanSnippet(job.categories.location) : 'Remote / Hybrid';
-          const isRemote = /remote/i.test(`${title} ${location}`) || job.workplaceType === 'remote';
+          const rawLocation = job.categories?.location ? cleanSnippet(job.categories.location) : 'Remote / Hybrid';
+          const isRemote = /remote/i.test(`${title} ${rawLocation}`) || job.workplaceType === 'remote';
+          const locCheck = isValidLocationForIndiaOrRemote(rawLocation, isRemote, title, job.descriptionPlain || '');
+
+          // Strictly allow only India (Bangalore prioritized) or Worldwide Remote
+          if (!locCheck.isValid) {
+            rejectedCount++;
+            continue;
+          }
+
+          const location = locCheck.cleanLocation;
           const role = classifyRole(title, job.descriptionPlain || '');
           const skills = extractSkills(title, job.descriptionPlain || '');
           const applicationUrl = job.hostedUrl || job.applyUrl;
@@ -879,6 +966,8 @@ export async function getInternshipsList(params: GetInternshipsParams, userId?: 
   if (params.location && params.location !== 'All') {
     if (params.location.toLowerCase() === 'remote') {
       query.remote = true;
+    } else if (params.location.toLowerCase() === 'bangalore') {
+      query.location = { $regex: /bangalore|bengaluru/i };
     } else {
       query.location = { $regex: new RegExp(params.location, 'i') };
     }
