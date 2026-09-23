@@ -5026,9 +5026,9 @@ export const getCurriculumForRole = (
             ]
           },
           'top-sde-cs-os': {
-            videoTitle: 'Gate Smashers: Operating System Full Course (Process, Threads, Memory & Deadlocks)',
+            videoTitle: 'Gate Smashers: Complete OS Interview Question in One Shot | Placement Revision',
             videoProvider: 'Gate Smashers',
-            videoUrl: 'https://www.youtube.com/watch?v=bkSWJJZNgf8',
+            videoUrl: 'https://www.youtube.com/watch?v=h8J7X1cEG4E',
             docTitle: 'OSTEP: Operating Systems: Three Easy Pieces (Official Book Notes)',
             docProvider: 'Univ. of Wisconsin (Remzi H. Arpaci-Dusseau)',
             docUrl: 'https://pages.cs.wisc.edu/~remzi/OSTEP/',
@@ -5074,9 +5074,9 @@ export const getCurriculumForRole = (
             ]
           },
           'top-sde-cs-cn': {
-            videoTitle: 'Gate Smashers: Computer Networks Complete Playlist (OSI, TCP/IP, HTTP)',
+            videoTitle: 'Gate Smashers: Complete CN Interview Questions in One Shot | Placement Revision',
             videoProvider: 'Gate Smashers',
-            videoUrl: 'https://www.youtube.com/playlist?list=PLxCzCOWd7aiGFBD2-2joCpWOLUrDLvVV_',
+            videoUrl: 'https://www.youtube.com/watch?v=skvCwFPZ7zM',
             docTitle: 'GeeksforGeeks: Computer Networks Tutorial & Protocol Notes',
             docProvider: 'GeeksforGeeks',
             docUrl: 'https://www.geeksforgeeks.org/computer-network-tutorials/',
@@ -5122,9 +5122,9 @@ export const getCurriculumForRole = (
             ]
           },
           'top-sde-cs-dbms': {
-            videoTitle: 'Gate Smashers: DBMS & SQL Complete Series (ACID, Normalization, Indexing)',
+            videoTitle: 'Gate Smashers: Complete DBMS Interview Question in One Shot | Placement Revision',
             videoProvider: 'Gate Smashers',
-            videoUrl: 'https://www.youtube.com/playlist?list=PLxCzCOWd7aiFAN6I8CuViBuCdJgiOkT2Y',
+            videoUrl: 'https://www.youtube.com/watch?v=YeYl-s7KAFM',
             docTitle: 'GeeksforGeeks: Database Management System Complete Tutorial',
             docProvider: 'GeeksforGeeks',
             docUrl: 'https://www.geeksforgeeks.org/dbms/',
@@ -5171,9 +5171,26 @@ export const getCurriculumForRole = (
             ]
           },
           'top-sde-cs-oop-design': {
-            videoTitle: 'Christopher Okhravi: Strategy Pattern & Design Patterns in Java (ep 1)',
-            videoProvider: 'Christopher Okhravi',
-            videoUrl: 'https://www.youtube.com/watch?v=v9ejT8FO-7I',
+            videoTitle: 'Apna College: Java OOPs in One Shot | Object Oriented Programming Placement Course',
+            videoProvider: 'Apna College',
+            videoUrl: 'https://www.youtube.com/watch?v=bSrm9RXwBaI',
+            videoByLanguage: {
+              Java: {
+                title: 'Apna College: Java OOPs in One Shot | Object Oriented Programming Placement Course',
+                provider: 'Apna College',
+                url: 'https://www.youtube.com/watch?v=bSrm9RXwBaI',
+              },
+              'C++': {
+                title: 'freeCodeCamp: Object Oriented Programming (OOP) in C++ Course',
+                provider: 'freeCodeCamp.org',
+                url: 'https://www.youtube.com/watch?v=wN0x9eZLix4',
+              },
+              Python: {
+                title: 'Corey Schafer: Python OOP Tutorial - Classes, Instances & Inheritance',
+                provider: 'Corey Schafer',
+                url: 'https://www.youtube.com/watch?v=ZDa-Z5JzLYM',
+              },
+            },
             docTitle: 'Refactoring Guru: Design Patterns & SOLID Architecture Catalog',
             docProvider: 'Refactoring Guru',
             docUrl: 'https://refactoring.guru/design-patterns',
@@ -20257,6 +20274,95 @@ export const getCurriculumForRole = (
             url: 'https://takeuforward.org/strivers-a2z-dsa-course/strivers-a2z-dsa-course-sheet-2/',
             type: 'article',
           });
+        }
+
+        // GAP-FILLER CS: Computer Science Core (OS, CN, DBMS, OOPs) One-Shot Revision & Complete Series
+        if (top.id.startsWith('top-sde-cs-')) {
+          if (top.id === 'top-sde-cs-os') {
+            altVideos.unshift(
+              {
+                id: `vid-os-oneshot-${top.id}`,
+                title: 'Gate Smashers: Complete OS Interview Question in One Shot | Placement Revision',
+                provider: 'Gate Smashers (YouTube)',
+                url: 'https://www.youtube.com/watch?v=h8J7X1cEG4E',
+                type: 'video',
+                difficulty: top.difficulty,
+              },
+              {
+                id: `vid-os-full-${top.id}`,
+                title: 'Gate Smashers: Operating System Full Course (Process, Threads, Memory & Deadlocks)',
+                provider: 'Gate Smashers (YouTube)',
+                url: 'https://www.youtube.com/watch?v=bkSWJJZNgf8',
+                type: 'video',
+                difficulty: top.difficulty,
+              }
+            );
+          } else if (top.id === 'top-sde-cs-cn') {
+            altVideos.unshift(
+              {
+                id: `vid-cn-oneshot-${top.id}`,
+                title: 'Gate Smashers: Complete CN Interview Questions in One Shot | Placement Revision',
+                provider: 'Gate Smashers (YouTube)',
+                url: 'https://www.youtube.com/watch?v=skvCwFPZ7zM',
+                type: 'video',
+                difficulty: top.difficulty,
+              },
+              {
+                id: `vid-cn-full-${top.id}`,
+                title: 'Gate Smashers: Computer Networks Complete Playlist (OSI, TCP/IP, HTTP)',
+                provider: 'Gate Smashers (YouTube)',
+                url: 'https://www.youtube.com/playlist?list=PLxCzCOWd7aiGFBD2-2joCpWOLUrDLvVV_',
+                type: 'video',
+                difficulty: top.difficulty,
+              }
+            );
+          } else if (top.id === 'top-sde-cs-dbms') {
+            altVideos.unshift(
+              {
+                id: `vid-dbms-oneshot-${top.id}`,
+                title: 'Gate Smashers: Complete DBMS Interview Question in One Shot | Placement Revision',
+                provider: 'Gate Smashers (YouTube)',
+                url: 'https://www.youtube.com/watch?v=YeYl-s7KAFM',
+                type: 'video',
+                difficulty: top.difficulty,
+              },
+              {
+                id: `vid-dbms-full-${top.id}`,
+                title: 'Gate Smashers: DBMS & SQL Complete Series (ACID, Normalization, Indexing)',
+                provider: 'Gate Smashers (YouTube)',
+                url: 'https://www.youtube.com/playlist?list=PLxCzCOWd7aiFAN6I8CuViBuCdJgiOkT2Y',
+                type: 'video',
+                difficulty: top.difficulty,
+              }
+            );
+          } else if (top.id === 'top-sde-cs-oop-design') {
+            altVideos.unshift(
+              {
+                id: `vid-oops-apna-${top.id}`,
+                title: 'Apna College: Java OOPs in One Shot | Object Oriented Programming Placement Course',
+                provider: 'Apna College (YouTube)',
+                url: 'https://www.youtube.com/watch?v=bSrm9RXwBaI',
+                type: 'video',
+                difficulty: top.difficulty,
+              },
+              {
+                id: `vid-oops-cpp-${top.id}`,
+                title: 'freeCodeCamp: Object Oriented Programming (OOP) in C++ One Shot Course',
+                provider: 'freeCodeCamp (YouTube)',
+                url: 'https://www.youtube.com/watch?v=wN0x9eZLix4',
+                type: 'video',
+                difficulty: top.difficulty,
+              },
+              {
+                id: `vid-oops-py-${top.id}`,
+                title: 'Corey Schafer: Python OOP Tutorial in One Shot (Classes, Instances & Inheritance)',
+                provider: 'Corey Schafer (YouTube)',
+                url: 'https://www.youtube.com/watch?v=ZDa-Z5JzLYM',
+                type: 'video',
+                difficulty: top.difficulty,
+              }
+            );
+          }
         }
 
         // GAP-FILLER 2: AI/ML Track — Add Andrew Ng Machine Learning Specialization
