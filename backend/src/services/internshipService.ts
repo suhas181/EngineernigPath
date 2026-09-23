@@ -561,17 +561,16 @@ export class LeverSource implements JobSource {
 
 /**
  * Composite Multi-Source Job Provider:
- * Aggregates Direct ATS sources (Greenhouse, Lever) + Adzuna
+ * Aggregates Direct ATS sources (Greenhouse, Lever) with 100% direct official company links
  */
 export class CompositeJobSource implements JobSource {
-  name = 'Multi-Source (Direct Official ATS + Adzuna)';
+  name = 'Direct Official ATS (Greenhouse + Lever)';
   private sources: JobSource[];
 
   constructor() {
     this.sources = [
       new GreenhouseSource(),
       new LeverSource(),
-      new AdzunaSource(),
     ];
   }
 
