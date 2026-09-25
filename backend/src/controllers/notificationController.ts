@@ -1,6 +1,7 @@
 import { Response, NextFunction } from 'express';
 import { AuthenticatedRequest } from '../types';
 import { Notification } from '../models/Notification';
+import { User } from '../models/User';
 
 const INITIAL_NOTIFICATIONS = [
   {
@@ -209,3 +210,39 @@ export const createNotification = async (
     next(error);
   }
 };
+
+/**
+ * POST /api/notifications/device-token
+ * Registers or updates a device's push notification token for the user
+ */
+export const registerDeviceToken = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const user = req.user;
+    if (!user) {
+      res.status(401).json({ success: false, message: 'Authentication required' });
+      return;
+    }
+
+    const { token } = req.body;
+    if (!token || typeof token !== 'string' || token.trim() === '') {
+      res.status(400).json({ success: false, message: 'Valid FCM token is required' });
+      return;
+    }
+
+    await User.findByIdAndUpdate(user._id, {
+      $addToSet: { fcmTokens: token.trim() },
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Push notification device token registered successfully',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+

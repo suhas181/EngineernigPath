@@ -65,6 +65,7 @@ export interface IUser extends Document {
   
   activeRoadmapId?: Schema.Types.ObjectId;
   savedInternships?: Schema.Types.ObjectId[];
+  fcmTokens?: string[];
 
   createdAt: Date;
   updatedAt: Date;
@@ -292,6 +293,10 @@ const UserSchema = new Schema<IUser>(
         ref: 'Internship',
       },
     ],
+    fcmTokens: {
+      type: [String],
+      default: [],
+    },
   },
   {
     timestamps: true,
