@@ -1,4 +1,4 @@
-export type ResourceLanguage = 'Java' | 'Python' | 'C++' | 'JavaScript' | 'TypeScript' | 'All';
+export type ResourceLanguage = 'Java' | 'Python' | 'C++' | 'JavaScript' | 'TypeScript' | 'Kannada' | 'Hindi' | 'English' | 'All';
 
 export type ResourceType =
   | 'video'
@@ -22,6 +22,7 @@ export type ResourceCategory =
   | 'Web Development'
   | 'CS Fundamentals'
   | 'Git & GitHub'
+  | 'Open Sources'
   | 'Open Source & GSoC'
   | 'Aptitude'
   | 'Interview Preparation'

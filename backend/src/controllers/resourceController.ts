@@ -128,7 +128,14 @@ export const getResources = async (
     }
 
     if (catFilter !== 'all') {
-      augmented = augmented.filter((r) => (r.category || '').toLowerCase() === catFilter.toLowerCase());
+      const lower = catFilter.toLowerCase();
+      augmented = augmented.filter((r) => {
+        const rCat = (r.category || '').toLowerCase();
+        if (lower === 'open sources' || lower === 'open source & gsoc' || lower === 'open source') {
+          return rCat === 'open sources' || rCat === 'open source & gsoc' || rCat === 'open source';
+        }
+        return rCat === lower;
+      });
     }
 
     if (typeFilter !== 'all') {

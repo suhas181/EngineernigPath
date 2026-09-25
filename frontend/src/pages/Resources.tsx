@@ -50,7 +50,7 @@ const CATEGORIES = [
   'Web Development',
   'CS Fundamentals',
   'Git & GitHub',
-  'Open Source & GSoC',
+  'Open Sources',
   'Aptitude',
   'Interview Preparation',
   'Projects',
@@ -426,16 +426,16 @@ export function Resources() {
                   </SectionBlock>
                 )}
 
-                {/* SECTION 2: OPEN SOURCE & GSOC */}
-                {resourcesByCategory['Open Source & GSoC']?.length > 0 && (
+                {/* SECTION 2: OPEN SOURCES */}
+                {((resourcesByCategory['Open Sources']?.length || 0) > 0 || (resourcesByCategory['Open Source & GSoC']?.length || 0) > 0) && (
                   <SectionBlock
-                    title="🚀 Open Source & GSoC"
-                    subtitle="Official Google Summer of Code guides, GitHub Skills labs, and beginner contribution walkthroughs."
+                    title="🚀 Open Sources"
+                    subtitle="Official Google Summer of Code guides, LFX mentorship, GitHub Skills labs, and beginner contribution walkthroughs."
                     badge="COMMUNITY"
                     badgeColor="bg-emerald-100 text-emerald-700 border-emerald-200"
                   >
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
-                      {resourcesByCategory['Open Source & GSoC'].map((res) => (
+                      {[...(resourcesByCategory['Open Sources'] || []), ...(resourcesByCategory['Open Source & GSoC'] || [])].map((res) => (
                         <ResourceCard
                           key={res.id}
                           resource={res}
