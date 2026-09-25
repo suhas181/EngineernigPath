@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">EngineerPath</string>
+    <string name="title_activity_main">EngineerPath</string>
+    <string name="package_name">me.engineerpath.app</string>
+    <string name="custom_url_scheme">me.engineerpath.app</string>
+</resources>
