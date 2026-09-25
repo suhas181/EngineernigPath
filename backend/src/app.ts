@@ -18,6 +18,7 @@ import productivityRoutes from './routes/productivityRoutes';
 import resumeRoutes from './routes/resumeRoutes';
 import adminRoutes from './routes/adminRoutes';
 import internshipRoutes from './routes/internshipRoutes';
+import notificationRoutes from './routes/notificationRoutes';
 
 const app = express();
 
@@ -194,6 +195,7 @@ app.use('/api/productivity', productivityRoutes);
 app.use('/api/resume', resumeRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/internships', internshipRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // 404 Catch-All Handler
 app.use((req, res) => {

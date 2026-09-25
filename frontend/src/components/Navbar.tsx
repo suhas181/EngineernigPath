@@ -4,10 +4,10 @@ import { useAuthStore } from '../store/useAuthStore';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 import ThemeToggle from './ThemeToggle';
+import NotificationDropdown from './NotificationDropdown';
 import {
   GraduationCap,
   LogOut,
-  Bell,
   User,
   LayoutDashboard,
   Map,
@@ -132,10 +132,7 @@ export function Navbar() {
           {isAuthenticated ? (
             <>
               {/* Notifications */}
-              <button className="relative p-2 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition rounded-full hover:bg-slate-100 dark:hover:bg-slate-800">
-                <Bell className="h-4 w-4" />
-                <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-purple-600" />
-              </button>
+              <NotificationDropdown />
 
               {/* User Card & Settings (Desktop) */}
               <div className="hidden md:flex items-center space-x-2 pl-2 border-l border-slate-200 dark:border-slate-700">
