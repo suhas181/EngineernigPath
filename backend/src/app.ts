@@ -64,6 +64,17 @@ const isAllowedOrigin = (origin: string): boolean => {
     return true;
   }
 
+  // 4. Mobile Native WebViews (Capacitor Android: https://localhost, iOS: capacitor://localhost)
+  const isMobileAppOrigin =
+    cleanOrigin === 'https://localhost' ||
+    cleanOrigin === 'capacitor://localhost' ||
+    cleanOrigin === 'ionic://localhost' ||
+    cleanOrigin === 'http://localhost' ||
+    /^https?:\/\/localhost(:\d+)?$/.test(cleanOrigin);
+  if (isMobileAppOrigin) {
+    return true;
+  }
+
   return false;
 };
 
