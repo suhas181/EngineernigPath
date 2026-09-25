@@ -2,6 +2,7 @@ import { Response, NextFunction } from 'express';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import { User } from '../models/User';
+import { Notification } from '../models/Notification';
 import { AuthenticatedRequest } from '../types';
 
 // Admin User Creation Schema
@@ -167,3 +168,109 @@ export const getAdminStats = async (
     next(error);
   }
 };
+
+/**
+ * GET /api/admin/notifications
+ * Fetch all broadcasted notifications with read analytics
+ */
+export const getAdminNotifications = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const notifications = await Notification.find({})
+      .sort({ createdAt: -1 })
+      .lean();
+
+    const totalStudents = await User.countDocuments({ role: 'student' });
+
+    const formatted = notifications.map((n) => ({
+      id: n._id.toString(),
+      title: n.title,
+      message: n.message,
+      type: n.type,
+      link: n.link || '',
+      isBroadcast: n.isBroadcast,
+      readCount: Array.isArray(n.readBy) ? n.readBy.length : 0,
+      totalRecipients: n.isBroadcast ? totalStudents : 1,
+      createdAt: n.createdAt,
+    }));
+
+    res.status(200).json({
+      success: true,
+      count: formatted.length,
+      notifications: formatted,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * POST /api/admin/notifications
+ * Broadcast a new notification to all students
+ */
+export const broadcastNotification = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { title, message, type, link } = req.body;
+
+    if (!title || !title.trim() || !message || !message.trim()) {
+      res.status(400).json({
+        success: false,
+        message: 'Notification title and message are required.',
+      });
+      return;
+    }
+
+    const notification = await Notification.create({
+      title: title.trim(),
+      message: message.trim(),
+      type: type || 'system_announcement',
+      link: link ? link.trim() : '',
+      isBroadcast: true,
+      userId: null,
+      readBy: [],
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Notification broadcasted to all students successfully!',
+      notification,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * DELETE /api/admin/notifications/:id
+ * Delete a broadcast notification
+ */
+export const deleteAdminNotification = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { id } = req.params;
+
+    const notification = await Notification.findByIdAndDelete(id);
+    if (!notification) {
+      res.status(404).json({ success: false, message: 'Notification not found' });
+      return;
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Notification deleted successfully',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+

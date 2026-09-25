@@ -39,6 +39,25 @@ export interface CreateUserData {
   preferredCareer?: string;
 }
 
+export interface AdminNotificationItem {
+  id: string;
+  title: string;
+  message: string;
+  type: 'ai_suggestion' | 'internship_alert' | 'learning_resource' | 'system_announcement' | 'milestone';
+  link: string;
+  isBroadcast: boolean;
+  readCount: number;
+  totalRecipients: number;
+  createdAt: string;
+}
+
+export interface BroadcastNotificationData {
+  title: string;
+  message: string;
+  type: string;
+  link?: string;
+}
+
 export const adminService = {
   /**
    * Fetch all registered users with optional search and role filters
@@ -63,6 +82,30 @@ export const adminService = {
    */
   async getStats() {
     const response = await api.get<{ success: boolean; stats: AdminStats }>('/admin/stats');
+    return response.data;
+  },
+
+  /**
+   * Fetch all notifications with read statistics
+   */
+  async getNotifications() {
+    const response = await api.get<{ success: boolean; count: number; notifications: AdminNotificationItem[] }>('/admin/notifications');
+    return response.data;
+  },
+
+  /**
+   * Broadcast a notification to all registered students
+   */
+  async broadcastNotification(data: BroadcastNotificationData) {
+    const response = await api.post<{ success: boolean; message: string; notification: any }>('/admin/notifications', data);
+    return response.data;
+  },
+
+  /**
+   * Delete a notification
+   */
+  async deleteNotification(id: string) {
+    const response = await api.delete<{ success: boolean; message: string }>(`/admin/notifications/${id}`);
     return response.data;
   },
 };
