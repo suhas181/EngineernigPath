@@ -920,6 +920,23 @@ export const CURATED_RESOURCES: LibraryResource[] = [
   // 9. INTERVIEW PREPARATION
   // ==========================================
   {
+    id: 'int-hr-questions-upgrad',
+    title: '40 Most Asked HR Interview Questions and Answers | HR Interview Guide',
+    description: 'Master the 40 most asked HR round interview questions with sample answers, behavioral interview techniques, and campus placement tips by upGrad.',
+    provider: 'upGrad',
+    category: 'Interview Preparation',
+    topic: 'HR Interview',
+    type: 'video',
+    url: 'https://youtu.be/zIm_k9j0C50?si=sR1FjUEUi7E70cQE',
+    thumbnail: 'https://img.youtube.com/vi/zIm_k9j0C50/hqdefault.jpg',
+    duration: 'HR Interview',
+    level: 'Beginner',
+    tags: ['HR Interview', 'Behavioral Questions', 'Interview Preparation', 'Placements', 'upGrad'],
+    featured: true,
+    language: 'English',
+    verified: true,
+  },
+  {
     id: 'int-striver-sde-sheet',
     title: "Striver's SDE Sheet - Top 180 Coding Interview Problems",
     description: 'The most popular coding interview preparation sheet used by top candidates to crack product companies.',
