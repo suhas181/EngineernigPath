@@ -5,7 +5,6 @@ import AppRouter from './router/AppRouter';
 import { useAuthStore } from './store/useAuthStore';
 import { api } from './services/api';
 import { Loader2 } from 'lucide-react';
-import { initializePushNotifications } from './services/pushNotificationService';
 
 function App() {
   const { setUser, logout } = useAuthStore();
@@ -37,7 +36,6 @@ function App() {
     };
 
     initializeAuth();
-    initializePushNotifications();
   }, [setUser, logout]);
 
   if (isInitializing) {
