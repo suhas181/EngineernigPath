@@ -59,4 +59,5 @@ export interface CareerRoleCurriculum {
   role: string;
   language: 'Java' | 'Python' | 'C++';
   categories: CurriculumCategory[];
+  views?: number;
 }

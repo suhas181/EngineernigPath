@@ -19,6 +19,7 @@ import resumeRoutes from './routes/resumeRoutes';
 import adminRoutes from './routes/adminRoutes';
 import internshipRoutes from './routes/internshipRoutes';
 import notificationRoutes from './routes/notificationRoutes';
+import viewRoutes from './routes/viewRoutes';
 
 const app = express();
 
@@ -207,6 +208,7 @@ app.use('/api/resume', resumeRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/internships', internshipRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/views', viewRoutes);
 
 // 404 Catch-All Handler
 app.use((req, res) => {

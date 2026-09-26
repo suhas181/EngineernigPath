@@ -1,9 +1,18 @@
 import { Router } from 'express';
-import { getRoadmap, generateRoadmap, toggleRoadmapItem, submitWeeklyReview, selectActiveRoadmap, getLearningCurriculum } from '../controllers/roadmapController';
+import {
+  getRoadmap,
+  generateRoadmap,
+  toggleRoadmapItem,
+  submitWeeklyReview,
+  selectActiveRoadmap,
+  getLearningCurriculum,
+  getRoadmapViewCounts,
+} from '../controllers/roadmapController';
 import { protect, optionalAuth } from '../middlewares/auth';
 
 const router = Router();
 
+router.get('/views', optionalAuth, getRoadmapViewCounts);
 router.get('/curriculum', optionalAuth, getLearningCurriculum);
 router.get('/', protect, getRoadmap);
 router.post('/generate', protect, generateRoadmap);

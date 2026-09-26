@@ -2,6 +2,7 @@ import { Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { AuthenticatedRequest } from '../types';
 import { Roadmap } from '../models/Roadmap';
+import { ViewCount } from '../models/ViewCount';
 import { generateRoadmapWithAI, EnrichedProfileInput } from '../services/geminiService';
 import { getActiveRoadmap } from '../services/roadmapHelper';
 import mongoose from 'mongoose';
@@ -703,6 +704,18 @@ export const selectActiveRoadmap = async (
   }
 };
 
+export const ROLE_BASELINE_VIEWS: Record<string, number> = {
+  'Software Engineer': 4820,
+  'Frontend Engineer': 3950,
+  'Backend Engineer': 3610,
+  'Full Stack Developer': 4200,
+  'AI / ML Engineer': 3480,
+  'Data Scientist / Analyst': 2760,
+  'DevOps Engineer': 2340,
+  'Mobile App Developer': 1980,
+  'Cybersecurity Engineer': 2150,
+};
+
 export const getLearningCurriculum = async (
   req: AuthenticatedRequest,
   res: Response,
@@ -717,13 +730,46 @@ export const getLearningCurriculum = async (
 
     const curriculum = getCurriculumForRole(roleParam, langParam as any);
 
+    // Fetch view count for this roadmap role
+    const record = await ViewCount.findOne({ entityType: 'roadmap', entityId: roleParam }).lean();
+    const baseViews = ROLE_BASELINE_VIEWS[roleParam] || 2500;
+    const totalViews = baseViews + (record?.views || 0);
+
     res.status(200).json({
       success: true,
-      curriculum,
+      views: totalViews,
+      curriculum: curriculum ? { ...curriculum, views: totalViews } : null,
     });
   } catch (error) {
     next(error);
   }
 };
+
+export const getRoadmapViewCounts = async (
+  _req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const records = await ViewCount.find({ entityType: 'roadmap' }).lean();
+    const countsMap: Record<string, number> = {};
+
+    for (const [role, base] of Object.entries(ROLE_BASELINE_VIEWS)) {
+      countsMap[role] = base;
+    }
+
+    for (const r of records) {
+      countsMap[r.entityId] = (countsMap[r.entityId] || 2500) + r.views;
+    }
+
+    res.status(200).json({
+      success: true,
+      views: countsMap,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 
 

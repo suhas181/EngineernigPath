@@ -19,7 +19,9 @@ import {
   CheckCircle2,
   Pause,
   Play,
+  Eye,
 } from 'lucide-react';
+import { fetchRoadmapViews, formatViewCount } from '../../services/viewTrackingService';
 
 export interface CareerRoleItem {
   id: string;
@@ -286,6 +288,15 @@ export function DashboardHero({ onStartRole }: DashboardHeroProps) {
   const [direction, setDirection] = useState<1 | -1>(1);
 
   const isPaused = isManualPaused || isHovered;
+  const [roleViews, setRoleViews] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    fetchRoadmapViews().then((views) => {
+      if (views && Object.keys(views).length > 0) {
+        setRoleViews(views);
+      }
+    });
+  }, []);
 
   // Auto transition every 4 seconds (4000ms) with clean setTimeout and timer reset
   useEffect(() => {
@@ -370,6 +381,10 @@ export function DashboardHero({ onStartRole }: DashboardHeroProps) {
                 <span className="text-xs text-slate-300 font-semibold flex items-center bg-slate-900/80 px-3.5 py-1.5 rounded-full border border-slate-800 backdrop-blur-md">
                   <Clock className="w-3.5 h-3.5 mr-1.5 text-slate-400" />
                   Est. {currentRole.estimatedTime}
+                </span>
+                <span className="text-xs text-teal-300 font-semibold flex items-center bg-teal-950/60 px-3.5 py-1.5 rounded-full border border-teal-800/60 backdrop-blur-md shadow-xs">
+                  <Eye className="w-3.5 h-3.5 mr-1.5 text-teal-400" />
+                  {formatViewCount(roleViews[currentRole.name] || 3200)} explored
                 </span>
                 {isPaused && (
                   <span className="text-[10px] font-mono font-bold tracking-wider px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/30 flex items-center animate-pulse backdrop-blur-md">

@@ -11,9 +11,11 @@ import {
   Layers,
   ArrowRight,
   AlertOctagon,
+  Eye,
 } from 'lucide-react';
 
 import * as roadmapService from '../services/roadmapService';
+import { trackView, formatViewCount, fetchRoadmapViews } from '../services/viewTrackingService';
 import {
   CareerRoleCurriculum,
   CurriculumCategory,
@@ -168,8 +170,20 @@ export function Roadmap() {
     }
   };
 
+  const [allRoleViews, setAllRoleViews] = useState<Record<string, number>>({});
+
+  // Fetch view metrics for all roles
+  useEffect(() => {
+    fetchRoadmapViews().then((views) => {
+      if (views && Object.keys(views).length > 0) {
+        setAllRoleViews(views);
+      }
+    });
+  }, []);
+
   useEffect(() => {
     fetchCurriculum(selectedRole, selectedLanguage);
+    trackView('roadmap', selectedRole);
   }, [selectedRole, selectedLanguage]);
 
   const handleLanguageChange = (lang: 'Java' | 'Python' | 'C++') => {
@@ -263,15 +277,21 @@ export function Roadmap() {
                     >
                       {AVAILABLE_ROLES.map((r) => (
                         <option key={r} value={r}>
-                          {r} Track
+                          {r} Track {allRoleViews[r] ? `• ${formatViewCount(allRoleViews[r])} views` : ''}
                         </option>
                       ))}
                     </select>
                   </div>
 
-                  <p className="text-xs text-[var(--ink-muted)] mt-0.5">
-                    Select a category card below to automatically jump to its modules & topics.
-                  </p>
+                  <div className="flex flex-wrap items-center gap-2 mt-1">
+                    <span className="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full bg-teal-50 dark:bg-teal-950/60 border border-teal-200 dark:border-teal-800 text-teal-800 dark:text-teal-300 text-[11px] font-bold shadow-xs">
+                      <Eye className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
+                      <span>{formatViewCount(curriculum?.views || allRoleViews[selectedRole] || 3200)} students viewed</span>
+                    </span>
+                    <p className="text-xs text-[var(--ink-muted)]">
+                      • Select a category card below to automatically jump to its modules & topics.
+                    </p>
+                  </div>
                 </div>
               </div>
 

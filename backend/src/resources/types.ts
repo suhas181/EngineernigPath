@@ -58,6 +58,7 @@ export interface LibraryResource {
   order?: number;
   stage?: ResourceStage;
   clicks?: number;
+  views?: number;
 }
 
 export interface TopicArchitecture {

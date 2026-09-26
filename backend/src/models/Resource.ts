@@ -10,6 +10,7 @@ export interface IResource extends Document {
   estimatedTime: number; // in minutes
   tags: string[];
   clicks: number;
+  views: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -53,6 +54,10 @@ const ResourceSchema = new Schema<IResource>(
       index: true,
     },
     clicks: {
+      type: Number,
+      default: 0,
+    },
+    views: {
       type: Number,
       default: 0,
     },
